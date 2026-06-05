@@ -1,0 +1,29 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local IDE and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local runtime and debug files
+*.log
+.pytest_cache/
+
+# Local secrets
+.env
+
+# Generated or private data
+data/intermediate/*.json
+data/kg/*.ttl
+!data/intermediate/.gitkeep
+!data/kg/.gitkeep

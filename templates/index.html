@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>印人传知识问答系统</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">知识图谱大作业 / KG Agent</p>
+        <h1>印人传知识问答系统</h1>
+        <p class="intro">
+          面向《印人传》构建的本地知识图谱问答原型。当前页面已经预留普通问答、高级 SPARQL、
+          图谱接入状态和后续可视化入口，适合成员 D 持续整合成员 B 的抽取结果与成员 C 的 Turtle 图谱。
+        </p>
+        <div class="hero-actions">
+          <button class="primary-btn" id="scrollToQueryBtn">开始查询</button>
+          <a class="secondary-link" href="/api/health" target="_blank" rel="noreferrer">查看健康状态</a>
+        </div>
+      </div>
+      <aside class="hero-side">
+        <div class="status-panel">
+          <h2>图谱接入状态</h2>
+          <div class="status-grid">
+            <div class="status-card {{ 'online' if ttl_status.schema else 'offline' }}">
+              <span>schema.ttl</span>
+              <strong>{{ "已接入" if ttl_status.schema else "未接入" }}</strong>
+            </div>
+            <div class="status-card {{ 'online' if ttl_status.core else 'offline' }}">
+              <span>core.ttl</span>
+              <strong>{{ "已接入" if ttl_status.core else "未接入" }}</strong>
+            </div>
+            <div class="status-card {{ 'online' if ttl_status.aligned else 'offline' }}">
+              <span>aligned.ttl</span>
+              <strong>{{ "已接入" if ttl_status.aligned else "未接入" }}</strong>
+            </div>
+          </div>
+        </div>
+        <div class="mini-note">
+          <p>推荐演示顺序</p>
+          <ol>
+            <li>先展示普通问答</li>
+            <li>再展示固定工具查询</li>
+            <li>最后展示高级 SPARQL</li>
+          </ol>
+        </div>
+      </aside>
+    </header>
+
+    <main class="content-grid" id="querySection">
+      <section class="panel panel-large">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">自然语言查询</p>
+            <h2>普通问答</h2>
+          </div>
+          <span class="panel-badge">工作流入口</span>
+        </div>
+        <div class="form-row">
+          <input id="questionInput" type="text" placeholder="例如：文彭是谁？">
+          <button id="askBtn" class="primary-btn">查询</button>
+        </div>
+        <div class="chips">
+          <button class="chip" data-question="文彭是谁？">文彭是谁？</button>
+          <button class="chip" data-question="文彭的字是什么？">文彭的字是什么？</button>
+          <button class="chip" data-question="文徵明与文彭是什么关系？">文徵明与文彭是什么关系？</button>
+          <button class="chip" data-question="谁开创了吴门印派？">谁开创了吴门印派？</button>
+        </div>
+        <div class="result-wrap">
+          <div class="result-head">
+            <h3>问答结果</h3>
+            <span>JSON 调试输出</span>
+          </div>
+          <pre id="qaResult" class="result-box">等待查询...</pre>
+        </div>
+      </section>
+
+      <section class="panel panel-side">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">成员 D 提前准备</p>
+            <h2>整合重点</h2>
+          </div>
+        </div>
+        <ul class="todo-list">
+          <li>先和成员 C 定死命名空间、类名和属性名。</li>
+          <li>优先把字、号、生卒年、师承、亲属、交游、流派做成固定工具。</li>
+          <li>为每类高频问题准备 SPARQL 模板，不要一开始全靠模型生成。</li>
+          <li>把普通问答与高级 SPARQL 页面提前跑通，后续只替换数据源。</li>
+          <li>人物关系网络可视化留到主链路稳定后再加。</li>
+        </ul>
+      </section>
+
+      <section class="panel panel-large">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">结构化查询</p>
+            <h2>高级 SPARQL</h2>
+          </div>
+          <span class="panel-badge">适合演示课程技术点</span>
+        </div>
+        <textarea id="sparqlInput" rows="12">PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+SELECT ?person ?label
+WHERE {
+  ?person rdfs:label ?label .
+}
+LIMIT 10</textarea>
+        <div class="form-row form-row-end">
+          <button id="sparqlBtn" class="primary-btn">执行 SPARQL</button>
+        </div>
+        <div class="result-wrap">
+          <div class="result-head">
+            <h3>SPARQL 返回结果</h3>
+            <span>适合课堂现场展示</span>
+          </div>
+          <pre id="sparqlResult" class="result-box">等待执行...</pre>
+        </div>
+      </section>
+
+      <section class="panel panel-side">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">示例方向</p>
+            <h2>建议展示问题</h2>
+          </div>
+        </div>
+        <ul class="showcase-list">
+          <li>人物基础信息：某人的字、号、生卒年</li>
+          <li>人物关系：父子、师承、交游</li>
+          <li>流派问题：某人属于什么流派，谁开创了某流派</li>
+          <li>复杂查询：某人物的关联人物或路径查询</li>
+          <li>高级查询：直接执行 SPARQL 展示图谱结构</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    async function postJson(url, payload) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      return response.json();
+    }
+
+    function renderResult(targetId, data) {
+      document.getElementById(targetId).textContent = JSON.stringify(data, null, 2);
+    }
+
+    document.getElementById("scrollToQueryBtn").addEventListener("click", () => {
+      document.getElementById("querySection").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    document.getElementById("askBtn").addEventListener("click", async () => {
+      const question = document.getElementById("questionInput").value.trim();
+      const data = await postJson("/api/query", { question });
+      renderResult("qaResult", data);
+    });
+
+    document.getElementById("questionInput").addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") {
+        return;
+      }
+      event.preventDefault();
+      const question = document.getElementById("questionInput").value.trim();
+      const data = await postJson("/api/query", { question });
+      renderResult("qaResult", data);
+    });
+
+    document.getElementById("sparqlBtn").addEventListener("click", async () => {
+      const sparql = document.getElementById("sparqlInput").value;
+      const data = await postJson("/api/sparql", { sparql });
+      renderResult("sparqlResult", data);
+    });
+
+    document.querySelectorAll(".chip").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const question = button.dataset.question;
+        document.getElementById("questionInput").value = question;
+        const data = await postJson("/api/query", { question });
+        renderResult("qaResult", data);
+      });
+    });
+  </script>
+</body>
+</html>

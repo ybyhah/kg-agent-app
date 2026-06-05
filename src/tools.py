@@ -29,7 +29,11 @@ class QueryTools:
         rows = self.graph_store.query(sparql)
         return ToolResult(name=name, sparql=sparql.strip(), rows=rows, note=note)
 
+    def _escape_literal(self, value: str) -> str:
+        return value.replace("\\", "\\\\").replace('"', '\\"')
+
     def get_person_labels(self, person_name: str) -> ToolResult:
+        person_name = self._escape_literal(person_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT ?person ?label
@@ -42,10 +46,11 @@ class QueryTools:
         return self._run(
             name="get_person_labels",
             sparql=sparql,
-            note="当前是基础标签查询，后续可替换成更严格的人物实体定位工具。",
+            note="基础人物候选查询。后续可以替换为更严格的人物实体定位规则。",
         )
 
     def get_courtesy_name(self, person_name: str) -> ToolResult:
+        person_name = self._escape_literal(person_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT ?person ?label ?courtesyName
@@ -59,10 +64,11 @@ class QueryTools:
         return self._run(
             name="get_courtesy_name",
             sparql=sparql,
-            note="查询某人的字。当前使用占位属性 ex:hasCourtesyName，等成员 C 定稿后替换。",
+            note="查询人物的字。当前使用占位属性 ex:hasCourtesyName，等待成员 C 的本体定稿后替换。",
         )
 
     def get_art_name(self, person_name: str) -> ToolResult:
+        person_name = self._escape_literal(person_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT ?person ?label ?artName
@@ -76,10 +82,11 @@ class QueryTools:
         return self._run(
             name="get_art_name",
             sparql=sparql,
-            note="查询某人的号。当前使用占位属性 ex:hasArtName，等成员 C 定稿后替换。",
+            note="查询人物的号。当前使用占位属性 ex:hasArtName，等待成员 C 的本体定稿后替换。",
         )
 
     def get_birth_death(self, person_name: str) -> ToolResult:
+        person_name = self._escape_literal(person_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT ?person ?label ?birthYear ?deathYear
@@ -94,10 +101,11 @@ class QueryTools:
         return self._run(
             name="get_birth_death",
             sparql=sparql,
-            note="查询某人的生卒年。当前使用占位属性 ex:birthYear 和 ex:deathYear。",
+            note="查询人物的生卒年。当前使用占位属性 ex:birthYear 和 ex:deathYear。",
         )
 
     def get_teacher_relations(self, person_name: str) -> ToolResult:
+        person_name = self._escape_literal(person_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT ?person ?label ?teacher ?teacherLabel
@@ -112,10 +120,11 @@ class QueryTools:
         return self._run(
             name="get_teacher_relations",
             sparql=sparql,
-            note="查询某人的师承关系。当前使用占位属性 ex:hasTeacher。",
+            note="查询人物的师承关系。当前使用占位属性 ex:hasTeacher。",
         )
 
     def get_family_relations(self, person_name: str) -> ToolResult:
+        person_name = self._escape_literal(person_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT ?person ?label ?relative ?relativeLabel ?relationType
@@ -131,10 +140,11 @@ class QueryTools:
         return self._run(
             name="get_family_relations",
             sparql=sparql,
-            note="查询某人的亲属关系。当前使用占位属性 ex:hasRelative 和 ex:relativeRelationType。",
+            note="查询人物的亲属关系。当前使用占位属性 ex:hasRelative 和 ex:relativeRelationType。",
         )
 
     def get_social_relations(self, person_name: str) -> ToolResult:
+        person_name = self._escape_literal(person_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT ?person ?label ?friend ?friendLabel
@@ -149,10 +159,11 @@ class QueryTools:
         return self._run(
             name="get_social_relations",
             sparql=sparql,
-            note="查询某人的交游关系。当前使用占位属性 ex:hasFriend。",
+            note="查询人物的交游关系。当前使用占位属性 ex:hasFriend。",
         )
 
     def get_school_membership(self, person_name: str) -> ToolResult:
+        person_name = self._escape_literal(person_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT ?person ?label ?school ?schoolLabel
@@ -167,10 +178,11 @@ class QueryTools:
         return self._run(
             name="get_school_membership",
             sparql=sparql,
-            note="查询某人的流派归属。当前使用占位属性 ex:belongsToSchool。",
+            note="查询人物所属流派。当前使用占位属性 ex:belongsToSchool。",
         )
 
     def get_school_founder(self, school_name: str) -> ToolResult:
+        school_name = self._escape_literal(school_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT ?founder ?founderLabel ?school ?schoolLabel
@@ -185,10 +197,44 @@ class QueryTools:
         return self._run(
             name="get_school_founder",
             sparql=sparql,
-            note="查询某流派的开创者。当前使用占位属性 ex:foundsSchool。",
+            note="查询某一流派的开创者。当前使用占位属性 ex:foundsSchool。",
+        )
+
+    def get_pair_relations(self, person_a: str, person_b: str) -> ToolResult:
+        person_a = self._escape_literal(person_a)
+        person_b = self._escape_literal(person_b)
+        sparql = f"""
+        {BASE_PREFIXES}
+        SELECT ?sourceLabel ?targetLabel ?relation ?relationLabel ?direction
+        WHERE {{
+          {{
+            ?source rdfs:label ?sourceLabel .
+            ?target rdfs:label ?targetLabel .
+            ?source ?relation ?target .
+            OPTIONAL {{ ?relation rdfs:label ?relationLabel . }}
+            BIND("正向" AS ?direction)
+            FILTER(CONTAINS(STR(?sourceLabel), "{person_a}") && CONTAINS(STR(?targetLabel), "{person_b}"))
+          }}
+          UNION
+          {{
+            ?source rdfs:label ?sourceLabel .
+            ?target rdfs:label ?targetLabel .
+            ?target ?relation ?source .
+            OPTIONAL {{ ?relation rdfs:label ?relationLabel . }}
+            BIND("反向" AS ?direction)
+            FILTER(CONTAINS(STR(?sourceLabel), "{person_a}") && CONTAINS(STR(?targetLabel), "{person_b}"))
+          }}
+        }}
+        LIMIT 30
+        """
+        return self._run(
+            name="get_pair_relations",
+            sparql=sparql,
+            note="查询两个人物之间的直接关系。关系谓词标签若未显式建模，可能显示为 URI。",
         )
 
     def get_related_people(self, person_name: str) -> ToolResult:
+        person_name = self._escape_literal(person_name)
         sparql = f"""
         {BASE_PREFIXES}
         SELECT DISTINCT ?person ?label ?related ?relatedLabel
@@ -203,7 +249,7 @@ class QueryTools:
         return self._run(
             name="get_related_people",
             sparql=sparql,
-            note="查询某人的关联人物，适合后续做人物关系网络或路径分析。",
+            note="查询某人物的关联人物，适合后续做人际网络或路径分析。",
         )
 
     def run_raw_sparql(self, sparql: str) -> ToolResult:

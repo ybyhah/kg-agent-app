@@ -8,77 +8,78 @@ from .service import AppService
 
 def build_ui_text():
     return {
-        "title": "\u5370\u4eba\u4f20\u77e5\u8bc6\u95ee\u7b54\u7cfb\u7edf",
-        "eyebrow": "\u77e5\u8bc6\u56fe\u8c31\u5927\u4f5c\u4e1a / KG Agent",
-        "hero_title": "\u5370\u4eba\u4f20\u77e5\u8bc6\u95ee\u7b54\u7cfb\u7edf",
+        "title": "印人传知识问答系统",
+        "eyebrow": "知识图谱大作业 / KG Agent",
+        "hero_title": "印人传知识问答系统",
         "hero_intro": (
-            "\u9762\u5411\u300a\u5370\u4eba\u4f20\u300b\u6784\u5efa\u7684\u77e5\u8bc6\u56fe\u8c31\u95ee\u7b54\u539f\u578b\u3002"
-            "\u5f53\u524d\u9875\u9762\u5df2\u7ecf\u9884\u7559\u666e\u901a\u95ee\u7b54\u3001\u9ad8\u7ea7 SPARQL\u3001"
-            "\u56fe\u8c31\u63a5\u5165\u72b6\u6001\u548c\u53ef\u89c6\u5316\u6269\u5c55\u5165\u53e3\uff0c"
-            "\u9002\u5408\u6210\u5458 D \u6301\u7eed\u6574\u5408\u6210\u5458 B \u7684\u62bd\u53d6\u7ed3\u679c\u4e0e\u6210\u5458 C \u7684 Turtle \u56fe\u8c31\u3002"
+            "面向《印人传》构建的知识图谱问答原型。"
+            "当前页面已经预留普通问答、高级 SPARQL、图谱接入状态和可视化扩展入口，"
+            "适合成员 D 持续整合成员 B 的抽取结果与成员 C 的 Turtle 图谱。"
         ),
-        "start_query": "\u5f00\u59cb\u67e5\u8be2",
-        "health": "\u67e5\u770b\u5065\u5eb7\u72b6\u6001",
-        "ttl_title": "\u56fe\u8c31\u63a5\u5165\u72b6\u6001",
-        "ttl_online": "\u5df2\u63a5\u5165",
-        "ttl_offline": "\u672a\u63a5\u5165",
-        "demo_title": "\u63a8\u8350\u6f14\u793a\u987a\u5e8f",
+        "start_query": "开始查询",
+        "health": "查看健康状态",
+        "ttl_title": "图谱接入状态",
+        "ttl_online": "已接入",
+        "ttl_offline": "未接入",
+        "demo_title": "推荐演示顺序",
         "demo_steps": [
-            "\u5148\u5c55\u793a\u666e\u901a\u95ee\u7b54",
-            "\u518d\u5c55\u793a\u56fa\u5b9a\u5de5\u5177\u67e5\u8be2",
-            "\u6700\u540e\u5c55\u793a\u9ad8\u7ea7 SPARQL",
+            "先展示普通问答",
+            "再展示固定工具查询",
+            "最后展示高级 SPARQL",
         ],
-        "qa_kicker": "\u81ea\u7136\u8bed\u8a00\u67e5\u8be2",
-        "qa_title": "\u666e\u901a\u95ee\u7b54",
-        "qa_badge": "\u5de5\u4f5c\u6d41\u5165\u53e3",
-        "qa_placeholder": "\u4f8b\u5982\uff1a\u6587\u5f6d\u662f\u8c01\uff1f",
-        "qa_button": "\u67e5\u8be2",
+        "qa_kicker": "自然语言查询",
+        "qa_title": "普通问答",
+        "qa_badge": "工作流入口",
+        "qa_placeholder": "例如：文彭是谁？",
+        "qa_button": "查询",
         "qa_examples": [
-            "\u6587\u5f6d\u662f\u8c01\uff1f",
-            "\u6587\u5f6d\u7684\u5b57\u662f\u4ec0\u4e48\uff1f",
-            "\u6587\u5f6d\u7684\u53f7\u662f\u4ec0\u4e48\uff1f",
-            "\u6587\u5f6d\u7684\u751f\u5352\u5e74\u662f\u4ec0\u4e48\uff1f",
-            "\u6587\u5fb5\u660e\u4e0e\u6587\u5f6d\u662f\u4ec0\u4e48\u5173\u7cfb\uff1f",
-            "\u6587\u5f6d\u7684\u5e08\u627f\u662f\u8c01\uff1f",
-            "\u8c01\u5f00\u521b\u4e86\u5434\u95e8\u5370\u6d3e\uff1f",
+            "文彭是谁？",
+            "文彭的字是什么？",
+            "文彭的号是什么？",
+            "文彭的生卒年是什么？",
+            "文徵明与文彭是什么关系？",
+            "文彭的师承是？",
+            "谁开创了吴门印派？",
         ],
-        "qa_result_title": "\u95ee\u7b54\u7ed3\u679c",
-        "qa_result_hint": "\u5c55\u793a\u56de\u7b54\u3001\u5907\u6ce8\u3001SPARQL \u548c\u7ed3\u679c\u884c",
-        "qa_waiting": "\u8bf7\u8f93\u5165\u95ee\u9898\u540e\u5f00\u59cb\u67e5\u8be2\u3002",
-        "member_kicker": "\u6210\u5458 D \u63d0\u524d\u51c6\u5907",
-        "member_title": "\u6574\u5408\u91cd\u70b9",
+        "qa_result_title": "问答结果",
+        "qa_result_hint": "展示回答、备注、SPARQL 和结果行",
+        "qa_waiting": "请输入问题后开始查询。",
+        "member_kicker": "成员 D 提前准备",
+        "member_title": "整合重点",
         "member_todos": [
-            "\u5148\u548c\u6210\u5458 C \u5b9a\u6b7b\u547d\u540d\u7a7a\u95f4\u3001\u7c7b\u540d\u548c\u5c5e\u6027\u540d\u3002",
-            "\u4f18\u5148\u628a\u5b57\u3001\u53f7\u3001\u751f\u5352\u5e74\u3001\u5e08\u627f\u3001\u4eb2\u5c5e\u3001\u4ea4\u6e38\u3001\u6d41\u6d3e\u505a\u6210\u56fa\u5b9a\u5de5\u5177\u3002",
-            "\u4e3a\u6bcf\u7c7b\u9ad8\u9891\u95ee\u9898\u51c6\u5907 SPARQL \u6a21\u677f\uff0c\u4e0d\u8981\u4e00\u5f00\u59cb\u5168\u9760\u6a21\u578b\u751f\u6210\u3002",
-            "\u628a\u666e\u901a\u95ee\u7b54\u4e0e\u9ad8\u7ea7 SPARQL \u9875\u9762\u63d0\u524d\u8dd1\u901a\uff0c\u540e\u7eed\u53ea\u66ff\u6362\u6570\u636e\u6e90\u3002",
-            "\u4eba\u7269\u5173\u7cfb\u7f51\u7edc\u53ef\u89c6\u5316\u653e\u5230\u4e3b\u94fe\u8def\u7a33\u5b9a\u540e\u518d\u63a5\u5165\u3002",
+            "先和成员 C 定死命名空间、类名和属性名。",
+            "优先把字、号、生卒年、师承、亲属、交游、流派做成固定工具。",
+            "为每类高频问题准备 SPARQL 模板，不要一开始全靠模型生成。",
+            "把普通问答与高级 SPARQL 页面提前跑通，后续只替换数据源。",
+            "人物关系网络可视化放到主链路稳定后再接入。",
         ],
-        "sparql_kicker": "\u7ed3\u6784\u5316\u67e5\u8be2",
-        "sparql_title": "\u9ad8\u7ea7 SPARQL",
-        "sparql_badge": "\u9002\u5408\u6f14\u793a\u8bfe\u7a0b\u6280\u672f\u70b9",
-        "sparql_button": "\u6267\u884c SPARQL",
-        "sparql_result_title": "SPARQL \u8fd4\u56de\u7ed3\u679c",
-        "sparql_result_hint": "\u9002\u5408\u8bfe\u5802\u73b0\u573a\u5c55\u793a",
-        "sparql_waiting": "\u8bf7\u8f93\u5165 SPARQL \u540e\u6267\u884c\u3002",
-        "showcase_kicker": "\u793a\u4f8b\u65b9\u5411",
-        "showcase_title": "\u5efa\u8bae\u5c55\u793a\u95ee\u9898",
+        "sparql_kicker": "结构化查询",
+        "sparql_title": "高级 SPARQL",
+        "sparql_badge": "适合演示课程技术点",
+        "sparql_button": "执行 SPARQL",
+        "sparql_result_title": "SPARQL 返回结果",
+        "sparql_result_hint": "适合课堂现场展示",
+        "sparql_waiting": "请输入 SPARQL 后执行。",
+        "showcase_kicker": "示例方向",
+        "showcase_title": "建议展示问题",
         "showcases": [
-            "\u4eba\u7269\u57fa\u7840\u4fe1\u606f\uff1a\u67d0\u4eba\u7684\u5b57\u3001\u53f7\u3001\u751f\u5352\u5e74",
-            "\u4eba\u7269\u5173\u7cfb\uff1a\u7236\u5b50\u3001\u5e08\u627f\u3001\u4ea4\u6e38",
-            "\u6d41\u6d3e\u95ee\u9898\uff1a\u67d0\u4eba\u5c5e\u4e8e\u4ec0\u4e48\u6d41\u6d3e\uff0c\u8c01\u5f00\u521b\u4e86\u67d0\u6d41\u6d3e",
-            "\u590d\u6742\u67e5\u8be2\uff1a\u67d0\u4eba\u7269\u7684\u5173\u8054\u4eba\u7269\u6216\u8def\u5f84\u67e5\u8be2",
-            "\u9ad8\u7ea7\u67e5\u8be2\uff1a\u76f4\u63a5\u6267\u884c SPARQL \u5c55\u793a\u56fe\u8c31\u7ed3\u6784",
+            "人物基础信息：某人的字、号、生卒年",
+            "人物关系：父子、师承、交游",
+            "流派问题：某人属于什么流派，谁开创了某流派",
+            "复杂查询：某人物的关联人物或路径查询",
+            "高级查询：直接执行 SPARQL 展示图谱结构",
         ],
-        "answer_label": "\u56de\u7b54",
-        "notes_label": "\u8bf4\u660e",
+        "answer_label": "回答",
+        "notes_label": "说明",
         "sparql_label": "SPARQL",
-        "rows_label": "\u7ed3\u679c\u884c",
-        "tool_mode": "\u5de5\u5177\u67e5\u8be2",
-        "fallback_mode": "\u56de\u9000\u56de\u7b54",
-        "empty_mode": "\u7a7a\u8f93\u5165",
-        "result_empty": "\u6682\u65f6\u6ca1\u6709\u7ed3\u679c\u884c\u3002",
-        "result_error": "\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002",
+        "rows_label": "结果行",
+        "tool_mode": "工具查询",
+        "fallback_mode": "回退回答",
+        "empty_mode": "空输入",
+        "generated_mode": "生成式 SPARQL",
+        "tool_error_mode": "工具查询未完成",
+        "result_empty": "暂时没有结果行。",
+        "result_error": "请求失败，请稍后重试。",
     }
 
 
@@ -102,8 +103,22 @@ def register_routes(app, config: AppConfig):
     def query():
         payload = request.get_json(silent=True) or {}
         question = str(payload.get("question", "")).strip()
-        result = service.answer_question(question)
-        return jsonify(result.model_dump())
+        try:
+            result = service.answer_question(question)
+            return jsonify(result.model_dump())
+        except Exception as exc:
+            return (
+                jsonify(
+                    {
+                        "mode": "fallback",
+                        "answer": "查询流程执行失败。",
+                        "sparql": None,
+                        "rows": [],
+                        "notes": [str(exc)],
+                    }
+                ),
+                500,
+            )
 
     @app.post("/api/sparql")
     def sparql():

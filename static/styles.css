@@ -248,6 +248,11 @@ textarea {
   background: rgba(143, 45, 18, 0.06);
 }
 
+.chip-strong {
+  background: rgba(143, 45, 18, 0.08);
+  font-weight: 600;
+}
+
 .result-dashboard {
   display: grid;
   gap: 18px;
@@ -270,6 +275,11 @@ textarea {
 
 .result-columns-wide {
   margin-top: 18px;
+}
+
+.panel-intro {
+  max-width: none;
+  margin-bottom: 18px;
 }
 
 .result-topline {
@@ -417,6 +427,68 @@ textarea {
   color: var(--muted);
 }
 
+.network-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.network-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: 18px;
+}
+
+.network-stage-card,
+.network-format-card {
+  margin-top: 18px;
+}
+
+.network-canvas-wrap {
+  min-height: 420px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(circle at top left, rgba(143, 45, 18, 0.08), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 234, 220, 0.92));
+  overflow: hidden;
+}
+
+.network-svg {
+  width: 100%;
+  height: 420px;
+  display: block;
+}
+
+.network-edge-line {
+  stroke: rgba(111, 100, 88, 0.65);
+  stroke-width: 2;
+}
+
+.network-edge-label {
+  font-size: 12px;
+  fill: var(--accent-dark);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(255, 250, 243, 0.9);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.network-node-circle {
+  stroke: rgba(255, 250, 243, 0.95);
+  stroke-width: 3;
+}
+
+.network-node-text {
+  fill: #fffaf3;
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
 @media (max-width: 960px) {
   .hero,
   .content-grid {
@@ -424,7 +496,8 @@ textarea {
   }
 
   .hero-side,
-  .result-columns {
+  .result-columns,
+  .network-grid {
     grid-template-columns: 1fr;
   }
 }

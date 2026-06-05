@@ -153,6 +153,57 @@ LIMIT 10</textarea>
         </div>
       </section>
 
+      <section class="panel panel-large">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">{{ ui.network_kicker }}</p>
+            <h2>{{ ui.network_title }}</h2>
+          </div>
+          <span class="panel-badge">{{ ui.network_badge }}</span>
+        </div>
+        <p class="intro panel-intro">{{ ui.network_intro }}</p>
+        <div class="network-actions">
+          <button id="buildNetworkFromQaBtn" class="chip chip-strong">{{ ui.network_from_qa }}</button>
+          <button id="buildNetworkFromSparqlBtn" class="chip chip-strong">{{ ui.network_from_sparql }}</button>
+        </div>
+
+        <div class="network-grid">
+          <section class="result-card network-stage-card">
+            <div class="result-card-head">
+              <h3>{{ ui.network_canvas_title }}</h3>
+              <span class="muted-note" id="networkStatusText">{{ ui.network_empty }}</span>
+            </div>
+            <div id="networkCanvasWrap" class="network-canvas-wrap empty-state">{{ ui.network_empty }}</div>
+          </section>
+
+          <section class="result-card">
+            <div class="result-card-head">
+              <h3>{{ ui.network_meta_title }}</h3>
+              <span class="muted-note">nodes / edges / warnings</span>
+            </div>
+            <pre id="networkMeta" class="result-box">{{ ui.result_empty }}</pre>
+          </section>
+        </div>
+
+        <section class="result-card network-format-card">
+          <div class="result-card-head">
+            <h3>{{ ui.network_format_title }}</h3>
+            <span class="muted-note">{{ ui.network_format_hint }}</span>
+          </div>
+          <pre id="networkDataPreview" class="result-box">{
+  "nodes": [],
+  "edges": [],
+  "meta": {
+    "source": "",
+    "rowCount": 0,
+    "nodeCount": 0,
+    "edgeCount": 0,
+    "warnings": []
+  }
+}</pre>
+        </section>
+      </section>
+
       <section class="panel panel-side">
         <div class="panel-header">
           <div>
@@ -177,8 +228,21 @@ LIMIT 10</textarea>
       generatedMode: "{{ ui.generated_mode }}",
       toolErrorMode: "{{ ui.tool_error_mode }}",
       resultEmpty: "{{ ui.result_empty }}",
-      resultError: "{{ ui.result_error }}"
+      resultError: "{{ ui.result_error }}",
+      networkEmpty: "{{ ui.network_empty }}",
+      networkTooSmall: "{{ ui.network_too_small }}"
     };
+
+    const GRAPH_COLORS = {
+      person: "#8f2d12",
+      school: "#956f2e",
+      place: "#315d72",
+      unknown: "#6f6458"
+    };
+
+    let lastQaRows = [];
+    let lastSparqlRows = [];
+    let lastGraphData = { nodes: [], edges: [], meta: { source: "", rowCount: 0, nodeCount: 0, edgeCount: 0, warnings: [] } };
 
     async function postJson(url, payload) {
       const response = await fetch(url, {
@@ -257,7 +321,8 @@ LIMIT 10</textarea>
       document.getElementById("qaSparql").textContent = data.sparql || UI_TEXT.resultEmpty;
       document.getElementById("qaRowCount").textContent = `${(data.rows || []).length} 行`;
       renderNotes(data.notes || []);
-      renderTable("qaRows", data.rows || []);
+      lastQaRows = data.rows || [];
+      renderTable("qaRows", lastQaRows);
     }
 
     function renderSparqlResult(data) {
@@ -275,7 +340,247 @@ LIMIT 10</textarea>
         meta.push(data.sparql);
       }
       document.getElementById("sparqlMeta").textContent = meta.join("\n");
-      renderTable("sparqlRows", data.rows || []);
+      lastSparqlRows = data.rows || [];
+      renderTable("sparqlRows", lastSparqlRows);
+    }
+
+    function inferNodeType(row, key) {
+      const normalized = key.toLowerCase();
+      if (normalized.includes("school")) {
+        return "school";
+      }
+      if (normalized.includes("place")) {
+        return "place";
+      }
+      if (normalized.includes("person") || normalized.includes("teacher") || normalized.includes("friend") || normalized.includes("relative") || normalized.includes("founder") || normalized.includes("source") || normalized.includes("target") || normalized.includes("related")) {
+        return "person";
+      }
+      return "unknown";
+    }
+
+    function addNode(nodeMap, label, type = "unknown") {
+      if (!label) {
+        return null;
+      }
+      const id = label.trim();
+      if (!id) {
+        return null;
+      }
+      if (!nodeMap.has(id)) {
+        nodeMap.set(id, {
+          id,
+          label: id,
+          type,
+          group: type,
+          size: type === "person" ? 22 : 18
+        });
+      }
+      return nodeMap.get(id);
+    }
+
+    function addEdge(edgeMap, sourceNode, targetNode, relationLabel) {
+      if (!sourceNode || !targetNode || sourceNode.id === targetNode.id) {
+        return;
+      }
+      const safeLabel = relationLabel || "关联";
+      const edgeId = `${sourceNode.id}::${targetNode.id}::${safeLabel}`;
+      if (!edgeMap.has(edgeId)) {
+        edgeMap.set(edgeId, {
+          id: edgeId,
+          source: sourceNode.id,
+          target: targetNode.id,
+          label: safeLabel,
+          relationType: safeLabel
+        });
+      }
+    }
+
+    function adaptRowsToGraphData(rows, sourceName) {
+      const nodeMap = new Map();
+      const edgeMap = new Map();
+      const warnings = [];
+
+      for (const row of rows || []) {
+        const relationLabel = row.relationLabel || row.relationType || row.relation || "";
+
+        if (row.sourceLabel && row.targetLabel) {
+          const sourceNode = addNode(nodeMap, row.sourceLabel, "person");
+          const targetNode = addNode(nodeMap, row.targetLabel, "person");
+          addEdge(edgeMap, sourceNode, targetNode, relationLabel || "直接关系");
+          continue;
+        }
+
+        if (row.label && row.teacherLabel) {
+          const sourceNode = addNode(nodeMap, row.label, "person");
+          const targetNode = addNode(nodeMap, row.teacherLabel, "person");
+          addEdge(edgeMap, sourceNode, targetNode, "师承");
+          continue;
+        }
+
+        if (row.label && row.relativeLabel) {
+          const sourceNode = addNode(nodeMap, row.label, "person");
+          const targetNode = addNode(nodeMap, row.relativeLabel, "person");
+          addEdge(edgeMap, sourceNode, targetNode, relationLabel || "亲属");
+          continue;
+        }
+
+        if (row.label && row.friendLabel) {
+          const sourceNode = addNode(nodeMap, row.label, "person");
+          const targetNode = addNode(nodeMap, row.friendLabel, "person");
+          addEdge(edgeMap, sourceNode, targetNode, "交游");
+          continue;
+        }
+
+        if (row.label && row.schoolLabel) {
+          const sourceNode = addNode(nodeMap, row.label, "person");
+          const targetNode = addNode(nodeMap, row.schoolLabel, "school");
+          addEdge(edgeMap, sourceNode, targetNode, "所属流派");
+          continue;
+        }
+
+        if (row.founderLabel && row.schoolLabel) {
+          const sourceNode = addNode(nodeMap, row.founderLabel, "person");
+          const targetNode = addNode(nodeMap, row.schoolLabel, "school");
+          addEdge(edgeMap, sourceNode, targetNode, "开创");
+          continue;
+        }
+
+        if (row.label && row.relatedLabel) {
+          const sourceNode = addNode(nodeMap, row.label, "person");
+          const targetNode = addNode(nodeMap, row.relatedLabel, "person");
+          addEdge(edgeMap, sourceNode, targetNode, "关联");
+          continue;
+        }
+
+        const labelKeys = Object.keys(row).filter((key) => key.toLowerCase().endsWith("label"));
+        if (labelKeys.length >= 2) {
+          const [firstKey, secondKey] = labelKeys;
+          const firstNode = addNode(nodeMap, row[firstKey], inferNodeType(row, firstKey));
+          const secondNode = addNode(nodeMap, row[secondKey], inferNodeType(row, secondKey));
+          addEdge(edgeMap, firstNode, secondNode, relationLabel || "关联");
+          continue;
+        }
+
+        if (labelKeys.length === 1) {
+          addNode(nodeMap, row[labelKeys[0]], inferNodeType(row, labelKeys[0]));
+        }
+      }
+
+      if (rows && rows.length > 0 && edgeMap.size === 0) {
+        warnings.push("结果表格里暂未识别到标准关系字段，当前只能抽取到零散节点。");
+      }
+      if (nodeMap.size > 0 && nodeMap.size < 2) {
+        warnings.push("节点数量过少，当前无法形成有效的人物关系网络。");
+      }
+      if (nodeMap.size >= 2 && edgeMap.size === 0) {
+        warnings.push("已有多个节点，但没有识别到边。后续需要与成员 C 对齐字段名。");
+      }
+
+      return {
+        nodes: Array.from(nodeMap.values()),
+        edges: Array.from(edgeMap.values()),
+        meta: {
+          source: sourceName,
+          rowCount: (rows || []).length,
+          nodeCount: nodeMap.size,
+          edgeCount: edgeMap.size,
+          warnings
+        }
+      };
+    }
+
+    function buildCircularLayout(nodes, width, height) {
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = Math.max(90, Math.min(width, height) / 2 - 72);
+      return nodes.map((node, index) => {
+        if (nodes.length === 1) {
+          return { ...node, x: cx, y: cy };
+        }
+        const angle = (Math.PI * 2 * index) / nodes.length - Math.PI / 2;
+        return {
+          ...node,
+          x: cx + radius * Math.cos(angle),
+          y: cy + radius * Math.sin(angle)
+        };
+      });
+    }
+
+    function renderNetworkGraph(graphData) {
+      const wrap = document.getElementById("networkCanvasWrap");
+      const metaBox = document.getElementById("networkMeta");
+      const previewBox = document.getElementById("networkDataPreview");
+      const statusText = document.getElementById("networkStatusText");
+
+      lastGraphData = graphData;
+      metaBox.textContent = JSON.stringify(graphData.meta, null, 2);
+      previewBox.textContent = JSON.stringify(graphData, null, 2);
+
+      if (!graphData.nodes.length) {
+        wrap.className = "network-canvas-wrap empty-state";
+        wrap.textContent = UI_TEXT.networkEmpty;
+        statusText.textContent = UI_TEXT.networkEmpty;
+        return;
+      }
+
+      if (graphData.nodes.length < 2 || graphData.edges.length < 1) {
+        wrap.className = "network-canvas-wrap empty-state";
+        wrap.textContent = UI_TEXT.networkTooSmall;
+        statusText.textContent = UI_TEXT.networkTooSmall;
+        return;
+      }
+
+      const width = 760;
+      const height = 420;
+      const positionedNodes = buildCircularLayout(graphData.nodes, width, height);
+      const nodeLookup = Object.fromEntries(positionedNodes.map((node) => [node.id, node]));
+
+      const edgeLines = graphData.edges.map((edge) => {
+        const source = nodeLookup[edge.source];
+        const target = nodeLookup[edge.target];
+        if (!source || !target) {
+          return "";
+        }
+        const midX = (source.x + target.x) / 2;
+        const midY = (source.y + target.y) / 2;
+        return `
+          <g class="network-edge-group">
+            <line x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" class="network-edge-line"></line>
+            <text x="${midX}" y="${midY - 6}" class="network-edge-label">${escapeHtml(edge.label)}</text>
+          </g>
+        `;
+      }).join("");
+
+      const nodeCircles = positionedNodes.map((node) => {
+        const fill = GRAPH_COLORS[node.type] || GRAPH_COLORS.unknown;
+        return `
+          <g class="network-node-group">
+            <circle cx="${node.x}" cy="${node.y}" r="${node.size}" fill="${fill}" class="network-node-circle"></circle>
+            <text x="${node.x}" y="${node.y + 5}" class="network-node-text">${escapeHtml(node.label)}</text>
+          </g>
+        `;
+      }).join("");
+
+      wrap.className = "network-canvas-wrap";
+      wrap.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" class="network-svg" role="img" aria-label="人物关系网络预览">
+          <defs>
+            <linearGradient id="networkBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fffaf3"></stop>
+              <stop offset="100%" stop-color="#f4eadc"></stop>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="url(#networkBg)"></rect>
+          ${edgeLines}
+          ${nodeCircles}
+        </svg>
+      `;
+      statusText.textContent = `已生成 ${graphData.meta.nodeCount} 个节点、${graphData.meta.edgeCount} 条边`;
+    }
+
+    function buildNetworkFromRows(rows, sourceName) {
+      const graphData = adaptRowsToGraphData(rows, sourceName);
+      renderNetworkGraph(graphData);
     }
 
     async function submitQuestion(question) {
@@ -329,13 +634,23 @@ LIMIT 10</textarea>
       await submitSparql(sparql);
     });
 
-    document.querySelectorAll(".chip").forEach((button) => {
+    document.getElementById("buildNetworkFromQaBtn").addEventListener("click", () => {
+      buildNetworkFromRows(lastQaRows, "普通问答结果");
+    });
+
+    document.getElementById("buildNetworkFromSparqlBtn").addEventListener("click", () => {
+      buildNetworkFromRows(lastSparqlRows, "高级 SPARQL 结果");
+    });
+
+    document.querySelectorAll(".chips .chip").forEach((button) => {
       button.addEventListener("click", async () => {
         const question = button.dataset.question;
         document.getElementById("questionInput").value = question;
         await submitQuestion(question);
       });
     });
+
+    renderNetworkGraph(lastGraphData);
   </script>
 </body>
 </html>

@@ -1,0 +1,10 @@
+[
+  {
+    "chapter_id": "chapter_001",
+    "title": "示例章节",
+    "source_file": "demo.txt",
+    "start_offset": 0,
+    "end_offset": 0,
+    "text": "这里放成员 A 交付的章节切分样例。"
+  }
+]

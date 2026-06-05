@@ -13,12 +13,22 @@
 
 ## 推荐的队友交付文件
 
+- `data/source/raw_text/`
+- `data/source/clean_text/`
+- `data/source/chapter_split.json`
+- `data/source/person_passages.json`
 - `data/intermediate/entities.json`
 - `data/intermediate/relations.json`
-- `data/intermediate/attributes.json`
+- `data/intermediate/extraction_prompts.md`
+- `data/intermediate/evaluation_samples.json`
 - `data/kg/schema.ttl`
 - `data/kg/core.ttl`
 - `data/kg/aligned.ttl`
+- `data/kg/alignment_rules.md`
+
+详细字段约定见：
+
+- `docs/team_deliverables_interface.md`
 
 ## 运行步骤
 
@@ -41,6 +51,8 @@
 - 本地图谱加载层
 - 简单的查询工作流路由
 - 普通问答和高级 SPARQL 页面
+- 关系网络可视化骨架
+- 团队交付接口文档与占位文件
 - 成员 D 的整合说明
 
 ## 当前还没有包含的内容

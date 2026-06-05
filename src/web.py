@@ -6,6 +6,36 @@ from .config import AppConfig
 from .service import AppService
 
 
+def build_deliverable_status(config: AppConfig):
+    return {
+        "member_a": {
+            "raw_text_dir": config.raw_text_dir.exists(),
+            "clean_text_dir": config.clean_text_dir.exists(),
+            "chapter_split_json": config.chapter_split_json.exists(),
+            "person_passages_json": config.person_passages_json.exists(),
+        },
+        "member_b": {
+            "entities_json": config.entities_json.exists(),
+            "relations_json": config.relations_json.exists(),
+            "extraction_prompts_md": config.extraction_prompts_md.exists(),
+            "evaluation_samples_json": config.evaluation_samples_json.exists(),
+        },
+        "member_c": {
+            "schema_ttl": config.schema_ttl.exists(),
+            "core_ttl": config.core_ttl.exists(),
+            "aligned_ttl": config.aligned_ttl.exists(),
+            "alignment_rules_md": config.alignment_rules_md.exists(),
+        },
+        "member_d": {
+            "query_tools_py": (config.base_dir / "src" / "tools.py").exists(),
+            "sparql_examples_md": config.sparql_examples_md.exists(),
+            "frontend_html": (config.templates_dir / "index.html").exists(),
+            "frontend_css": (config.static_dir / "styles.css").exists(),
+            "demo_script_md": config.demo_script_md.exists(),
+        },
+    }
+
+
 def build_ui_text():
     return {
         "title": "印人传知识问答系统",
@@ -69,6 +99,18 @@ def build_ui_text():
             "复杂查询：某人物的关联人物或路径查询",
             "高级查询：直接执行 SPARQL 展示图谱结构",
         ],
+        "network_kicker": "关系网络可视化",
+        "network_title": "人物关系网络面板",
+        "network_badge": "可视化骨架",
+        "network_intro": "将查询结果表格自动转换为节点和边，用于展示人物关系网络的基础结构。",
+        "network_from_qa": "从普通问答结果生成",
+        "network_from_sparql": "从高级 SPARQL 结果生成",
+        "network_empty": "当前还没有可用于构图的关系数据。请先查询师承、亲属、交游、流派或两人关系。",
+        "network_too_small": "当前结果只够识别极少量节点，尚不足以形成可展示的关系网络。",
+        "network_canvas_title": "网络预览",
+        "network_meta_title": "图数据摘要",
+        "network_format_title": "节点 / 边数据格式",
+        "network_format_hint": "后续无论接成员 C 的 Turtle 结果还是更复杂的 SPARQL 查询，前端统一吃这个结构。",
         "answer_label": "回答",
         "notes_label": "说明",
         "sparql_label": "SPARQL",
@@ -150,5 +192,7 @@ def register_routes(app, config: AppConfig):
                     "core": config.core_ttl.exists(),
                     "aligned": config.aligned_ttl.exists(),
                 },
+                "deliverables": build_deliverable_status(config),
+                "interface_doc": str(config.team_interface_md),
             }
         )

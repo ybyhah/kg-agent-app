@@ -65,12 +65,40 @@
           <button class="chip" data-question="{{ question }}">{{ question }}</button>
           {% endfor %}
         </div>
-        <div class="result-wrap">
-          <div class="result-head">
-            <h3>{{ ui.qa_result_title }}</h3>
-            <span>{{ ui.qa_result_hint }}</span>
+
+        <div class="result-dashboard">
+          <div class="answer-card">
+            <div class="result-topline">
+              <span class="status-pill" id="qaModeBadge">{{ ui.empty_mode }}</span>
+              <span class="muted-note" id="qaMetaText">{{ ui.qa_result_hint }}</span>
+            </div>
+            <div class="answer-block">
+              <span class="block-label">{{ ui.answer_label }}</span>
+              <p class="answer-text" id="qaAnswer">{{ ui.qa_waiting }}</p>
+            </div>
+            <div class="notes-block" id="qaNotesBlock" hidden>
+              <span class="block-label">{{ ui.notes_label }}</span>
+              <ul class="notes-list" id="qaNotesList"></ul>
+            </div>
           </div>
-          <pre id="qaResult" class="result-box">{{ ui.qa_waiting }}</pre>
+
+          <div class="result-columns">
+            <section class="result-card">
+              <div class="result-card-head">
+                <h3>{{ ui.sparql_label }}</h3>
+                <span class="muted-note">本次查询使用的语句</span>
+              </div>
+              <pre id="qaSparql" class="result-box">{{ ui.result_empty }}</pre>
+            </section>
+
+            <section class="result-card">
+              <div class="result-card-head">
+                <h3>{{ ui.rows_label }}</h3>
+                <span class="muted-note" id="qaRowCount">0 行</span>
+              </div>
+              <div id="qaRows" class="table-wrap empty-state">{{ ui.result_empty }}</div>
+            </section>
+          </div>
         </div>
       </section>
 
@@ -105,12 +133,23 @@ LIMIT 10</textarea>
         <div class="form-row form-row-end">
           <button id="sparqlBtn" class="primary-btn">{{ ui.sparql_button }}</button>
         </div>
-        <div class="result-wrap">
-          <div class="result-head">
-            <h3>{{ ui.sparql_result_title }}</h3>
-            <span>{{ ui.sparql_result_hint }}</span>
-          </div>
-          <pre id="sparqlResult" class="result-box">{{ ui.sparql_waiting }}</pre>
+
+        <div class="result-columns result-columns-wide">
+          <section class="result-card">
+            <div class="result-card-head">
+              <h3>{{ ui.sparql_result_title }}</h3>
+              <span class="muted-note">手动执行结果</span>
+            </div>
+            <div id="sparqlRows" class="table-wrap empty-state">{{ ui.sparql_waiting }}</div>
+          </section>
+
+          <section class="result-card">
+            <div class="result-card-head">
+              <h3>{{ ui.notes_label }}</h3>
+              <span class="muted-note">执行信息</span>
+            </div>
+            <pre id="sparqlMeta" class="result-box">{{ ui.sparql_waiting }}</pre>
+          </section>
         </div>
       </section>
 
@@ -131,6 +170,14 @@ LIMIT 10</textarea>
   </div>
 
   <script>
+    const UI_TEXT = {
+      toolMode: "{{ ui.tool_mode }}",
+      fallbackMode: "{{ ui.fallback_mode }}",
+      emptyMode: "{{ ui.empty_mode }}",
+      resultEmpty: "{{ ui.result_empty }}",
+      resultError: "{{ ui.result_error }}"
+    };
+
     async function postJson(url, payload) {
       const response = await fetch(url, {
         method: "POST",
@@ -140,8 +187,119 @@ LIMIT 10</textarea>
       return response.json();
     }
 
-    function renderResult(targetId, data) {
-      document.getElementById(targetId).textContent = JSON.stringify(data, null, 2);
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function renderTable(targetId, rows) {
+      const target = document.getElementById(targetId);
+      if (!rows || rows.length === 0) {
+        target.className = "table-wrap empty-state";
+        target.textContent = UI_TEXT.resultEmpty;
+        return;
+      }
+
+      const columns = Array.from(
+        rows.reduce((set, row) => {
+          Object.keys(row).forEach((key) => set.add(key));
+          return set;
+        }, new Set())
+      );
+
+      const thead = columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("");
+      const tbody = rows.map((row) => {
+        const cells = columns
+          .map((column) => `<td>${escapeHtml(row[column] ?? "")}</td>`)
+          .join("");
+        return `<tr>${cells}</tr>`;
+      }).join("");
+
+      target.className = "table-wrap";
+      target.innerHTML = `
+        <table class="result-table">
+          <thead><tr>${thead}</tr></thead>
+          <tbody>${tbody}</tbody>
+        </table>
+      `;
+    }
+
+    function renderNotes(notes) {
+      const block = document.getElementById("qaNotesBlock");
+      const list = document.getElementById("qaNotesList");
+      if (!notes || notes.length === 0) {
+        block.hidden = true;
+        list.innerHTML = "";
+        return;
+      }
+
+      block.hidden = false;
+      list.innerHTML = notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
+    }
+
+    function renderQaResult(data) {
+      const modeMap = {
+        tool: UI_TEXT.toolMode,
+        fallback: UI_TEXT.fallbackMode,
+        empty: UI_TEXT.emptyMode
+      };
+
+      document.getElementById("qaModeBadge").textContent = modeMap[data.mode] || data.mode || UI_TEXT.emptyMode;
+      document.getElementById("qaAnswer").textContent = data.answer || UI_TEXT.resultEmpty;
+      document.getElementById("qaSparql").textContent = data.sparql || UI_TEXT.resultEmpty;
+      document.getElementById("qaRowCount").textContent = `${(data.rows || []).length} 行`;
+      renderNotes(data.notes || []);
+      renderTable("qaRows", data.rows || []);
+    }
+
+    function renderSparqlResult(data) {
+      const meta = [];
+      if (data.ok === false) {
+        meta.push(`错误：${data.error || UI_TEXT.resultError}`);
+      } else {
+        meta.push("状态：执行成功");
+      }
+      if (data.note) {
+        meta.push(`说明：${data.note}`);
+      }
+      if (data.sparql) {
+        meta.push("语句：");
+        meta.push(data.sparql);
+      }
+      document.getElementById("sparqlMeta").textContent = meta.join("\n");
+      renderTable("sparqlRows", data.rows || []);
+    }
+
+    async function submitQuestion(question) {
+      try {
+        const data = await postJson("/api/query", { question });
+        renderQaResult(data);
+      } catch (error) {
+        renderQaResult({
+          mode: "fallback",
+          answer: UI_TEXT.resultError,
+          sparql: "",
+          rows: [],
+          notes: [error.message]
+        });
+      }
+    }
+
+    async function submitSparql(sparql) {
+      try {
+        const data = await postJson("/api/sparql", { sparql });
+        renderSparqlResult(data);
+      } catch (error) {
+        renderSparqlResult({
+          ok: false,
+          error: error.message,
+          rows: []
+        });
+      }
     }
 
     document.getElementById("scrollToQueryBtn").addEventListener("click", () => {
@@ -150,8 +308,7 @@ LIMIT 10</textarea>
 
     document.getElementById("askBtn").addEventListener("click", async () => {
       const question = document.getElementById("questionInput").value.trim();
-      const data = await postJson("/api/query", { question });
-      renderResult("qaResult", data);
+      await submitQuestion(question);
     });
 
     document.getElementById("questionInput").addEventListener("keydown", async (event) => {
@@ -160,22 +317,19 @@ LIMIT 10</textarea>
       }
       event.preventDefault();
       const question = document.getElementById("questionInput").value.trim();
-      const data = await postJson("/api/query", { question });
-      renderResult("qaResult", data);
+      await submitQuestion(question);
     });
 
     document.getElementById("sparqlBtn").addEventListener("click", async () => {
       const sparql = document.getElementById("sparqlInput").value;
-      const data = await postJson("/api/sparql", { sparql });
-      renderResult("sparqlResult", data);
+      await submitSparql(sparql);
     });
 
     document.querySelectorAll(".chip").forEach((button) => {
       button.addEventListener("click", async () => {
         const question = button.dataset.question;
         document.getElementById("questionInput").value = question;
-        const data = await postJson("/api/query", { question });
-        renderResult("qaResult", data);
+        await submitQuestion(question);
       });
     });
   </script>

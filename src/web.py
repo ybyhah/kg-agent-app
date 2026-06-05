@@ -40,8 +40,8 @@ def build_ui_text():
             "\u8c01\u5f00\u521b\u4e86\u5434\u95e8\u5370\u6d3e\uff1f",
         ],
         "qa_result_title": "\u95ee\u7b54\u7ed3\u679c",
-        "qa_result_hint": "\u5f53\u524d\u4e3a\u8c03\u8bd5\u8f93\u51fa\uff0c\u540e\u7eed\u53ef\u6539\u6210\u5361\u7247\u5f0f\u5c55\u793a",
-        "qa_waiting": "\u7b49\u5f85\u67e5\u8be2...",
+        "qa_result_hint": "\u5c55\u793a\u56de\u7b54\u3001\u5907\u6ce8\u3001SPARQL \u548c\u7ed3\u679c\u884c",
+        "qa_waiting": "\u8bf7\u8f93\u5165\u95ee\u9898\u540e\u5f00\u59cb\u67e5\u8be2\u3002",
         "member_kicker": "\u6210\u5458 D \u63d0\u524d\u51c6\u5907",
         "member_title": "\u6574\u5408\u91cd\u70b9",
         "member_todos": [
@@ -57,7 +57,7 @@ def build_ui_text():
         "sparql_button": "\u6267\u884c SPARQL",
         "sparql_result_title": "SPARQL \u8fd4\u56de\u7ed3\u679c",
         "sparql_result_hint": "\u9002\u5408\u8bfe\u5802\u73b0\u573a\u5c55\u793a",
-        "sparql_waiting": "\u7b49\u5f85\u6267\u884c...",
+        "sparql_waiting": "\u8bf7\u8f93\u5165 SPARQL \u540e\u6267\u884c\u3002",
         "showcase_kicker": "\u793a\u4f8b\u65b9\u5411",
         "showcase_title": "\u5efa\u8bae\u5c55\u793a\u95ee\u9898",
         "showcases": [
@@ -67,6 +67,15 @@ def build_ui_text():
             "\u590d\u6742\u67e5\u8be2\uff1a\u67d0\u4eba\u7269\u7684\u5173\u8054\u4eba\u7269\u6216\u8def\u5f84\u67e5\u8be2",
             "\u9ad8\u7ea7\u67e5\u8be2\uff1a\u76f4\u63a5\u6267\u884c SPARQL \u5c55\u793a\u56fe\u8c31\u7ed3\u6784",
         ],
+        "answer_label": "\u56de\u7b54",
+        "notes_label": "\u8bf4\u660e",
+        "sparql_label": "SPARQL",
+        "rows_label": "\u7ed3\u679c\u884c",
+        "tool_mode": "\u5de5\u5177\u67e5\u8be2",
+        "fallback_mode": "\u56de\u9000\u56de\u7b54",
+        "empty_mode": "\u7a7a\u8f93\u5165",
+        "result_empty": "\u6682\u65f6\u6ca1\u6709\u7ed3\u679c\u884c\u3002",
+        "result_error": "\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002",
     }
 
 

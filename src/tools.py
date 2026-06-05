@@ -32,7 +32,7 @@ class QueryTools:
             name="get_person_labels",
             sparql=sparql.strip(),
             rows=rows,
-            note="Basic label lookup. Replace with schema-aware person query after member C finalizes ontology.",
+            note="当前是基础标签查询，等成员 C 定稿本体后可替换成正式的人物查询工具。",
         )
 
     def run_raw_sparql(self, sparql: str) -> ToolResult:

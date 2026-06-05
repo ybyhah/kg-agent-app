@@ -2,7 +2,8 @@
 
 ## 当前结构为什么适合 Replit
 
-- 入口文件固定为 `app.py`
+- 本地/工作区启动脚本为 `run_replit.py`
+- 部署入口为 `wsgi:app`
 - 启动时自动读取 `PORT`
 - 服务监听 `0.0.0.0`
 - 依赖集中写在 `requirements.txt`
@@ -17,7 +18,7 @@
 ## 在 Replit 上建议怎么做
 
 1. 把整个 `kg_agent_app` 目录作为项目根目录
-2. 确认 `run` 命令是 `python app.py`
+2. 确认 `run` 命令是 `python run_replit.py`
 3. 先在 Workspace 内跑通
 4. 再发布为可访问的 Web 应用
 

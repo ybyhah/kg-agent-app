@@ -1,5 +1,13 @@
-run = "python app.py"
+run = "python run_replit.py"
+
+[env]
+PORT = "3000"
+FLASK_DEBUG = "0"
 
 [deployment]
-run = ["python", "app.py"]
+run = ["gunicorn", "--bind", "0.0.0.0:3000", "wsgi:app"]
 deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 3000
+externalPort = 80

@@ -3,48 +3,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>印人传知识问答系统</title>
+  <title>{{ ui.title }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
   <div class="page-shell">
     <header class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">知识图谱大作业 / KG Agent</p>
-        <h1>印人传知识问答系统</h1>
-        <p class="intro">
-          面向《印人传》构建的本地知识图谱问答原型。当前页面已经预留普通问答、高级 SPARQL、
-          图谱接入状态和后续可视化入口，适合成员 D 持续整合成员 B 的抽取结果与成员 C 的 Turtle 图谱。
-        </p>
+        <p class="eyebrow">{{ ui.eyebrow }}</p>
+        <h1>{{ ui.hero_title }}</h1>
+        <p class="intro">{{ ui.hero_intro }}</p>
         <div class="hero-actions">
-          <button class="primary-btn" id="scrollToQueryBtn">开始查询</button>
-          <a class="secondary-link" href="/api/health" target="_blank" rel="noreferrer">查看健康状态</a>
+          <button class="primary-btn" id="scrollToQueryBtn">{{ ui.start_query }}</button>
+          <a class="secondary-link" href="/api/health" target="_blank" rel="noreferrer">{{ ui.health }}</a>
         </div>
       </div>
       <aside class="hero-side">
         <div class="status-panel">
-          <h2>图谱接入状态</h2>
+          <h2>{{ ui.ttl_title }}</h2>
           <div class="status-grid">
             <div class="status-card {{ 'online' if ttl_status.schema else 'offline' }}">
               <span>schema.ttl</span>
-              <strong>{{ "已接入" if ttl_status.schema else "未接入" }}</strong>
+              <strong>{{ ui.ttl_online if ttl_status.schema else ui.ttl_offline }}</strong>
             </div>
             <div class="status-card {{ 'online' if ttl_status.core else 'offline' }}">
               <span>core.ttl</span>
-              <strong>{{ "已接入" if ttl_status.core else "未接入" }}</strong>
+              <strong>{{ ui.ttl_online if ttl_status.core else ui.ttl_offline }}</strong>
             </div>
             <div class="status-card {{ 'online' if ttl_status.aligned else 'offline' }}">
               <span>aligned.ttl</span>
-              <strong>{{ "已接入" if ttl_status.aligned else "未接入" }}</strong>
+              <strong>{{ ui.ttl_online if ttl_status.aligned else ui.ttl_offline }}</strong>
             </div>
           </div>
         </div>
         <div class="mini-note">
-          <p>推荐演示顺序</p>
+          <p>{{ ui.demo_title }}</p>
           <ol>
-            <li>先展示普通问答</li>
-            <li>再展示固定工具查询</li>
-            <li>最后展示高级 SPARQL</li>
+            {% for step in ui.demo_steps %}
+            <li>{{ step }}</li>
+            {% endfor %}
           </ol>
         </div>
       </aside>
@@ -54,53 +51,50 @@
       <section class="panel panel-large">
         <div class="panel-header">
           <div>
-            <p class="panel-kicker">自然语言查询</p>
-            <h2>普通问答</h2>
+            <p class="panel-kicker">{{ ui.qa_kicker }}</p>
+            <h2>{{ ui.qa_title }}</h2>
           </div>
-          <span class="panel-badge">工作流入口</span>
+          <span class="panel-badge">{{ ui.qa_badge }}</span>
         </div>
         <div class="form-row">
-          <input id="questionInput" type="text" placeholder="例如：文彭是谁？">
-          <button id="askBtn" class="primary-btn">查询</button>
+          <input id="questionInput" type="text" placeholder="{{ ui.qa_placeholder }}">
+          <button id="askBtn" class="primary-btn">{{ ui.qa_button }}</button>
         </div>
         <div class="chips">
-          <button class="chip" data-question="文彭是谁？">文彭是谁？</button>
-          <button class="chip" data-question="文彭的字是什么？">文彭的字是什么？</button>
-          <button class="chip" data-question="文徵明与文彭是什么关系？">文徵明与文彭是什么关系？</button>
-          <button class="chip" data-question="谁开创了吴门印派？">谁开创了吴门印派？</button>
+          {% for question in ui.qa_examples %}
+          <button class="chip" data-question="{{ question }}">{{ question }}</button>
+          {% endfor %}
         </div>
         <div class="result-wrap">
           <div class="result-head">
-            <h3>问答结果</h3>
-            <span>JSON 调试输出</span>
+            <h3>{{ ui.qa_result_title }}</h3>
+            <span>{{ ui.qa_result_hint }}</span>
           </div>
-          <pre id="qaResult" class="result-box">等待查询...</pre>
+          <pre id="qaResult" class="result-box">{{ ui.qa_waiting }}</pre>
         </div>
       </section>
 
       <section class="panel panel-side">
         <div class="panel-header">
           <div>
-            <p class="panel-kicker">成员 D 提前准备</p>
-            <h2>整合重点</h2>
+            <p class="panel-kicker">{{ ui.member_kicker }}</p>
+            <h2>{{ ui.member_title }}</h2>
           </div>
         </div>
         <ul class="todo-list">
-          <li>先和成员 C 定死命名空间、类名和属性名。</li>
-          <li>优先把字、号、生卒年、师承、亲属、交游、流派做成固定工具。</li>
-          <li>为每类高频问题准备 SPARQL 模板，不要一开始全靠模型生成。</li>
-          <li>把普通问答与高级 SPARQL 页面提前跑通，后续只替换数据源。</li>
-          <li>人物关系网络可视化留到主链路稳定后再加。</li>
+          {% for item in ui.member_todos %}
+          <li>{{ item }}</li>
+          {% endfor %}
         </ul>
       </section>
 
       <section class="panel panel-large">
         <div class="panel-header">
           <div>
-            <p class="panel-kicker">结构化查询</p>
-            <h2>高级 SPARQL</h2>
+            <p class="panel-kicker">{{ ui.sparql_kicker }}</p>
+            <h2>{{ ui.sparql_title }}</h2>
           </div>
-          <span class="panel-badge">适合演示课程技术点</span>
+          <span class="panel-badge">{{ ui.sparql_badge }}</span>
         </div>
         <textarea id="sparqlInput" rows="12">PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
 SELECT ?person ?label
@@ -109,30 +103,28 @@ WHERE {
 }
 LIMIT 10</textarea>
         <div class="form-row form-row-end">
-          <button id="sparqlBtn" class="primary-btn">执行 SPARQL</button>
+          <button id="sparqlBtn" class="primary-btn">{{ ui.sparql_button }}</button>
         </div>
         <div class="result-wrap">
           <div class="result-head">
-            <h3>SPARQL 返回结果</h3>
-            <span>适合课堂现场展示</span>
+            <h3>{{ ui.sparql_result_title }}</h3>
+            <span>{{ ui.sparql_result_hint }}</span>
           </div>
-          <pre id="sparqlResult" class="result-box">等待执行...</pre>
+          <pre id="sparqlResult" class="result-box">{{ ui.sparql_waiting }}</pre>
         </div>
       </section>
 
       <section class="panel panel-side">
         <div class="panel-header">
           <div>
-            <p class="panel-kicker">示例方向</p>
-            <h2>建议展示问题</h2>
+            <p class="panel-kicker">{{ ui.showcase_kicker }}</p>
+            <h2>{{ ui.showcase_title }}</h2>
           </div>
         </div>
         <ul class="showcase-list">
-          <li>人物基础信息：某人的字、号、生卒年</li>
-          <li>人物关系：父子、师承、交游</li>
-          <li>流派问题：某人属于什么流派，谁开创了某流派</li>
-          <li>复杂查询：某人物的关联人物或路径查询</li>
-          <li>高级查询：直接执行 SPARQL 展示图谱结构</li>
+          {% for item in ui.showcases %}
+          <li>{{ item }}</li>
+          {% endfor %}
         </ul>
       </section>
     </main>

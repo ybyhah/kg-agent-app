@@ -7,15 +7,51 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+  <div class="opening-screen" id="openingScreen" aria-hidden="true">
+    <div class="opening-screen__inner">
+      <span class="opening-screen__seal">印</span>
+      <p class="opening-screen__eyebrow">知识图谱课程大作业</p>
+      <h1 class="opening-screen__title">印人传 知识问答系统</h1>
+      <p class="opening-screen__subtitle">人物、流派、印风、历史脉络</p>
+    </div>
+  </div>
+
+  <div class="ambient-stage" aria-hidden="true">
+    <span class="ambient-stage__wash ambient-stage__wash--left"></span>
+    <span class="ambient-stage__wash ambient-stage__wash--right"></span>
+    <span class="ambient-stage__seal ambient-stage__seal--one">文</span>
+    <span class="ambient-stage__seal ambient-stage__seal--two">印</span>
+    <span class="ambient-stage__seal ambient-stage__seal--three">谱</span>
+    <span class="ambient-stage__spark ambient-stage__spark--one"></span>
+    <span class="ambient-stage__spark ambient-stage__spark--two"></span>
+    <span class="ambient-stage__spark ambient-stage__spark--three"></span>
+  </div>
+
   <div class="page-shell">
     <header class="hero">
       <div class="hero-copy">
         <p class="eyebrow">{{ ui.eyebrow }}</p>
+        <span class="hero-script">印谱 · 人物 · 流派 · 问答</span>
         <h1>{{ ui.hero_title }}</h1>
+        <p class="hero-quote">“搜罗印人行迹，串联书风脉络，将传记文本转化为可查询、可追踪、可解释的知识图谱。”</p>
         <p class="intro">{{ ui.hero_intro }}</p>
         <div class="hero-actions">
           <button class="primary-btn" id="scrollToQueryBtn">{{ ui.start_query }}</button>
           <a class="secondary-link" href="/api/health" target="_blank" rel="noreferrer">{{ ui.health }}</a>
+        </div>
+        <div class="hero-metrics">
+          <article class="metric-card">
+            <span class="metric-label">查询链路</span>
+            <p class="metric-value">问句解析、工具调用、SPARQL 执行、结果回答</p>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">课程核心</span>
+            <p class="metric-value">知识抽取、RDF / Turtle、实体对齐、SPARQL 查询</p>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">展示重点</span>
+            <p class="metric-value">前端界面、LangGraph 工作流、人物关系网络</p>
+          </article>
         </div>
       </div>
       <aside class="hero-side">
@@ -74,15 +110,15 @@
             </div>
             <div class="answer-block">
               <span class="block-label">{{ ui.answer_label }}</span>
-              <p class="answer-text" id="qaAnswer">{{ ui.qa_waiting }}</p>
-            </div>
-            <div class="notes-block" id="qaNotesBlock" hidden>
-              <span class="block-label">{{ ui.notes_label }}</span>
-              <ul class="notes-list" id="qaNotesList"></ul>
-            </div>
+            <p class="answer-text" id="qaAnswer">{{ ui.qa_waiting }}</p>
           </div>
+          <div class="notes-block" id="qaNotesBlock" hidden>
+            <span class="block-label">{{ ui.notes_label }}</span>
+            <ul class="notes-list" id="qaNotesList"></ul>
+          </div>
+        </div>
 
-          <div class="result-columns">
+        <div class="result-columns">
             <section class="result-card">
               <div class="result-card-head">
                 <h3>{{ ui.sparql_label }}</h3>
@@ -108,6 +144,10 @@
             <p class="panel-kicker">{{ ui.member_kicker }}</p>
             <h2>{{ ui.member_title }}</h2>
           </div>
+        </div>
+        <div class="side-note-card">
+          <span class="side-note-card__label">成员 D 视角</span>
+          <p class="side-note-card__text">先把查询、工作流、前端、可视化和联调入口全部搭稳，再接成员 A / B / C 的正式成果。</p>
         </div>
         <ul class="todo-list">
           {% for item in ui.member_todos %}
@@ -166,6 +206,11 @@ LIMIT 10</textarea>
           <button id="buildNetworkFromQaBtn" class="chip chip-strong">{{ ui.network_from_qa }}</button>
           <button id="buildNetworkFromSparqlBtn" class="chip chip-strong">{{ ui.network_from_sparql }}</button>
         </div>
+        <div class="network-legend">
+          <span class="legend-pill"><span class="legend-dot person"></span>人物节点</span>
+          <span class="legend-pill"><span class="legend-dot school"></span>流派节点</span>
+          <span class="legend-pill"><span class="legend-dot unknown"></span>待对齐字段</span>
+        </div>
 
         <div class="network-grid">
           <section class="result-card network-stage-card">
@@ -210,6 +255,10 @@ LIMIT 10</textarea>
             <p class="panel-kicker">{{ ui.showcase_kicker }}</p>
             <h2>{{ ui.showcase_title }}</h2>
           </div>
+        </div>
+        <div class="side-note-card side-note-card--soft">
+          <span class="side-note-card__label">答辩建议</span>
+          <p class="side-note-card__text">先问人物基础信息，再问关系与流派，最后展示高级 SPARQL 和关系网络，节奏最稳。</p>
         </div>
         <ul class="showcase-list">
           {% for item in ui.showcases %}
@@ -651,6 +700,13 @@ LIMIT 10</textarea>
     });
 
     renderNetworkGraph(lastGraphData);
+
+    window.addEventListener("load", () => {
+      const openingScreen = document.getElementById("openingScreen");
+      window.setTimeout(() => {
+        openingScreen.classList.add("opening-screen--hidden");
+      }, 1150);
+    });
   </script>
 </body>
 </html>

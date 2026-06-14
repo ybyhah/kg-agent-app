@@ -3,3 +3,6 @@ rdflib>=7.0.0
 pydantic>=2.0.0
 gunicorn>=23.0.0
 langgraph>=0.2.0
+langchain-huggingface>=0.1.0
+transformers>=4.51.0
+accelerate>=1.7.0

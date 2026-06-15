@@ -4,101 +4,147 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ ui.title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+SC:wght@400;500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <div class="opening-screen" id="openingScreen" aria-hidden="true">
+    <div class="opening-screen__panel opening-screen__panel--left"></div>
+    <div class="opening-screen__panel opening-screen__panel--right"></div>
     <div class="opening-screen__inner">
       <span class="opening-screen__seal">印</span>
-      <p class="opening-screen__eyebrow">知识图谱课程大作业</p>
-      <h1 class="opening-screen__title">印人传 知识问答系统</h1>
-      <p class="opening-screen__subtitle">人物、流派、印风、历史脉络</p>
+      <p class="opening-screen__eyebrow">{{ ui.eyebrow }}</p>
+      <h1 class="opening-screen__title">{{ ui.hero_title }}</h1>
+      <p class="opening-screen__subtitle">人物 · 流派 · 印风 · 关系</p>
     </div>
   </div>
 
   <div class="ambient-stage" aria-hidden="true">
     <span class="ambient-stage__wash ambient-stage__wash--left"></span>
     <span class="ambient-stage__wash ambient-stage__wash--right"></span>
-    <span class="ambient-stage__seal ambient-stage__seal--one">文</span>
-    <span class="ambient-stage__seal ambient-stage__seal--two">印</span>
-    <span class="ambient-stage__seal ambient-stage__seal--three">谱</span>
+    <span class="ambient-stage__seal ambient-stage__seal--one">印</span>
+    <span class="ambient-stage__seal ambient-stage__seal--two">谱</span>
+    <span class="ambient-stage__seal ambient-stage__seal--three">传</span>
     <span class="ambient-stage__spark ambient-stage__spark--one"></span>
     <span class="ambient-stage__spark ambient-stage__spark--two"></span>
     <span class="ambient-stage__spark ambient-stage__spark--three"></span>
   </div>
 
   <div class="page-shell">
-    <header class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">{{ ui.eyebrow }}</p>
-        <span class="hero-script">印谱 · 人物 · 流派 · 问答</span>
-        <h1>{{ ui.hero_title }}</h1>
-        <p class="hero-quote">“搜罗印人行迹，串联书风脉络，将传记文本转化为可查询、可追踪、可解释的知识图谱。”</p>
-        <p class="intro">{{ ui.hero_intro }}</p>
-        <div class="hero-actions">
-          <button class="primary-btn" id="scrollToQueryBtn">{{ ui.start_query }}</button>
-          <a class="secondary-link" href="/api/health" target="_blank" rel="noreferrer">{{ ui.health }}</a>
-        </div>
-        <div class="hero-metrics">
-          <article class="metric-card">
-            <span class="metric-label">查询链路</span>
-            <p class="metric-value">问句解析、工具调用、SPARQL 执行、结果回答</p>
-          </article>
-          <article class="metric-card">
-            <span class="metric-label">课程核心</span>
-            <p class="metric-value">知识抽取、RDF / Turtle、实体对齐、SPARQL 查询</p>
-          </article>
-          <article class="metric-card">
-            <span class="metric-label">展示重点</span>
-            <p class="metric-value">前端界面、LangGraph 工作流、人物关系网络</p>
-          </article>
+    <nav class="top-nav">
+      <div class="top-nav__brand">
+        <span class="top-nav__seal"><i data-lucide="stamp"></i></span>
+        <div>
+          <strong>{{ ui.title }}</strong>
+          <span>{{ ui.eyebrow }}</span>
         </div>
       </div>
-      <aside class="hero-side">
-        <div class="status-panel">
-          <h2>{{ ui.ttl_title }}</h2>
-          <div class="status-grid">
-            <div class="status-card {{ 'online' if ttl_status.schema else 'offline' }}">
-              <span>schema.ttl</span>
-              <strong>{{ ui.ttl_online if ttl_status.schema else ui.ttl_offline }}</strong>
-            </div>
-            <div class="status-card {{ 'online' if ttl_status.core else 'offline' }}">
-              <span>core.ttl</span>
-              <strong>{{ ui.ttl_online if ttl_status.core else ui.ttl_offline }}</strong>
-            </div>
-            <div class="status-card {{ 'online' if ttl_status.aligned else 'offline' }}">
-              <span>aligned.ttl</span>
-              <strong>{{ ui.ttl_online if ttl_status.aligned else ui.ttl_offline }}</strong>
-            </div>
+      <div class="top-nav__tabs">
+        <button class="nav-tab is-active" data-tab="overviewTab">
+          <i data-lucide="book-open-text"></i>
+          <span>{{ ui.nav_home }}</span>
+        </button>
+        <button class="nav-tab" data-tab="qaTab">
+          <i data-lucide="sparkles"></i>
+          <span>{{ ui.nav_qa }}</span>
+        </button>
+        <button class="nav-tab" data-tab="sparqlTab">
+          <i data-lucide="braces"></i>
+          <span>{{ ui.nav_sparql }}</span>
+        </button>
+        <button class="nav-tab" data-tab="networkTab">
+          <i data-lucide="network"></i>
+          <span>{{ ui.nav_network }}</span>
+        </button>
+        <button class="nav-tab" data-tab="analysisTab">
+          <i data-lucide="waypoints"></i>
+          <span>{{ ui.nav_analysis }}</span>
+        </button>
+      </div>
+      <div class="top-nav__status">
+        <div class="runtime-badge" id="runtimeBadge">
+          {{ ui.runtime_llm_enabled if runtime_status.llm_available else ui.runtime_llm_disabled }}
+        </div>
+      </div>
+    </nav>
+
+    <section class="tab-panel is-active" id="overviewTab">
+      <header class="hero hero--compact">
+        <div class="hero-copy">
+          <p class="eyebrow">{{ ui.eyebrow }}</p>
+          <span class="hero-script">{{ ui.hero_script }}</span>
+          <h1>{{ ui.hero_title }}</h1>
+          <p class="hero-quote">{{ ui.hero_quote }}</p>
+          <p class="intro">{{ ui.hero_intro }}</p>
+          <div class="hero-actions">
+            <button class="primary-btn" data-go-tab="qaTab">
+              <i data-lucide="message-circle-more"></i>
+              <span>{{ ui.hero_primary }}</span>
+            </button>
+            <button class="ghost-btn" data-go-tab="networkTab">
+              <i data-lucide="share-2"></i>
+              <span>进入关系图谱</span>
+            </button>
           </div>
         </div>
-        <div class="mini-note">
-          <p>{{ ui.demo_title }}</p>
-          <ol>
-            {% for step in ui.demo_steps %}
-            <li>{{ step }}</li>
-            {% endfor %}
-          </ol>
-        </div>
-      </aside>
-    </header>
+        <aside class="hero-side">
+          {% for card in ui.hero_cards %}
+          <article class="hero-feature-card">
+            <span class="hero-feature-card__index">0{{ loop.index }}</span>
+            <h2>{{ card.title }}</h2>
+            <p>{{ card.text }}</p>
+          </article>
+          {% endfor %}
+        </aside>
+      </header>
+    </section>
 
-    <main class="content-grid" id="querySection">
+    <section class="tab-panel" id="qaTab">
       <section class="panel panel-large">
         <div class="panel-header">
           <div>
             <p class="panel-kicker">{{ ui.qa_kicker }}</p>
             <h2>{{ ui.qa_title }}</h2>
           </div>
-          <span class="panel-badge">{{ ui.qa_badge }}</span>
+          <span class="panel-badge"><i data-lucide="database-zap"></i>{{ ui.qa_badge }}</span>
         </div>
+
+        <div class="runtime-toolbar form-row">
+          <div class="runtime-card">
+            <span class="runtime-card__label">{{ ui.runtime_status_label }}</span>
+            <strong id="runtimeProviderText">
+              {{ runtime_status.provider_name if runtime_status.llm_available else ui.runtime_llm_disabled }}
+            </strong>
+          </div>
+          <div class="runtime-card">
+            <span class="runtime-card__label">{{ ui.runtime_reference_label }}</span>
+            <strong id="referenceModeState">
+              {{ ui.runtime_reference_on if runtime_status.reference_mode else ui.runtime_reference_off }}
+            </strong>
+          </div>
+          <button id="toggleReferenceModeBtn" class="ghost-btn">
+            <i data-lucide="shield-question"></i>
+            <span>{{ ui.reference_toggle_off if runtime_status.reference_mode else ui.reference_toggle_on }}</span>
+          </button>
+        </div>
+
         <div class="form-row">
           <input id="questionInput" type="text" placeholder="{{ ui.qa_placeholder }}">
-          <button id="askBtn" class="primary-btn">{{ ui.qa_button }}</button>
+          <button id="askBtn" class="primary-btn">
+            <i data-lucide="search"></i>
+            <span>{{ ui.qa_button }}</span>
+          </button>
         </div>
+
         <div class="chips">
           {% for question in ui.qa_examples %}
-          <button class="chip" data-question="{{ question }}">{{ question }}</button>
+          <button class="chip" data-question="{{ question }}">
+            <i data-lucide="sparkle"></i>
+            <span>{{ question }}</span>
+          </button>
           {% endfor %}
         </div>
 
@@ -108,79 +154,86 @@
               <span class="status-pill" id="qaModeBadge">{{ ui.empty_mode }}</span>
               <span class="muted-note" id="qaMetaText">{{ ui.qa_result_hint }}</span>
             </div>
-            <div class="answer-block">
-              <span class="block-label">{{ ui.answer_label }}</span>
-            <p class="answer-text" id="qaAnswer">{{ ui.qa_waiting }}</p>
-          </div>
-          <div class="notes-block" id="qaNotesBlock" hidden>
-            <span class="block-label">{{ ui.notes_label }}</span>
-            <ul class="notes-list" id="qaNotesList"></ul>
+            <div class="route-strip">
+              <div class="route-chip">
+                <span class="route-chip__label">{{ ui.route_label }}</span>
+                <strong id="qaRouteLabel">{{ ui.empty_mode }}</strong>
+              </div>
+              <div class="route-chip route-chip--wide">
+                <span class="route-chip__label">{{ ui.route_stage_label }}</span>
+                <strong id="qaRouteStage">尚未进入工作流</strong>
+              </div>
+            </div>
+            <div class="answer-stack">
+              <div class="answer-block answer-block--primary">
+                <span class="block-label">{{ ui.graph_conclusion_label }}</span>
+                <p class="answer-text" id="qaGraphConclusion">{{ ui.qa_waiting }}</p>
+              </div>
+              <div class="answer-block answer-block--secondary" id="qaReferenceBlock" hidden>
+                <span class="block-label">{{ ui.model_reference_label }}</span>
+                <p class="answer-text answer-text--secondary" id="qaReferenceText"></p>
+              </div>
+              <div class="notes-block" id="qaNotesBlock" hidden>
+                <span class="block-label">{{ ui.notes_label }}</span>
+                <ul class="notes-list" id="qaNotesList"></ul>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="result-columns">
-            <section class="result-card">
-              <div class="result-card-head">
-                <h3>{{ ui.sparql_label }}</h3>
-                <span class="muted-note">本次查询使用的语句</span>
-              </div>
-              <pre id="qaSparql" class="result-box">{{ ui.result_empty }}</pre>
-            </section>
+          <section class="result-card">
+            <div class="result-card-head">
+              <h3>{{ ui.sparql_label }}</h3>
+              <span class="muted-note">本次查询使用的语句</span>
+            </div>
+            <pre id="qaSparql" class="result-box">{{ ui.result_empty }}</pre>
+          </section>
 
-            <section class="result-card">
-              <div class="result-card-head">
-                <h3>{{ ui.rows_label }}</h3>
-                <span class="muted-note" id="qaRowCount">0 行</span>
-              </div>
-              <div id="qaRows" class="table-wrap empty-state">{{ ui.result_empty }}</div>
-            </section>
-          </div>
+          <section class="result-card">
+            <div class="result-card-head">
+              <h3>{{ ui.rows_label }}</h3>
+              <span class="muted-note" id="qaRowCount">0 行</span>
+            </div>
+            <div id="qaRows" class="table-wrap empty-state">{{ ui.result_empty }}</div>
+          </section>
         </div>
       </section>
+    </section>
 
-      <section class="panel panel-side">
-        <div class="panel-header">
-          <div>
-            <p class="panel-kicker">{{ ui.member_kicker }}</p>
-            <h2>{{ ui.member_title }}</h2>
-          </div>
-        </div>
-        <div class="side-note-card">
-          <span class="side-note-card__label">成员 D 视角</span>
-          <p class="side-note-card__text">先把查询、工作流、前端、可视化和联调入口全部搭稳，再接成员 A / B / C 的正式成果。</p>
-        </div>
-        <ul class="todo-list">
-          {% for item in ui.member_todos %}
-          <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-
+    <section class="tab-panel" id="sparqlTab">
       <section class="panel panel-large">
         <div class="panel-header">
           <div>
-            <p class="panel-kicker">{{ ui.sparql_kicker }}</p>
-            <h2>{{ ui.sparql_title }}</h2>
+            <p class="panel-kicker">{{ ui.graph_kicker }}</p>
+            <h2>{{ ui.graph_title }}</h2>
           </div>
-          <span class="panel-badge">{{ ui.sparql_badge }}</span>
+          <span class="panel-badge"><i data-lucide="binary"></i>{{ ui.graph_badge }}</span>
         </div>
+
+        <p class="intro panel-intro">{{ ui.graph_intro }}</p>
+
         <textarea id="sparqlInput" rows="12">PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
 SELECT ?person ?label
 WHERE {
   ?person rdfs:label ?label .
 }
 LIMIT 10</textarea>
+
         <div class="form-row form-row-end">
-          <button id="sparqlBtn" class="primary-btn">{{ ui.sparql_button }}</button>
+          <button id="sparqlBtn" class="primary-btn">
+            <i data-lucide="play"></i>
+            <span>{{ ui.graph_button }}</span>
+          </button>
         </div>
 
         <div class="result-columns result-columns-wide">
           <section class="result-card">
             <div class="result-card-head">
-              <h3>{{ ui.sparql_result_title }}</h3>
-              <span class="muted-note">手动执行结果</span>
+              <h3>{{ ui.graph_result_title }}</h3>
+              <span class="muted-note">{{ ui.graph_result_hint }}</span>
             </div>
-            <div id="sparqlRows" class="table-wrap empty-state">{{ ui.sparql_waiting }}</div>
+            <div id="sparqlRows" class="table-wrap empty-state">{{ ui.graph_waiting }}</div>
           </section>
 
           <section class="result-card">
@@ -188,31 +241,78 @@ LIMIT 10</textarea>
               <h3>{{ ui.notes_label }}</h3>
               <span class="muted-note">执行信息</span>
             </div>
-            <pre id="sparqlMeta" class="result-box">{{ ui.sparql_waiting }}</pre>
+            <pre id="sparqlMeta" class="result-box">{{ ui.graph_waiting }}</pre>
           </section>
         </div>
       </section>
+    </section>
 
+    <section class="tab-panel" id="networkTab">
       <section class="panel panel-large">
         <div class="panel-header">
           <div>
             <p class="panel-kicker">{{ ui.network_kicker }}</p>
             <h2>{{ ui.network_title }}</h2>
           </div>
-          <span class="panel-badge">{{ ui.network_badge }}</span>
-        </div>
-        <p class="intro panel-intro">{{ ui.network_intro }}</p>
-        <div class="network-actions">
-          <button id="buildNetworkFromQaBtn" class="chip chip-strong">{{ ui.network_from_qa }}</button>
-          <button id="buildNetworkFromSparqlBtn" class="chip chip-strong">{{ ui.network_from_sparql }}</button>
-        </div>
-        <div class="network-legend">
-          <span class="legend-pill"><span class="legend-dot person"></span>人物节点</span>
-          <span class="legend-pill"><span class="legend-dot school"></span>流派节点</span>
-          <span class="legend-pill"><span class="legend-dot unknown"></span>待对齐字段</span>
+          <span class="panel-badge"><i data-lucide="workflow"></i>{{ ui.network_badge }}</span>
         </div>
 
-        <div class="network-grid">
+        <p class="intro panel-intro">{{ ui.network_intro }}</p>
+
+        <div class="network-workspace">
+          <aside class="result-card network-sidebar">
+            <div class="result-card-head">
+              <h3>探索控制</h3>
+              <span class="muted-note">全量 / 单人扩展 / 筛选</span>
+            </div>
+            <div class="network-control-stack">
+              <div class="network-actions">
+                <button id="buildNetworkFromQaBtn" class="chip chip-strong">
+                  <i data-lucide="sparkle"></i>
+                  <span>{{ ui.network_from_qa }}</span>
+                </button>
+                <button id="buildNetworkFromSparqlBtn" class="chip chip-strong">
+                  <i data-lucide="table-properties"></i>
+                  <span>{{ ui.network_from_sparql }}</span>
+                </button>
+                <button id="loadFullGraphBtn" class="chip chip-strong">
+                  <i data-lucide="orbit"></i>
+                  <span>加载全量图谱</span>
+                </button>
+              </div>
+              <div class="network-expand-form">
+                <input id="networkCenterInput" type="text" placeholder="输入人物名，例如：文彭">
+                <div class="network-hop-toggle">
+                  <button id="networkHopOneBtn" class="chip chip-strong is-active" data-hop="1">
+                    <i data-lucide="circle-dot"></i>
+                    <span>一跳</span>
+                  </button>
+                  <button id="networkHopTwoBtn" class="chip chip-strong" data-hop="2">
+                    <i data-lucide="circles-relation"></i>
+                    <span>两跳</span>
+                  </button>
+                </div>
+                <button id="expandPersonGraphBtn" class="primary-btn">
+                  <i data-lucide="scan-search"></i>
+                  <span>按人物扩展</span>
+                </button>
+              </div>
+              <div class="network-filter-box">
+                <span class="runtime-card__label">关系筛选</span>
+                <label class="network-filter-item"><input class="relation-filter" type="checkbox" value="师承" checked> 师承</label>
+                <label class="network-filter-item"><input class="relation-filter" type="checkbox" value="亲属" checked> 亲属</label>
+                <label class="network-filter-item"><input class="relation-filter" type="checkbox" value="交游" checked> 交游</label>
+                <label class="network-filter-item"><input class="relation-filter" type="checkbox" value="所属流派" checked> 所属流派</label>
+                <label class="network-filter-item"><input class="relation-filter" type="checkbox" value="开创流派" checked> 开创流派</label>
+              </div>
+              <div class="network-legend">
+                <span class="legend-pill"><span class="legend-dot person"></span>人物节点</span>
+                <span class="legend-pill"><span class="legend-dot school"></span>流派节点</span>
+                <span class="legend-pill"><span class="legend-dot unknown"></span>其他节点</span>
+              </div>
+            </div>
+          </aside>
+
           <section class="result-card network-stage-card">
             <div class="result-card-head">
               <h3>{{ ui.network_canvas_title }}</h3>
@@ -221,10 +321,20 @@ LIMIT 10</textarea>
             <div id="networkCanvasWrap" class="network-canvas-wrap empty-state">{{ ui.network_empty }}</div>
           </section>
 
+          <aside class="result-card network-detail-card">
+            <div class="result-card-head">
+              <h3>节点详情</h3>
+              <span class="muted-note">点击图中节点查看</span>
+            </div>
+            <div id="networkDetailPanel" class="analysis-block empty-state">点击图中的人物或流派节点后，在这里查看详情。</div>
+          </aside>
+        </div>
+
+        <div class="network-grid">
           <section class="result-card">
             <div class="result-card-head">
               <h3>{{ ui.network_meta_title }}</h3>
-              <span class="muted-note">nodes / edges / warnings</span>
+              <span class="muted-note">nodes / edges / relationTypes</span>
             </div>
             <pre id="networkMeta" class="result-box">{{ ui.result_empty }}</pre>
           </section>
@@ -248,25 +358,68 @@ LIMIT 10</textarea>
 }</pre>
         </section>
       </section>
+    </section>
 
-      <section class="panel panel-side">
+    <section class="tab-panel" id="analysisTab">
+      <section class="panel panel-large">
         <div class="panel-header">
           <div>
-            <p class="panel-kicker">{{ ui.showcase_kicker }}</p>
-            <h2>{{ ui.showcase_title }}</h2>
+            <p class="panel-kicker">{{ ui.analysis_kicker }}</p>
+            <h2>{{ ui.analysis_title }}</h2>
           </div>
+          <span class="panel-badge"><i data-lucide="badge-plus"></i>{{ ui.analysis_badge }}</span>
         </div>
-        <div class="side-note-card side-note-card--soft">
-          <span class="side-note-card__label">答辩建议</span>
-          <p class="side-note-card__text">先问人物基础信息，再问关系与流派，最后展示高级 SPARQL 和关系网络，节奏最稳。</p>
+
+        <p class="intro panel-intro">{{ ui.analysis_intro }}</p>
+
+        <div class="form-row analysis-toolbar">
+          <button id="refreshAnalysisBtn" class="primary-btn">
+            <i data-lucide="refresh-cw"></i>
+            <span>{{ ui.analysis_refresh }}</span>
+          </button>
+          <input id="pathSourceInput" type="text" placeholder="{{ ui.analysis_path_placeholder_a }}">
+          <input id="pathTargetInput" type="text" placeholder="{{ ui.analysis_path_placeholder_b }}">
+          <button id="pathAnalysisBtn" class="ghost-btn">
+            <i data-lucide="route"></i>
+            <span>{{ ui.analysis_path_button }}</span>
+          </button>
         </div>
-        <ul class="showcase-list">
-          {% for item in ui.showcases %}
-          <li>{{ item }}</li>
-          {% endfor %}
-        </ul>
+
+        <div class="analysis-grid">
+          <section class="result-card result-card--analysis">
+            <div class="result-card-head">
+              <h3><i data-lucide="badge-percent"></i>中心性分析</h3>
+              <span class="muted-note">度中心性 / 介数中心性</span>
+            </div>
+            <div id="centralityBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
+          </section>
+
+          <section class="result-card result-card--analysis">
+            <div class="result-card-head">
+              <h3><i data-lucide="users-round"></i>社区发现</h3>
+              <span class="muted-note">交游 / 师承群体</span>
+            </div>
+            <div id="communityBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
+          </section>
+
+          <section class="result-card result-card--analysis">
+            <div class="result-card-head">
+              <h3><i data-lucide="route"></i>路径分析</h3>
+              <span class="muted-note">人物可达路径</span>
+            </div>
+            <div id="pathBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
+          </section>
+
+          <section class="result-card result-card--analysis">
+            <div class="result-card-head">
+              <h3><i data-lucide="git-branch-plus"></i>流派演变分析</h3>
+              <span class="muted-note">流派核心人物与关联</span>
+            </div>
+            <div id="schoolEvolutionBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
+          </section>
+        </div>
       </section>
-    </main>
+    </section>
   </div>
 
   <script>
@@ -279,7 +432,15 @@ LIMIT 10</textarea>
       resultEmpty: "{{ ui.result_empty }}",
       resultError: "{{ ui.result_error }}",
       networkEmpty: "{{ ui.network_empty }}",
-      networkTooSmall: "{{ ui.network_too_small }}"
+      networkTooSmall: "{{ ui.network_too_small }}",
+      analysisWaiting: "{{ ui.analysis_waiting }}",
+      referenceOn: "{{ ui.runtime_reference_on }}",
+      referenceOff: "{{ ui.runtime_reference_off }}",
+      referenceToggleOn: "{{ ui.reference_toggle_on }}",
+      referenceToggleOff: "{{ ui.reference_toggle_off }}",
+      llmEnabled: "{{ ui.runtime_llm_enabled }}",
+      llmDisabled: "{{ ui.runtime_llm_disabled }}",
+      queryDescriptions: {{ ui.query_descriptions | tojson }}
     };
 
     const GRAPH_COLORS = {
@@ -292,6 +453,20 @@ LIMIT 10</textarea>
     let lastQaRows = [];
     let lastSparqlRows = [];
     let lastGraphData = { nodes: [], edges: [], meta: { source: "", rowCount: 0, nodeCount: 0, edgeCount: 0, warnings: [] } };
+    let runtimeStatus = {{ runtime_status | tojson }};
+    let selectedGraphNodeId = "";
+    let highlightedCommunityMembers = [];
+    let highlightedPathNodes = [];
+    let highlightedQueryNodes = [];
+    let currentExploreGraph = { nodes: [], edges: [], meta: { mode: "", center: "", hop: 0, nodeCount: 0, edgeCount: 0, relationTypes: [] } };
+    let networkLoadedOnce = false;
+    let analysisLoadedOnce = false;
+
+    function createLucideIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === "function") {
+        window.lucide.createIcons();
+      }
+    }
 
     async function postJson(url, payload) {
       const response = await fetch(url, {
@@ -300,6 +475,56 @@ LIMIT 10</textarea>
         body: JSON.stringify(payload)
       });
       return response.json();
+    }
+
+    function activateTab(tabId) {
+      document.querySelectorAll(".nav-tab").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.tab === tabId);
+      });
+      document.querySelectorAll(".tab-panel").forEach((panel) => {
+        panel.classList.toggle("is-active", panel.id === tabId);
+      });
+      const activePanel = document.getElementById(tabId);
+      if (activePanel) {
+        activePanel.classList.remove("tab-panel--revealed");
+        void activePanel.offsetWidth;
+        activePanel.classList.add("tab-panel--revealed");
+      }
+      if (tabId === "networkTab" && !networkLoadedOnce) {
+        networkLoadedOnce = true;
+        void loadExploreGraph();
+      }
+      if (tabId === "analysisTab" && !analysisLoadedOnce) {
+        analysisLoadedOnce = true;
+        void loadGraphAnalysis();
+      }
+      createLucideIcons();
+    }
+
+    function renderRuntimeStatus(data) {
+      runtimeStatus = data;
+      const badge = document.getElementById("runtimeBadge");
+      const providerText = document.getElementById("runtimeProviderText");
+      const referenceState = document.getElementById("referenceModeState");
+      const toggleBtn = document.getElementById("toggleReferenceModeBtn");
+      if (badge) {
+        badge.textContent = data.llm_available ? (data.provider_name || UI_TEXT.llmEnabled) : UI_TEXT.llmDisabled;
+      }
+      if (providerText) {
+        providerText.textContent = data.llm_available ? (data.provider_name || UI_TEXT.llmEnabled) : UI_TEXT.llmDisabled;
+      }
+      if (referenceState) {
+        referenceState.textContent = data.reference_mode ? UI_TEXT.referenceOn : UI_TEXT.referenceOff;
+      }
+      if (toggleBtn) {
+        const labelSpan = toggleBtn.querySelector("span");
+        if (labelSpan) {
+          labelSpan.textContent = data.reference_mode ? UI_TEXT.referenceToggleOff : UI_TEXT.referenceToggleOn;
+        } else {
+          toggleBtn.textContent = data.reference_mode ? UI_TEXT.referenceToggleOff : UI_TEXT.referenceToggleOn;
+        }
+        toggleBtn.disabled = !data.llm_available;
+      }
     }
 
     function escapeHtml(value) {
@@ -318,14 +543,12 @@ LIMIT 10</textarea>
         target.textContent = UI_TEXT.resultEmpty;
         return;
       }
-
       const columns = Array.from(
         rows.reduce((set, row) => {
           Object.keys(row).forEach((key) => set.add(key));
           return set;
         }, new Set())
       );
-
       const thead = columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("");
       const tbody = rows.map((row) => {
         const cells = columns
@@ -333,7 +556,6 @@ LIMIT 10</textarea>
           .join("");
         return `<tr>${cells}</tr>`;
       }).join("");
-
       target.className = "table-wrap";
       target.innerHTML = `
         <table class="result-table">
@@ -351,9 +573,21 @@ LIMIT 10</textarea>
         list.innerHTML = "";
         return;
       }
-
       block.hidden = false;
       list.innerHTML = notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
+    }
+
+    function splitAnswerSections(answer) {
+      const raw = String(answer || "").trim();
+      const marker = "模型参考说明：";
+      const index = raw.indexOf(marker);
+      if (index === -1) {
+        return { graphConclusion: raw, modelReference: "" };
+      }
+      return {
+        graphConclusion: raw.slice(0, index).trim(),
+        modelReference: raw.slice(index).trim()
+      };
     }
 
     function renderQaResult(data) {
@@ -364,14 +598,27 @@ LIMIT 10</textarea>
         fallback: UI_TEXT.fallbackMode,
         empty: UI_TEXT.emptyMode
       };
-
+      const answerSections = splitAnswerSections(data.answer || "");
       document.getElementById("qaModeBadge").textContent = modeMap[data.mode] || data.mode || UI_TEXT.emptyMode;
-      document.getElementById("qaAnswer").textContent = data.answer || UI_TEXT.resultEmpty;
+      document.getElementById("qaMetaText").textContent = UI_TEXT.queryDescriptions[data.mode] || UI_TEXT.queryDescriptions.empty;
+      document.getElementById("qaRouteLabel").textContent = data.route_label || UI_TEXT.emptyMode;
+      document.getElementById("qaRouteStage").textContent = data.route_stage || "未提供链路阶段信息";
+      document.getElementById("qaGraphConclusion").textContent = answerSections.graphConclusion || UI_TEXT.resultEmpty;
+      const referenceBlock = document.getElementById("qaReferenceBlock");
+      const referenceText = document.getElementById("qaReferenceText");
+      if (answerSections.modelReference) {
+        referenceBlock.hidden = false;
+        referenceText.textContent = answerSections.modelReference;
+      } else {
+        referenceBlock.hidden = true;
+        referenceText.textContent = "";
+      }
       document.getElementById("qaSparql").textContent = data.sparql || UI_TEXT.resultEmpty;
       document.getElementById("qaRowCount").textContent = `${(data.rows || []).length} 行`;
       renderNotes(data.notes || []);
       lastQaRows = data.rows || [];
       renderTable("qaRows", lastQaRows);
+      highlightRowsInGraph(lastQaRows);
     }
 
     function renderSparqlResult(data) {
@@ -381,9 +628,7 @@ LIMIT 10</textarea>
       } else {
         meta.push("状态：执行成功");
       }
-      if (data.note) {
-        meta.push(`说明：${data.note}`);
-      }
+      if (data.note) meta.push(`说明：${data.note}`);
       if (data.sparql) {
         meta.push("语句：");
         meta.push(data.sparql);
@@ -391,16 +636,13 @@ LIMIT 10</textarea>
       document.getElementById("sparqlMeta").textContent = meta.join("\n");
       lastSparqlRows = data.rows || [];
       renderTable("sparqlRows", lastSparqlRows);
+      highlightRowsInGraph(lastSparqlRows);
     }
 
     function inferNodeType(row, key) {
       const normalized = key.toLowerCase();
-      if (normalized.includes("school")) {
-        return "school";
-      }
-      if (normalized.includes("place")) {
-        return "place";
-      }
+      if (normalized.includes("school")) return "school";
+      if (normalized.includes("place")) return "place";
       if (normalized.includes("person") || normalized.includes("teacher") || normalized.includes("friend") || normalized.includes("relative") || normalized.includes("founder") || normalized.includes("source") || normalized.includes("target") || normalized.includes("related")) {
         return "person";
       }
@@ -408,29 +650,26 @@ LIMIT 10</textarea>
     }
 
     function addNode(nodeMap, label, type = "unknown") {
-      if (!label) {
-        return null;
-      }
+      if (!label) return null;
       const id = label.trim();
-      if (!id) {
-        return null;
-      }
+      if (!id) return null;
       if (!nodeMap.has(id)) {
-        nodeMap.set(id, {
-          id,
-          label: id,
-          type,
-          group: type,
-          size: type === "person" ? 22 : 18
-        });
+        nodeMap.set(id, { id, label: id, type, group: type, size: type === "person" ? 22 : 18, isCenter: false });
       }
       return nodeMap.get(id);
     }
 
+    function classifyRelation(relationLabel) {
+      const label = String(relationLabel || "");
+      if (label.includes("师")) return "teacher";
+      if (label.includes("亲") || label.includes("父") || label.includes("子")) return "family";
+      if (label.includes("交") || label.includes("友")) return "social";
+      if (label.includes("流派") || label.includes("开创") || label.includes("所属")) return "school";
+      return "default";
+    }
+
     function addEdge(edgeMap, sourceNode, targetNode, relationLabel) {
-      if (!sourceNode || !targetNode || sourceNode.id === targetNode.id) {
-        return;
-      }
+      if (!sourceNode || !targetNode || sourceNode.id === targetNode.id) return;
       const safeLabel = relationLabel || "关联";
       const edgeId = `${sourceNode.id}::${targetNode.id}::${safeLabel}`;
       if (!edgeMap.has(edgeId)) {
@@ -439,7 +678,11 @@ LIMIT 10</textarea>
           source: sourceNode.id,
           target: targetNode.id,
           label: safeLabel,
-          relationType: safeLabel
+          relationType: safeLabel,
+          relationLabel: safeLabel,
+          color: "#6f6458",
+          width: 2,
+          edgeClass: `edge-class-${classifyRelation(safeLabel)}`
         });
       }
     }
@@ -448,83 +691,54 @@ LIMIT 10</textarea>
       const nodeMap = new Map();
       const edgeMap = new Map();
       const warnings = [];
-
       for (const row of rows || []) {
         const relationLabel = row.relationLabel || row.relationType || row.relation || "";
-
         if (row.sourceLabel && row.targetLabel) {
-          const sourceNode = addNode(nodeMap, row.sourceLabel, "person");
-          const targetNode = addNode(nodeMap, row.targetLabel, "person");
-          addEdge(edgeMap, sourceNode, targetNode, relationLabel || "直接关系");
+          addEdge(edgeMap, addNode(nodeMap, row.sourceLabel, "person"), addNode(nodeMap, row.targetLabel, "person"), relationLabel || "直接关系");
           continue;
         }
-
         if (row.label && row.teacherLabel) {
-          const sourceNode = addNode(nodeMap, row.label, "person");
-          const targetNode = addNode(nodeMap, row.teacherLabel, "person");
-          addEdge(edgeMap, sourceNode, targetNode, "师承");
+          addEdge(edgeMap, addNode(nodeMap, row.label, "person"), addNode(nodeMap, row.teacherLabel, "person"), "师承");
           continue;
         }
-
         if (row.label && row.relativeLabel) {
-          const sourceNode = addNode(nodeMap, row.label, "person");
-          const targetNode = addNode(nodeMap, row.relativeLabel, "person");
-          addEdge(edgeMap, sourceNode, targetNode, relationLabel || "亲属");
+          addEdge(edgeMap, addNode(nodeMap, row.label, "person"), addNode(nodeMap, row.relativeLabel, "person"), relationLabel || "亲属");
           continue;
         }
-
         if (row.label && row.friendLabel) {
-          const sourceNode = addNode(nodeMap, row.label, "person");
-          const targetNode = addNode(nodeMap, row.friendLabel, "person");
-          addEdge(edgeMap, sourceNode, targetNode, "交游");
+          addEdge(edgeMap, addNode(nodeMap, row.label, "person"), addNode(nodeMap, row.friendLabel, "person"), "交游");
           continue;
         }
-
         if (row.label && row.schoolLabel) {
-          const sourceNode = addNode(nodeMap, row.label, "person");
-          const targetNode = addNode(nodeMap, row.schoolLabel, "school");
-          addEdge(edgeMap, sourceNode, targetNode, "所属流派");
+          addEdge(edgeMap, addNode(nodeMap, row.label, "person"), addNode(nodeMap, row.schoolLabel, "school"), "所属流派");
           continue;
         }
-
         if (row.founderLabel && row.schoolLabel) {
-          const sourceNode = addNode(nodeMap, row.founderLabel, "person");
-          const targetNode = addNode(nodeMap, row.schoolLabel, "school");
-          addEdge(edgeMap, sourceNode, targetNode, "开创");
+          addEdge(edgeMap, addNode(nodeMap, row.founderLabel, "person"), addNode(nodeMap, row.schoolLabel, "school"), "开创流派");
           continue;
         }
-
         if (row.label && row.relatedLabel) {
-          const sourceNode = addNode(nodeMap, row.label, "person");
-          const targetNode = addNode(nodeMap, row.relatedLabel, "person");
-          addEdge(edgeMap, sourceNode, targetNode, "关联");
+          addEdge(edgeMap, addNode(nodeMap, row.label, "person"), addNode(nodeMap, row.relatedLabel, "person"), "关联");
           continue;
         }
-
         const labelKeys = Object.keys(row).filter((key) => key.toLowerCase().endsWith("label"));
         if (labelKeys.length >= 2) {
           const [firstKey, secondKey] = labelKeys;
-          const firstNode = addNode(nodeMap, row[firstKey], inferNodeType(row, firstKey));
-          const secondNode = addNode(nodeMap, row[secondKey], inferNodeType(row, secondKey));
-          addEdge(edgeMap, firstNode, secondNode, relationLabel || "关联");
+          addEdge(
+            edgeMap,
+            addNode(nodeMap, row[firstKey], inferNodeType(row, firstKey)),
+            addNode(nodeMap, row[secondKey], inferNodeType(row, secondKey)),
+            relationLabel || "关联"
+          );
           continue;
         }
-
         if (labelKeys.length === 1) {
           addNode(nodeMap, row[labelKeys[0]], inferNodeType(row, labelKeys[0]));
         }
       }
-
-      if (rows && rows.length > 0 && edgeMap.size === 0) {
-        warnings.push("结果表格里暂未识别到标准关系字段，当前只能抽取到零散节点。");
-      }
-      if (nodeMap.size > 0 && nodeMap.size < 2) {
-        warnings.push("节点数量过少，当前无法形成有效的人物关系网络。");
-      }
-      if (nodeMap.size >= 2 && edgeMap.size === 0) {
-        warnings.push("已有多个节点，但没有识别到边。后续需要与成员 C 对齐字段名。");
-      }
-
+      if (rows && rows.length > 0 && edgeMap.size === 0) warnings.push("结果中暂未识别到标准关系字段，当前只提取到零散节点。");
+      if (nodeMap.size > 0 && nodeMap.size < 2) warnings.push("节点数量过少，暂时无法形成有效关系网络。");
+      if (nodeMap.size >= 2 && edgeMap.size === 0) warnings.push("已识别到多个节点，但尚未识别到明确边关系。");
       return {
         nodes: Array.from(nodeMap.values()),
         edges: Array.from(edgeMap.values()),
@@ -538,20 +752,20 @@ LIMIT 10</textarea>
       };
     }
 
-    function buildCircularLayout(nodes, width, height) {
+    function getActiveRelationFilters() {
+      return Array.from(document.querySelectorAll(".relation-filter:checked")).map((item) => item.value);
+    }
+
+    function buildForceLikeLayout(nodes, width, height, centerId = "") {
       const cx = width / 2;
       const cy = height / 2;
-      const radius = Math.max(90, Math.min(width, height) / 2 - 72);
+      const radius = Math.max(140, Math.min(width, height) / 2 - 90);
       return nodes.map((node, index) => {
-        if (nodes.length === 1) {
-          return { ...node, x: cx, y: cy };
-        }
-        const angle = (Math.PI * 2 * index) / nodes.length - Math.PI / 2;
-        return {
-          ...node,
-          x: cx + radius * Math.cos(angle),
-          y: cy + radius * Math.sin(angle)
-        };
+        if (node.id === centerId) return { ...node, x: cx, y: cy };
+        const offsetIndex = centerId ? index + 1 : index;
+        const angle = (Math.PI * 2 * offsetIndex) / Math.max(nodes.length, 1) - Math.PI / 2;
+        const radial = node.type === "school" ? radius * 0.72 : radius;
+        return { ...node, x: cx + radial * Math.cos(angle), y: cy + radial * Math.sin(angle) };
       });
     }
 
@@ -560,56 +774,62 @@ LIMIT 10</textarea>
       const metaBox = document.getElementById("networkMeta");
       const previewBox = document.getElementById("networkDataPreview");
       const statusText = document.getElementById("networkStatusText");
-
       lastGraphData = graphData;
+      currentExploreGraph = graphData;
       metaBox.textContent = JSON.stringify(graphData.meta, null, 2);
       previewBox.textContent = JSON.stringify(graphData, null, 2);
-
       if (!graphData.nodes.length) {
         wrap.className = "network-canvas-wrap empty-state";
         wrap.textContent = UI_TEXT.networkEmpty;
         statusText.textContent = UI_TEXT.networkEmpty;
         return;
       }
-
       if (graphData.nodes.length < 2 || graphData.edges.length < 1) {
         wrap.className = "network-canvas-wrap empty-state";
         wrap.textContent = UI_TEXT.networkTooSmall;
         statusText.textContent = UI_TEXT.networkTooSmall;
         return;
       }
-
-      const width = 760;
-      const height = 420;
-      const positionedNodes = buildCircularLayout(graphData.nodes, width, height);
+      const width = 860;
+      const height = 520;
+      const positionedNodes = buildForceLikeLayout(graphData.nodes, width, height, graphData.meta.center || "");
       const nodeLookup = Object.fromEntries(positionedNodes.map((node) => [node.id, node]));
-
       const edgeLines = graphData.edges.map((edge) => {
         const source = nodeLookup[edge.source];
         const target = nodeLookup[edge.target];
-        if (!source || !target) {
-          return "";
-        }
+        if (!source || !target) return "";
         const midX = (source.x + target.x) / 2;
         const midY = (source.y + target.y) / 2;
+        const isHighlighted = highlightedPathNodes.includes(edge.source) && highlightedPathNodes.includes(edge.target);
         return `
-          <g class="network-edge-group">
-            <line x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" class="network-edge-line"></line>
-            <text x="${midX}" y="${midY - 6}" class="network-edge-label">${escapeHtml(edge.label)}</text>
+          <g class="network-edge-group ${edge.edgeClass || ""} ${isHighlighted ? "is-highlighted" : ""}">
+            <line
+              x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}"
+              class="network-edge-line ${isHighlighted ? "is-highlighted" : ""}"
+              stroke="${edge.color || "#6f6458"}"
+              stroke-width="${edge.width || 2}">
+            </line>
+            <text x="${midX}" y="${midY - 6}" class="network-edge-label">${escapeHtml(edge.relationLabel || edge.label)}</text>
           </g>
         `;
       }).join("");
-
-      const nodeCircles = positionedNodes.map((node) => {
+      const nodeCircles = positionedNodes.map((node, index) => {
         const fill = GRAPH_COLORS[node.type] || GRAPH_COLORS.unknown;
+        const isCommunityHighlighted = highlightedCommunityMembers.includes(node.id);
+        const isPathHighlighted = highlightedPathNodes.includes(node.id);
+        const isQueryHighlighted = highlightedQueryNodes.includes(node.id);
+        const isSelected = selectedGraphNodeId === node.id;
         return `
-          <g class="network-node-group">
-            <circle cx="${node.x}" cy="${node.y}" r="${node.size}" fill="${fill}" class="network-node-circle"></circle>
+          <g class="network-node-group" data-node-id="${escapeHtml(node.id)}" style="animation-delay:${index * 90}ms">
+            <circle cx="${node.x}" cy="${node.y}" r="${node.size + 8}" class="network-node-ripple ${isCommunityHighlighted ? "is-community-highlighted" : ""} ${isPathHighlighted ? "is-path-highlighted" : ""}"></circle>
+            <circle
+              cx="${node.x}" cy="${node.y}" r="${node.size}" fill="${fill}"
+              class="network-node-circle ${node.isCenter ? "is-center" : ""} ${isSelected ? "is-selected" : ""} ${isCommunityHighlighted ? "is-community-highlighted" : ""} ${isPathHighlighted ? "is-path-highlighted" : ""} ${isQueryHighlighted ? "is-query-highlighted" : ""}">
+            </circle>
             <text x="${node.x}" y="${node.y + 5}" class="network-node-text">${escapeHtml(node.label)}</text>
           </g>
         `;
       }).join("");
-
       wrap.className = "network-canvas-wrap";
       wrap.innerHTML = `
         <svg viewBox="0 0 ${width} ${height}" class="network-svg" role="img" aria-label="人物关系网络预览">
@@ -625,11 +845,232 @@ LIMIT 10</textarea>
         </svg>
       `;
       statusText.textContent = `已生成 ${graphData.meta.nodeCount} 个节点、${graphData.meta.edgeCount} 条边`;
+      wrap.querySelectorAll(".network-node-group").forEach((group) => {
+        group.addEventListener("click", async () => {
+          const nodeId = group.dataset.nodeId || "";
+          selectedGraphNodeId = nodeId;
+          renderNetworkGraph(currentExploreGraph);
+          await loadPersonDetail(nodeId);
+        });
+      });
     }
 
     function buildNetworkFromRows(rows, sourceName) {
-      const graphData = adaptRowsToGraphData(rows, sourceName);
-      renderNetworkGraph(graphData);
+      highlightRowsInGraph(rows);
+      const preview = adaptRowsToGraphData(rows, sourceName);
+      document.getElementById("networkMeta").textContent = JSON.stringify({
+        graphMode: currentExploreGraph.meta?.mode || "full",
+        highlightSource: sourceName,
+        highlightNodeCount: highlightedQueryNodes.length,
+        previewMeta: preview.meta
+      }, null, 2);
+      document.getElementById("networkDataPreview").textContent = JSON.stringify(preview, null, 2);
+      renderNetworkGraph(currentExploreGraph);
+    }
+
+    function highlightRowsInGraph(rows) {
+      const labels = new Set();
+      for (const row of rows || []) {
+        for (const [key, value] of Object.entries(row)) {
+          if (!value) continue;
+          if (key.toLowerCase().includes("label")) labels.add(String(value));
+        }
+      }
+      highlightedQueryNodes = Array.from(labels);
+    }
+
+    async function loadExploreGraph(center = "", hop = 1) {
+      const statusText = document.getElementById("networkStatusText");
+      const wrap = document.getElementById("networkCanvasWrap");
+      if (statusText) statusText.textContent = "正在加载图谱网络...";
+      if (wrap && (!currentExploreGraph.nodes || currentExploreGraph.nodes.length === 0)) {
+        wrap.className = "network-canvas-wrap empty-state";
+        wrap.textContent = "正在构建全量人物关系图谱...";
+      }
+      const params = new URLSearchParams();
+      if (center) params.set("center", center);
+      params.set("hop", String(hop));
+      for (const relationType of getActiveRelationFilters()) {
+        params.append("relation_type", relationType);
+      }
+      const response = await fetch(`/api/graph-explore?${params.toString()}`);
+      const payload = await response.json();
+      if (!payload.ok || payload.data?.ok === false) {
+        const message = payload.error || payload.data?.error || UI_TEXT.resultError;
+        renderNetworkGraph({ nodes: [], edges: [], meta: { source: "", rowCount: 0, nodeCount: 0, edgeCount: 0, warnings: [message] } });
+        return;
+      }
+      highlightedCommunityMembers = [];
+      highlightedPathNodes = [];
+      renderNetworkGraph(payload.data);
+      if (payload.data.meta?.center) {
+        selectedGraphNodeId = payload.data.meta.center;
+        await loadPersonDetail(payload.data.meta.center);
+      }
+    }
+
+    async function loadPersonDetail(nodeId) {
+      if (!nodeId) return;
+      const panel = document.getElementById("networkDetailPanel");
+      panel.className = "analysis-block";
+      panel.innerHTML = `<div class="empty-state">正在加载 ${escapeHtml(nodeId)} 的详情...</div>`;
+      const response = await fetch(`/api/person-detail?name=${encodeURIComponent(nodeId)}`);
+      const payload = await response.json();
+      if (!payload.ok) {
+        panel.className = "analysis-block empty-state";
+        panel.textContent = payload.error || UI_TEXT.resultError;
+        return;
+      }
+      const profile = payload.profile || {};
+      const relations = payload.relations || [];
+      panel.className = "analysis-block";
+      panel.innerHTML = `
+        <div class="analysis-subsection">
+          <h4>${escapeHtml(profile.name || nodeId)}</h4>
+          <article class="analysis-item analysis-item--stack">
+            <span>字：${escapeHtml((profile.courtesyNames || []).join("、") || "暂无")}</span>
+            <span>号：${escapeHtml((profile.artNames || []).join("、") || "暂无")}</span>
+            <span>生年：${escapeHtml((profile.birthYears || []).join("、") || "暂无")}</span>
+            <span>卒年：${escapeHtml((profile.deathYears || []).join("、") || "暂无")}</span>
+            <span>流派：${escapeHtml((profile.schools || []).join("、") || "暂无")}</span>
+          </article>
+        </div>
+        <div class="analysis-subsection">
+          <h4>直接关联</h4>
+          ${renderAnalysisList(relations.slice(0, 20), (item) => `
+            <article class="analysis-item analysis-item--stack">
+              <strong>${escapeHtml(item.relatedLabel)}</strong>
+              <span>${escapeHtml(item.relationLabel)} / ${escapeHtml(item.direction)}</span>
+            </article>
+          `)}
+        </div>
+      `;
+    }
+
+    function renderAnalysisList(items, mapper) {
+      if (!items || items.length === 0) return `<div class="empty-state">${escapeHtml(UI_TEXT.resultEmpty)}</div>`;
+      return `<div class="analysis-list">${items.map(mapper).join("")}</div>`;
+    }
+
+    function renderGraphAnalysis(payload) {
+      const centralityBlock = document.getElementById("centralityBlock");
+      const communityBlock = document.getElementById("communityBlock");
+      const schoolEvolutionBlock = document.getElementById("schoolEvolutionBlock");
+      if (!payload || payload.ok === false) {
+        const message = escapeHtml(payload?.error || UI_TEXT.resultError);
+        [centralityBlock, communityBlock, schoolEvolutionBlock].forEach((el) => {
+          el.className = "analysis-block empty-state";
+          el.textContent = message;
+        });
+        return;
+      }
+      const data = payload.data || {};
+      const topDegree = data.centrality?.topDegree || [];
+      const topBetweenness = data.centrality?.topBetweenness || [];
+      const communities = data.communities || [];
+      const schoolEvolution = data.schoolEvolution || [];
+      centralityBlock.className = "analysis-block";
+      centralityBlock.innerHTML = `
+        <div class="analysis-subsection">
+          <h4>度中心性 Top</h4>
+          ${renderAnalysisList(topDegree, (item) => `
+            <article class="analysis-item analysis-item--tag clickable-analysis" data-center-name="${escapeHtml(item.name)}">
+              <strong>${escapeHtml(item.name)}</strong>
+              <span>score=${escapeHtml(item.score)} / degree=${escapeHtml(item.degree)}</span>
+            </article>
+          `)}
+        </div>
+        <div class="analysis-subsection">
+          <h4>介数中心性 Top</h4>
+          ${renderAnalysisList(topBetweenness, (item) => `
+            <article class="analysis-item analysis-item--tag clickable-analysis" data-center-name="${escapeHtml(item.name)}">
+              <strong>${escapeHtml(item.name)}</strong>
+              <span>score=${escapeHtml(item.score)}</span>
+            </article>
+          `)}
+        </div>
+      `;
+      communityBlock.className = "analysis-block";
+      communityBlock.innerHTML = renderAnalysisList(communities, (item) => `
+        <article class="analysis-item analysis-item--stack analysis-item--tag clickable-analysis" data-community-members="${escapeHtml((item.members || []).join("||"))}">
+          <strong>${escapeHtml(item.id)} · ${escapeHtml(item.size)} 人</strong>
+          <span>成员：${escapeHtml((item.members || []).join("、"))}</span>
+          <span>主要关系：${escapeHtml((item.dominantRelations || []).map((rel) => `${rel.relation}(${rel.count})`).join("、") || "暂无")}</span>
+        </article>
+      `);
+      schoolEvolutionBlock.className = "analysis-block";
+      schoolEvolutionBlock.innerHTML = renderAnalysisList(schoolEvolution, (item) => `
+        <article class="analysis-item analysis-item--stack analysis-item--tag">
+          <strong>${escapeHtml(item.school)}</strong>
+          <span>开创者：${escapeHtml((item.founders || []).join("、") || "暂无")}</span>
+          <span>成员数：${escapeHtml(item.memberCount)}</span>
+          <span>代表人物：${escapeHtml((item.representativeFigures || []).map((person) => `${person.name}(${person.degreeCentrality})`).join("、") || "暂无")}</span>
+          <span>关联流派：${escapeHtml((item.linkedSchools || []).map((school) => `${school.school}(${school.linkCount})`).join("、") || "暂无")}</span>
+        </article>
+      `);
+      bindAnalysisHighlightActions();
+    }
+
+    function renderPathAnalysis(payload) {
+      const pathBlock = document.getElementById("pathBlock");
+      if (!payload || payload.ok === false) {
+        pathBlock.className = "analysis-block empty-state";
+        pathBlock.textContent = payload?.error || UI_TEXT.resultError;
+        return;
+      }
+      const nodes = payload.nodes || [];
+      const steps = payload.steps || [];
+      pathBlock.className = "analysis-block";
+      pathBlock.innerHTML = `
+        <div class="analysis-subsection">
+          <h4>路径概览</h4>
+          <article class="analysis-item analysis-item--stack analysis-item--tag clickable-analysis" data-path-nodes="${escapeHtml(nodes.join("||"))}">
+            <strong>${escapeHtml(payload.source)} → ${escapeHtml(payload.target)}</strong>
+            <span>距离：${escapeHtml(payload.distance)}</span>
+            <span>节点路径：${escapeHtml(nodes.join(" → "))}</span>
+          </article>
+        </div>
+        <div class="analysis-subsection">
+          <h4>逐步关系</h4>
+          ${renderAnalysisList(steps, (item) => `
+            <article class="analysis-item analysis-item--stack">
+              <strong>${escapeHtml(item.source)} → ${escapeHtml(item.target)}</strong>
+              <span>关系：${escapeHtml(item.relation)}</span>
+            </article>
+          `)}
+        </div>
+      `;
+      bindAnalysisHighlightActions();
+    }
+
+    function bindAnalysisHighlightActions() {
+      document.querySelectorAll("[data-community-members]").forEach((item) => {
+        item.addEventListener("click", () => {
+          highlightedCommunityMembers = (item.dataset.communityMembers || "").split("||").filter(Boolean);
+          highlightedPathNodes = [];
+          highlightedQueryNodes = [];
+          activateTab("networkTab");
+          renderNetworkGraph(currentExploreGraph);
+        });
+      });
+      document.querySelectorAll("[data-path-nodes]").forEach((item) => {
+        item.addEventListener("click", () => {
+          highlightedPathNodes = (item.dataset.pathNodes || "").split("||").filter(Boolean);
+          highlightedCommunityMembers = [];
+          highlightedQueryNodes = [];
+          activateTab("networkTab");
+          renderNetworkGraph(currentExploreGraph);
+        });
+      });
+      document.querySelectorAll("[data-center-name]").forEach((item) => {
+        item.addEventListener("click", async () => {
+          const centerName = item.dataset.centerName || "";
+          if (!centerName) return;
+          document.getElementById("networkCenterInput").value = centerName;
+          activateTab("networkTab");
+          await loadExploreGraph(centerName, 1);
+        });
+      });
     }
 
     async function submitQuestion(question) {
@@ -642,70 +1083,126 @@ LIMIT 10</textarea>
           answer: UI_TEXT.resultError,
           sparql: "",
           rows: [],
-          notes: [error.message]
+          notes: [error.message],
+          route_label: "fallback",
+          route_stage: "请求异常",
         });
       }
     }
 
     async function submitSparql(sparql) {
       try {
-        const data = await postJson("/api/sparql", { sparql });
-        renderSparqlResult(data);
+        renderSparqlResult(await postJson("/api/sparql", { sparql }));
       } catch (error) {
-        renderSparqlResult({
-          ok: false,
-          error: error.message,
-          rows: []
-        });
+        renderSparqlResult({ ok: false, error: error.message, rows: [] });
       }
     }
 
-    document.getElementById("scrollToQueryBtn").addEventListener("click", () => {
-      document.getElementById("querySection").scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-
-    document.getElementById("askBtn").addEventListener("click", async () => {
-      const question = document.getElementById("questionInput").value.trim();
-      await submitQuestion(question);
-    });
-
-    document.getElementById("questionInput").addEventListener("keydown", async (event) => {
-      if (event.key !== "Enter") {
-        return;
+    async function loadGraphAnalysis() {
+      ["centralityBlock", "communityBlock", "pathBlock", "schoolEvolutionBlock"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.className = "analysis-block empty-state";
+          el.textContent = "正在计算图结构分析结果...";
+        }
+      });
+      try {
+        const response = await fetch("/api/graph-analysis");
+        renderGraphAnalysis(await response.json());
+      } catch (error) {
+        renderGraphAnalysis({ ok: false, error: error.message });
       }
+    }
+
+    async function loadPathAnalysis() {
+      const sourceName = document.getElementById("pathSourceInput").value.trim();
+      const targetName = document.getElementById("pathTargetInput").value.trim();
+      try {
+        renderPathAnalysis(await postJson("/api/graph-path", { source_name: sourceName, target_name: targetName }));
+      } catch (error) {
+        renderPathAnalysis({ ok: false, error: error.message });
+      }
+    }
+
+    async function refreshRuntimeStatus() {
+      try {
+        const response = await fetch("/api/runtime-status");
+        const payload = await response.json();
+        if (payload.ok) renderRuntimeStatus(payload.data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    async function toggleReferenceMode() {
+      try {
+        const payload = await postJson("/api/reference-mode", { enabled: !runtimeStatus.reference_mode });
+        if (payload.ok) renderRuntimeStatus(payload.data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    document.querySelectorAll(".nav-tab").forEach((button) => {
+      button.addEventListener("click", () => activateTab(button.dataset.tab));
+    });
+    document.querySelectorAll("[data-go-tab]").forEach((button) => {
+      button.addEventListener("click", () => activateTab(button.dataset.goTab));
+    });
+    document.getElementById("toggleReferenceModeBtn").addEventListener("click", toggleReferenceMode);
+    document.getElementById("askBtn").addEventListener("click", async () => submitQuestion(document.getElementById("questionInput").value.trim()));
+    document.getElementById("questionInput").addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") return;
       event.preventDefault();
-      const question = document.getElementById("questionInput").value.trim();
-      await submitQuestion(question);
+      await submitQuestion(document.getElementById("questionInput").value.trim());
     });
-
-    document.getElementById("sparqlBtn").addEventListener("click", async () => {
-      const sparql = document.getElementById("sparqlInput").value;
-      await submitSparql(sparql);
+    document.getElementById("sparqlBtn").addEventListener("click", async () => submitSparql(document.getElementById("sparqlInput").value));
+    document.getElementById("buildNetworkFromQaBtn").addEventListener("click", () => buildNetworkFromRows(lastQaRows, "问答结果"));
+    document.getElementById("buildNetworkFromSparqlBtn").addEventListener("click", () => buildNetworkFromRows(lastSparqlRows, "图谱查询结果"));
+    document.getElementById("loadFullGraphBtn").addEventListener("click", async () => loadExploreGraph("", Number(document.querySelector(".network-hop-toggle .is-active")?.dataset.hop || "1")));
+    document.getElementById("expandPersonGraphBtn").addEventListener("click", async () => {
+      const center = document.getElementById("networkCenterInput").value.trim();
+      const hop = Number(document.querySelector(".network-hop-toggle .is-active")?.dataset.hop || "1");
+      await loadExploreGraph(center, hop);
     });
-
-    document.getElementById("buildNetworkFromQaBtn").addEventListener("click", () => {
-      buildNetworkFromRows(lastQaRows, "普通问答结果");
+    document.querySelectorAll(".network-hop-toggle [data-hop]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".network-hop-toggle [data-hop]").forEach((item) => item.classList.remove("is-active"));
+        button.classList.add("is-active");
+      });
     });
-
-    document.getElementById("buildNetworkFromSparqlBtn").addEventListener("click", () => {
-      buildNetworkFromRows(lastSparqlRows, "高级 SPARQL 结果");
+    document.querySelectorAll(".relation-filter").forEach((checkbox) => {
+      checkbox.addEventListener("change", async () => {
+        const center = currentExploreGraph.meta?.center || "";
+        const hop = Number(currentExploreGraph.meta?.hop || document.querySelector(".network-hop-toggle .is-active")?.dataset.hop || "1");
+        await loadExploreGraph(center, hop);
+      });
     });
-
+    document.getElementById("refreshAnalysisBtn").addEventListener("click", loadGraphAnalysis);
+    document.getElementById("pathAnalysisBtn").addEventListener("click", loadPathAnalysis);
     document.querySelectorAll(".chips .chip").forEach((button) => {
       button.addEventListener("click", async () => {
         const question = button.dataset.question;
         document.getElementById("questionInput").value = question;
+        activateTab("qaTab");
         await submitQuestion(question);
       });
     });
 
+    renderRuntimeStatus(runtimeStatus);
     renderNetworkGraph(lastGraphData);
+    refreshRuntimeStatus();
+    createLucideIcons();
 
     window.addEventListener("load", () => {
       const openingScreen = document.getElementById("openingScreen");
       window.setTimeout(() => {
         openingScreen.classList.add("opening-screen--hidden");
-      }, 1150);
+      }, 1250);
+      window.setTimeout(() => {
+        document.querySelector(".tab-panel.is-active")?.classList.add("tab-panel--revealed");
+      }, 180);
+      createLucideIcons();
     });
   </script>
 </body>

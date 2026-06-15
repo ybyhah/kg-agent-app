@@ -38,89 +38,122 @@ def build_deliverable_status(config: AppConfig):
 
 def build_ui_text():
     return {
-        "title": "印人传知识问答系统",
-        "eyebrow": "知识图谱大作业 / KG Agent",
-        "hero_title": "印人传知识问答系统",
+        "title": "印人传知识图谱智能体",
+        "eyebrow": "Seal Lineage Knowledge Agent",
+        "hero_title": "印人传知识图谱智能体",
+        "hero_script": "印谱人物 · 流派脉络 · 关系追踪",
+        "hero_quote": "从人物传记进入印学世界，让姓名、字号、师承、交游与流派在同一张图谱中彼此照见。",
         "hero_intro": (
-            "面向《印人传》构建的知识图谱问答原型。"
-            "当前页面已经预留普通问答、高级 SPARQL、图谱接入状态和可视化扩展入口，"
-            "适合成员 D 持续整合成员 B 的抽取结果与成员 C 的 Turtle 图谱。"
+            "围绕《印人传》构建的人物知识图谱问答系统。"
+            "你可以直接提问人物生平、字号、师承、亲属、交游与流派问题，"
+            "也可以使用图谱查询台执行 SPARQL，进一步查看结构化结果、关系网络与图结构分析。"
         ),
-        "start_query": "开始查询",
-        "health": "查看健康状态",
-        "ttl_title": "图谱接入状态",
-        "ttl_online": "已接入",
-        "ttl_offline": "未接入",
-        "demo_title": "推荐演示顺序",
-        "demo_steps": [
-            "先展示普通问答",
-            "再展示固定工具查询",
-            "最后展示高级 SPARQL",
+        "hero_primary": "开始查询",
+        "hero_secondary": "进入图谱查询",
+        "nav_home": "概览",
+        "nav_qa": "智能问答",
+        "nav_sparql": "图谱查询",
+        "nav_network": "关系网络",
+        "nav_analysis": "图结构分析",
+        "hero_cards": [
+            {
+                "title": "人物检索",
+                "text": "查询人物姓名、字号、生卒年与基础传记信息。",
+            },
+            {
+                "title": "关系追踪",
+                "text": "查看师承、亲属、交游与人物之间的关联线索。",
+            },
+            {
+                "title": "流派脉络",
+                "text": "观察印派的开创者、代表人物与演变中的关键节点。",
+            },
         ],
-        "qa_kicker": "自然语言查询",
-        "qa_title": "普通问答",
-        "qa_badge": "工作流入口",
-        "qa_placeholder": "例如：文彭是谁？",
+        "qa_kicker": "自然语言问答",
+        "qa_title": "智能问答",
+        "qa_badge": "本地图谱优先",
+        "qa_placeholder": "例如：文彭的号是什么？",
         "qa_button": "查询",
         "qa_examples": [
             "文彭是谁？",
-            "文彭的字是什么？",
-            "文彭的号是什么？",
-            "文彭的生卒年是什么？",
-            "文徵明与文彭是什么关系？",
-            "文彭的师承是？",
+            "文彭的字和号是什么？",
+            "文彭与文徵明是什么关系？",
             "谁开创了吴门印派？",
+            "文彭的师承关系有哪些？",
+            "吴门印派有哪些代表人物？",
         ],
-        "qa_result_title": "问答结果",
-        "qa_result_hint": "展示回答、备注、SPARQL 和结果行",
-        "qa_waiting": "请输入问题后开始查询。",
-        "member_kicker": "成员 D 提前准备",
-        "member_title": "整合重点",
-        "member_todos": [
-            "先和成员 C 定死命名空间、类名和属性名。",
-            "优先把字、号、生卒年、师承、亲属、交游、流派做成固定工具。",
-            "为每类高频问题准备 SPARQL 模板，不要一开始全靠模型生成。",
-            "把普通问答与高级 SPARQL 页面提前跑通，后续只替换数据源。",
-            "人物关系网络可视化放到主链路稳定后再接入。",
-        ],
-        "sparql_kicker": "结构化查询",
-        "sparql_title": "高级 SPARQL",
-        "sparql_badge": "适合演示课程技术点",
-        "sparql_button": "执行 SPARQL",
-        "sparql_result_title": "SPARQL 返回结果",
-        "sparql_result_hint": "适合课堂现场展示",
-        "sparql_waiting": "请输入 SPARQL 后执行。",
-        "showcase_kicker": "示例方向",
-        "showcase_title": "建议展示问题",
-        "showcases": [
-            "人物基础信息：某人的字、号、生卒年",
-            "人物关系：父子、师承、交游",
-            "流派问题：某人属于什么流派，谁开创了某流派",
-            "复杂查询：某人物的关联人物或路径查询",
-            "高级查询：直接执行 SPARQL 展示图谱结构",
-        ],
-        "network_kicker": "关系网络可视化",
-        "network_title": "人物关系网络面板",
-        "network_badge": "可视化骨架",
-        "network_intro": "将查询结果表格自动转换为节点和边，用于展示人物关系网络的基础结构。",
-        "network_from_qa": "从普通问答结果生成",
-        "network_from_sparql": "从高级 SPARQL 结果生成",
-        "network_empty": "当前还没有可用于构图的关系数据。请先查询师承、亲属、交游、流派或两人关系。",
-        "network_too_small": "当前结果只够识别极少量节点，尚不足以形成可展示的关系网络。",
+        "qa_result_hint": "系统会优先依据本地知识图谱返回结果。",
+        "qa_waiting": "请输入问题并开始查询。",
+        "runtime_status_label": "模型状态",
+        "runtime_reference_label": "参考模式",
+        "runtime_reference_on": "已开启",
+        "runtime_reference_off": "已关闭",
+        "runtime_llm_disabled": "当前未启用 GPT 链路",
+        "runtime_llm_enabled": "当前已启用大模型链路",
+        "reference_toggle_on": "开启参考模式",
+        "reference_toggle_off": "关闭参考模式",
+        "graph_conclusion_label": "图谱结论",
+        "model_reference_label": "模型参考说明",
+        "notes_label": "补充说明",
+        "route_label": "当前链路",
+        "route_stage_label": "执行阶段",
+        "sparql_label": "SPARQL",
+        "rows_label": "结果表",
+        "query_descriptions": {
+            "tool": "当前回答由 function calling 触发固定工具，并由模型基于工具结果组织。",
+            "generated_sparql": "当前回答由生成式 SPARQL 查询链路返回。",
+            "tool_error": "固定工具未稳定命中，系统已转入后续图谱链路。",
+            "fallback": "工具链与 SPARQL 链均未稳定返回结果，系统进入谨慎说明。",
+            "empty": "等待查询。",
+        },
+        "graph_kicker": "结构化探索",
+        "graph_title": "图谱查询台",
+        "graph_badge": "SPARQL",
+        "graph_intro": "适合需要直接查看结构化三元组查询结果时使用。",
+        "graph_button": "执行查询",
+        "graph_result_title": "查询结果",
+        "graph_result_hint": "在下方查看返回表格与执行信息。",
+        "graph_waiting": "请输入 SPARQL 后执行查询。",
+        "network_kicker": "关系可视化",
+        "network_title": "人物关系网络",
+        "network_badge": "Network",
+        "network_intro": "支持全量人物图谱浏览、中心人物扩展、关系类型筛选、节点详情查看，以及与图结构分析结果联动高亮。",
+        "network_from_qa": "从问答结果生成",
+        "network_from_sparql": "从图谱结果生成",
+        "network_load_full": "加载全量图谱",
+        "network_expand_person": "按人物扩展",
+        "network_center_placeholder": "输入人物名，如：文彭",
+        "network_hop_one": "一跳",
+        "network_hop_two": "两跳",
+        "network_filter_label": "关系筛选",
+        "network_empty": "当前还没有可用于构图的关系数据，请先查询人物关系或流派信息。",
+        "network_too_small": "当前结果过少，暂时无法形成可读的关系网络。",
         "network_canvas_title": "网络预览",
         "network_meta_title": "图数据摘要",
-        "network_format_title": "节点 / 边数据格式",
-        "network_format_hint": "后续无论接成员 C 的 Turtle 结果还是更复杂的 SPARQL 查询，前端统一吃这个结构。",
-        "answer_label": "回答",
-        "notes_label": "说明",
-        "sparql_label": "SPARQL",
-        "rows_label": "结果行",
-        "tool_mode": "工具查询",
-        "fallback_mode": "回退回答",
-        "empty_mode": "空输入",
+        "network_format_title": "节点与边数据",
+        "network_format_hint": "此处展示前端当前使用的关系网络数据结构。",
+        "network_detail_title": "节点详情",
+        "network_detail_empty": "点击图中的人物或流派节点后，在这里查看详情。",
+        "network_relation_teacher": "师承",
+        "network_relation_family": "亲属",
+        "network_relation_social": "交游",
+        "network_relation_school": "所属流派",
+        "network_relation_founder": "开创流派",
+        "analysis_kicker": "图结构分析",
+        "analysis_title": "图谱分析面板",
+        "analysis_badge": "Bonus",
+        "analysis_intro": "基于当前本地图谱中的人物关系与流派关系，展示中心性分析、社区发现、路径分析与流派演变线索。",
+        "analysis_refresh": "刷新分析",
+        "analysis_path_button": "分析路径",
+        "analysis_path_placeholder_a": "起点人物，例如：文徵明",
+        "analysis_path_placeholder_b": "终点人物，例如：文彭",
+        "analysis_waiting": "点击刷新后载入图结构分析结果。",
+        "tool_mode": "固定工具",
+        "fallback_mode": "fallback",
+        "empty_mode": "等待查询",
         "generated_mode": "生成式 SPARQL",
-        "tool_error_mode": "工具查询未完成",
-        "result_empty": "暂时没有结果行。",
+        "tool_error_mode": "继续检索",
+        "result_empty": "暂无结果。",
         "result_error": "请求失败，请稍后重试。",
     }
 
@@ -131,15 +164,7 @@ def register_routes(app, config: AppConfig):
 
     @app.get("/")
     def index():
-        return render_template(
-            "index.html",
-            ui=ui,
-            ttl_status={
-                "schema": config.schema_ttl.exists(),
-                "core": config.core_ttl.exists(),
-                "aligned": config.aligned_ttl.exists(),
-            },
-        )
+        return render_template("index.html", ui=ui, runtime_status=service.get_runtime_status())
 
     @app.post("/api/query")
     def query():
@@ -157,6 +182,8 @@ def register_routes(app, config: AppConfig):
                         "sparql": None,
                         "rows": [],
                         "notes": [str(exc)],
+                        "route_label": "fallback",
+                        "route_stage": "请求处理异常",
                     }
                 ),
                 500,
@@ -181,6 +208,76 @@ def register_routes(app, config: AppConfig):
             )
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/graph-analysis")
+    def graph_analysis():
+        try:
+            return jsonify({"ok": True, "data": service.get_graph_analysis()})
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/graph-explore")
+    def graph_explore():
+        center = str(request.args.get("center", "")).strip()
+        hop = request.args.get("hop", default=1, type=int) or 1
+        relation_types = request.args.getlist("relation_type")
+        try:
+            return jsonify(
+                {
+                    "ok": True,
+                    "data": service.get_graph_exploration(
+                        center=center,
+                        hop=hop,
+                        relation_types=relation_types,
+                    ),
+                }
+            )
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/person-detail")
+    def person_detail():
+        person_name = str(request.args.get("name", "")).strip()
+        if not person_name:
+            return jsonify({"ok": False, "error": "人物名不能为空。"}), 400
+        try:
+            return jsonify(service.get_person_detail(person_name))
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/runtime-status")
+    def runtime_status():
+        return jsonify({"ok": True, "data": service.get_runtime_status()})
+
+    @app.post("/api/reference-mode")
+    def reference_mode():
+        payload = request.get_json(silent=True) or {}
+        enabled = bool(payload.get("enabled", False))
+        try:
+            return jsonify({"ok": True, "data": service.set_reference_mode(enabled)})
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.post("/api/graph-path")
+    def graph_path():
+        payload = request.get_json(silent=True) or {}
+        source_name = str(payload.get("source_name", "")).strip()
+        target_name = str(payload.get("target_name", "")).strip()
+        try:
+            result = service.find_person_path(source_name, target_name)
+            return jsonify(result)
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.get("/api/tools")
+    def tools():
+        return jsonify(
+            {
+                "ok": True,
+                "course_overview": service.get_course_overview(),
+                "tools": service.list_tools(),
+            }
+        )
 
     @app.get("/api/health")
     def health():

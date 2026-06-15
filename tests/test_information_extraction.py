@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from kg_agent_app.src.information_extraction import (
+from src.information_extraction import (
     JsonExtractionParser,
     PersonRecordExtractor,
     extract_records_to_file,

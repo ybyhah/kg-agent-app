@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>印人传知识图谱智能体 - 视觉方向稿</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Noto+Serif+SC:wght@500;600;700;900&family=IBM+Plex+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: #f3ecdf;
+      --bg-strong: #e7d6bc;
+      --paper: rgba(255, 250, 241, 0.82);
+      --paper-strong: #fff8ee;
+      --ink: #1f1713;
+      --ink-soft: #5e5147;
+      --line: rgba(121, 77, 41, 0.18);
+      --seal: #952d18;
+      --seal-deep: #6f170b;
+      --jade: #32574e;
+      --gold: #a78335;
+      --shadow: 0 30px 80px rgba(74, 38, 18, 0.12);
+      --radius: 28px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "IBM Plex Sans SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(149, 45, 24, 0.18), transparent 22rem),
+        radial-gradient(circle at 82% 18%, rgba(50, 87, 78, 0.14), transparent 20rem),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-strong) 38%, #f8f3ea 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          180deg,
+          transparent 0,
+          transparent 34px,
+          rgba(149, 45, 24, 0.028) 34px,
+          rgba(149, 45, 24, 0.028) 35px
+        );
+      opacity: 0.7;
+    }
+
+    .stage {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .stage__seal,
+    .stage__thread,
+    .stage__wave {
+      position: absolute;
+    }
+
+    .stage__seal {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      border: 1px solid rgba(149, 45, 24, 0.12);
+      display: grid;
+      place-items: center;
+      color: rgba(149, 45, 24, 0.15);
+      background: rgba(255, 250, 241, 0.18);
+      font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+      font-size: 2.5rem;
+      animation: driftSeal 12s ease-in-out infinite;
+    }
+
+    .stage__seal--one { top: 10%; left: 3%; transform: rotate(-12deg); }
+    .stage__seal--two { right: 5%; top: 22%; animation-delay: -4s; }
+    .stage__seal--three { left: 9%; bottom: 10%; width: 82px; height: 82px; font-size: 2rem; animation-delay: -7s; }
+
+    .stage__thread {
+      height: 1px;
+      background: linear-gradient(90deg, rgba(149, 45, 24, 0.3), transparent);
+      animation: threadFlow 11s linear infinite;
+    }
+
+    .stage__thread--one { top: 17%; left: 15%; width: 180px; }
+    .stage__thread--two { right: 13%; top: 56%; width: 220px; animation-delay: -5s; }
+
+    .stage__wave {
+      border-radius: 999px;
+      filter: blur(16px);
+      opacity: 0.48;
+      animation: waveFloat 14s ease-in-out infinite alternate;
+    }
+
+    .stage__wave--one {
+      width: 30rem;
+      height: 30rem;
+      left: -7rem;
+      top: 8rem;
+      background: radial-gradient(circle, rgba(149, 45, 24, 0.15), transparent 65%);
+    }
+
+    .stage__wave--two {
+      width: 26rem;
+      height: 26rem;
+      right: -8rem;
+      bottom: 4rem;
+      background: radial-gradient(circle, rgba(50, 87, 78, 0.14), transparent 64%);
+      animation-duration: 18s;
+    }
+
+    .page {
+      width: min(1280px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 28px 0 52px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px 24px;
+      border-radius: 26px;
+      background: rgba(255, 250, 242, 0.76);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 40px rgba(74, 38, 18, 0.08);
+      backdrop-filter: blur(18px);
+      animation: revealCard 0.8s ease both;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand__seal {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--seal), var(--seal-deep));
+      box-shadow: 0 12px 28px rgba(149, 45, 24, 0.22);
+    }
+
+    .brand strong {
+      display: block;
+      font-family: "Noto Serif SC", serif;
+      font-size: 1.05rem;
+    }
+
+    .brand span {
+      display: block;
+      color: var(--ink-soft);
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+    }
+
+    .nav__tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav__tab {
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(121, 77, 41, 0.16);
+      background: rgba(255, 251, 246, 0.84);
+      color: var(--ink-soft);
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .nav__tab--active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--seal), var(--seal-deep));
+      box-shadow: 0 12px 24px rgba(149, 45, 24, 0.18);
+    }
+
+    .hero {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: 1.25fr 0.9fr;
+      gap: 22px;
+    }
+
+    .hero__main,
+    .hero__side,
+    .panel {
+      position: relative;
+      overflow: hidden;
+      border-radius: 34px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 252, 247, 0.95), rgba(246, 235, 220, 0.88));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      animation: revealCard 0.9s ease both;
+    }
+
+    .hero__main {
+      padding: 34px 34px 30px;
+    }
+
+    .hero__side {
+      padding: 24px;
+      display: grid;
+      gap: 16px;
+      animation-delay: 0.12s;
+    }
+
+    .hero__main::before,
+    .hero__side::before,
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 8px;
+      background: linear-gradient(180deg, rgba(201, 100, 67, 0.95), rgba(111, 23, 11, 0.95));
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--seal);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      max-width: 9.2em;
+      font-family: "Noto Serif SC", serif;
+      font-size: clamp(2.5rem, 4vw, 4.9rem);
+      line-height: 1.05;
+      letter-spacing: 0.04em;
+    }
+
+    .hero__quote {
+      margin: 0 0 16px;
+      max-width: 42rem;
+      padding-left: 22px;
+      position: relative;
+      color: var(--seal-deep);
+      line-height: 1.92;
+      font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+      font-size: 1.18rem;
+      font-style: italic;
+    }
+
+    .hero__quote::before {
+      content: "“";
+      position: absolute;
+      left: 0;
+      top: -0.08em;
+      color: rgba(149, 45, 24, 0.32);
+      font-size: 1.8em;
+    }
+
+    .hero__intro {
+      margin: 0;
+      color: var(--ink-soft);
+      line-height: 1.9;
+      max-width: 44rem;
+    }
+
+    .hero__actions {
+      margin-top: 22px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 18px;
+      padding: 14px 18px;
+      font: inherit;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn--primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--seal), var(--seal-deep));
+      box-shadow: 0 14px 30px rgba(149, 45, 24, 0.22);
+    }
+
+    .btn--ghost {
+      color: var(--jade);
+      background: rgba(255, 250, 242, 0.8);
+      border: 1px solid rgba(50, 87, 78, 0.16);
+    }
+
+    .feature-card {
+      border-radius: 24px;
+      padding: 18px 18px 16px;
+      background: rgba(255, 252, 246, 0.82);
+      border: 1px solid rgba(121, 77, 41, 0.14);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -40% auto;
+      width: 12rem;
+      height: 12rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(149, 45, 24, 0.08), transparent 70%);
+    }
+
+    .feature-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-family: "Noto Serif SC", serif;
+      font-size: 1.05rem;
+    }
+
+    .feature-card p {
+      margin: 0;
+      color: var(--ink-soft);
+      line-height: 1.75;
+    }
+
+    .deck {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 22px;
+    }
+
+    .panel {
+      padding: 24px;
+    }
+
+    .panel__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .panel__title {
+      margin: 0;
+      font-family: "Noto Serif SC", serif;
+      font-size: 1.42rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(149, 45, 24, 0.08);
+      color: var(--seal-deep);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .analysis-card {
+      position: relative;
+      min-height: 182px;
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(121, 77, 41, 0.14);
+      background:
+        linear-gradient(180deg, rgba(255, 252, 247, 0.92), rgba(247, 238, 225, 0.98));
+      overflow: hidden;
+      transform-origin: center;
+      animation: breatheCard 6s ease-in-out infinite;
+    }
+
+    .analysis-card:nth-child(2) { animation-delay: -1.2s; }
+    .analysis-card:nth-child(3) { animation-delay: -2.4s; }
+    .analysis-card:nth-child(4) { animation-delay: -3.6s; }
+
+    .analysis-card::before {
+      content: "";
+      position: absolute;
+      inset: -10% auto auto -10%;
+      width: 10rem;
+      height: 10rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(149, 45, 24, 0.12), transparent 70%);
+      animation: pulseHalo 5.2s ease-in-out infinite;
+    }
+
+    .analysis-card::after {
+      content: "";
+      position: absolute;
+      left: -20%;
+      top: 0;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+      transform: skewX(-22deg);
+      animation: scanLight 6.8s linear infinite;
+    }
+
+    .analysis-card__icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: rgba(149, 45, 24, 0.08);
+      color: var(--seal);
+      margin-bottom: 14px;
+    }
+
+    .analysis-card h3 {
+      margin: 0 0 8px;
+      font-family: "Noto Serif SC", serif;
+      font-size: 1.08rem;
+    }
+
+    .analysis-card p {
+      margin: 0 0 12px;
+      color: var(--ink-soft);
+      line-height: 1.72;
+    }
+
+    .analysis-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .analysis-tags span {
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      background: rgba(50, 87, 78, 0.08);
+      color: var(--jade);
+    }
+
+    .network-scene {
+      min-height: 430px;
+      border-radius: 26px;
+      border: 1px solid rgba(121, 77, 41, 0.14);
+      background:
+        radial-gradient(circle at 14% 16%, rgba(149, 45, 24, 0.1), transparent 16rem),
+        radial-gradient(circle at 84% 82%, rgba(50, 87, 78, 0.1), transparent 18rem),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 236, 220, 0.96));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .network-scene svg {
+      width: 100%;
+      height: 430px;
+      display: block;
+    }
+
+    .edge {
+      stroke: rgba(77, 63, 56, 0.42);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-dasharray: 10 12;
+      animation: edgeFlow 5.6s linear infinite;
+    }
+
+    .edge--school { stroke: rgba(167, 131, 53, 0.75); }
+    .edge--friend { stroke: rgba(50, 87, 78, 0.62); }
+    .edge--highlight {
+      stroke: rgba(149, 45, 24, 0.92);
+      stroke-width: 4;
+      stroke-dasharray: 14 8;
+      animation-duration: 2.8s;
+    }
+
+    .node {
+      transform-origin: center;
+      animation: nodeBreath 4.8s ease-in-out infinite;
+    }
+
+    .node--2 { animation-delay: -0.8s; }
+    .node--3 { animation-delay: -1.4s; }
+    .node--4 { animation-delay: -2.2s; }
+    .node--5 { animation-delay: -3s; }
+    .node--6 { animation-delay: -3.8s; }
+
+    .node__core {
+      stroke: rgba(255, 248, 238, 0.95);
+      stroke-width: 3;
+      filter: drop-shadow(0 10px 18px rgba(74, 38, 18, 0.12));
+    }
+
+    .node__ring {
+      fill: none;
+      stroke-width: 1.5;
+      opacity: 0.38;
+      animation: nodeRipple 3.6s ease-out infinite;
+    }
+
+    .node text {
+      font-size: 12px;
+      font-weight: 700;
+      fill: #fffaf1;
+      text-anchor: middle;
+      font-family: "IBM Plex Sans SC", sans-serif;
+    }
+
+    .transition-strip {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    .transition-card {
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(121, 77, 41, 0.14);
+      background: rgba(255, 252, 246, 0.84);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .transition-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: translateX(-120%);
+      animation: pageWipe 5.2s ease-in-out infinite;
+    }
+
+    .transition-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+      font-family: "Noto Serif SC", serif;
+    }
+
+    .transition-card p {
+      margin: 0;
+      color: var(--ink-soft);
+      line-height: 1.65;
+      font-size: 0.92rem;
+    }
+
+    @keyframes revealCard {
+      from { opacity: 0; transform: translateY(24px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes driftSeal {
+      0%, 100% { transform: translateY(0) rotate(-7deg); }
+      50% { transform: translateY(-14px) rotate(5deg); }
+    }
+
+    @keyframes threadFlow {
+      0% { transform: translateX(0); opacity: 0.2; }
+      50% { opacity: 0.48; }
+      100% { transform: translateX(26px); opacity: 0.18; }
+    }
+
+    @keyframes waveFloat {
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      100% { transform: translate3d(18px, -14px, 0) scale(1.06); }
+    }
+
+    @keyframes breatheCard {
+      0%, 100% { transform: translateY(0); box-shadow: 0 16px 32px rgba(74, 38, 18, 0.08); }
+      50% { transform: translateY(-4px); box-shadow: 0 24px 42px rgba(74, 38, 18, 0.12); }
+    }
+
+    @keyframes pulseHalo {
+      0%, 100% { transform: scale(0.92); opacity: 0.24; }
+      50% { transform: scale(1.08); opacity: 0.44; }
+    }
+
+    @keyframes scanLight {
+      0% { transform: translateX(-180%) skewX(-22deg); opacity: 0; }
+      10% { opacity: 1; }
+      50% { opacity: 1; }
+      100% { transform: translateX(380%) skewX(-22deg); opacity: 0; }
+    }
+
+    @keyframes edgeFlow {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: -44; }
+    }
+
+    @keyframes nodeBreath {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    @keyframes nodeRipple {
+      0% { transform: scale(0.94); opacity: 0.48; }
+      70% { transform: scale(1.22); opacity: 0.08; }
+      100% { transform: scale(1.28); opacity: 0; }
+    }
+
+    @keyframes pageWipe {
+      0%, 18% { transform: translateX(-140%); opacity: 0; }
+      34% { opacity: 1; }
+      66% { opacity: 1; }
+      100% { transform: translateX(180%); opacity: 0; }
+    }
+
+    @media (max-width: 1100px) {
+      .hero,
+      .deck,
+      .transition-strip,
+      .analysis-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage" aria-hidden="true">
+    <span class="stage__wave stage__wave--one"></span>
+    <span class="stage__wave stage__wave--two"></span>
+    <span class="stage__seal stage__seal--one">印</span>
+    <span class="stage__seal stage__seal--two">谱</span>
+    <span class="stage__seal stage__seal--three">传</span>
+    <span class="stage__thread stage__thread--one"></span>
+    <span class="stage__thread stage__thread--two"></span>
+  </div>
+
+  <main class="page">
+    <nav class="nav">
+      <div class="brand">
+        <span class="brand__seal"><i data-lucide="stamp"></i></span>
+        <div>
+          <strong>印人传知识图谱智能体</strong>
+          <span>卷轴式叙事 · 图谱式探索 · 学术展示前端方向稿</span>
+        </div>
+      </div>
+      <div class="nav__tabs">
+        <span class="nav__tab nav__tab--active"><i data-lucide="book-open-text"></i>概览</span>
+        <span class="nav__tab"><i data-lucide="sparkles"></i>智能问答</span>
+        <span class="nav__tab"><i data-lucide="network"></i>关系网络</span>
+        <span class="nav__tab"><i data-lucide="waypoints"></i>图结构分析</span>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <article class="hero__main">
+        <p class="eyebrow">Direction / Hybrid Motion</p>
+        <h1>文献卷轴的气韵，叠加图谱流动的可视化呼吸。</h1>
+        <p class="hero__quote">页面切换像册页揭启，人物关系像脉络生长，图结构分析像墨线回响。这不是普通查询页，而是可用于答辩展示的知识图谱叙事界面。</p>
+        <p class="hero__intro">这一版方向会把“印人传”的文学性保留在开屏、分栏、标题、过场动画里，同时把重点火力放在关系网络和附加项分析的动态体验上，让老师一眼看出你们不仅做了功能，也做了图谱表达。</p>
+        <div class="hero__actions">
+          <button class="btn btn--primary"><i data-lucide="wand-sparkles"></i>作为正式实现方向</button>
+          <button class="btn btn--ghost"><i data-lucide="library-big"></i>保留学术展示感</button>
+        </div>
+      </article>
+
+      <aside class="hero__side">
+        <article class="feature-card">
+          <strong>卷轴式页面切换</strong>
+          <p>导航切换不再是硬切页签，而是带有横向揭页、淡入题签和内容分层浮现的过场节奏。</p>
+        </article>
+        <article class="feature-card">
+          <strong>图谱流动动画</strong>
+          <p>边会缓慢流动，路径高亮像朱砂追线，节点带呼吸和轻微涟漪，适合展示中心人物、社区与传播脉络。</p>
+        </article>
+        <article class="feature-card">
+          <strong>Lucide 统一图标系统</strong>
+          <p>全站按钮、标签、状态和分析模块改用 Lucide，去掉杂乱小图形，整体更专业、统一、可答辩。</p>
+        </article>
+      </aside>
+    </section>
+
+    <section class="deck">
+      <section class="panel">
+        <div class="panel__head">
+          <div>
+            <p class="eyebrow">Analysis Motion</p>
+            <h2 class="panel__title">图结构分析四块的动画语言</h2>
+          </div>
+          <span class="pill"><i data-lucide="orbit"></i>附加项高亮展示</span>
+        </div>
+        <div class="analysis-grid">
+          <article class="analysis-card">
+            <div class="analysis-card__icon"><i data-lucide="badge-percent"></i></div>
+            <h3>中心性分析</h3>
+            <p>卡片带呼吸与光扫，点击后对应人物在关系图中发光，像从统计结果反射到人物脉络。</p>
+            <div class="analysis-tags"><span>度中心性</span><span>介数中心性</span></div>
+          </article>
+          <article class="analysis-card">
+            <div class="analysis-card__icon"><i data-lucide="users-round"></i></div>
+            <h3>社区发现</h3>
+            <p>不同群体以柔和色雾区分，点击群体卡时，网络中的同社群人物同步提亮并削弱其他节点。</p>
+            <div class="analysis-tags"><span>交游群体</span><span>师承社群</span></div>
+          </article>
+          <article class="analysis-card">
+            <div class="analysis-card__icon"><i data-lucide="route"></i></div>
+            <h3>路径分析</h3>
+            <p>路径结果不是文字静态展示，而是边线上出现流动追光，从起点人物一路“点亮”到终点人物。</p>
+            <div class="analysis-tags"><span>最短路径</span><span>师承脉络</span></div>
+          </article>
+          <article class="analysis-card">
+            <div class="analysis-card__icon"><i data-lucide="git-branch-plus"></i></div>
+            <h3>流派演变分析</h3>
+            <p>流派卡片用金色与朱砂强调传承，创始人、代表人物与关联流派形成层次化的动态叙事。</p>
+            <div class="analysis-tags"><span>核心人物</span><span>流派关联</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head">
+          <div>
+            <p class="eyebrow">Network Motion</p>
+            <h2 class="panel__title">关系网络可视化的成熟感</h2>
+          </div>
+          <span class="pill"><i data-lucide="share-2"></i>全量图谱探索</span>
+        </div>
+        <div class="network-scene">
+          <svg viewBox="0 0 620 430" role="img" aria-label="人物关系图谱动画方向">
+            <line class="edge edge--highlight" x1="132" y1="126" x2="310" y2="210"></line>
+            <line class="edge edge--friend" x1="310" y1="210" x2="492" y2="124"></line>
+            <line class="edge edge--school" x1="310" y1="210" x2="468" y2="316"></line>
+            <line class="edge" x1="132" y1="126" x2="132" y2="302"></line>
+            <line class="edge edge--friend" x1="132" y1="302" x2="310" y2="210"></line>
+            <line class="edge edge--school" x1="492" y1="124" x2="468" y2="316"></line>
+
+            <g class="node node--1" transform="translate(132 126)">
+              <circle class="node__ring" r="30" stroke="#952d18"></circle>
+              <circle class="node__core" r="24" fill="#952d18"></circle>
+              <text y="4">文徵明</text>
+            </g>
+            <g class="node node--2" transform="translate(310 210)">
+              <circle class="node__ring" r="36" stroke="#a78335"></circle>
+              <circle class="node__core" r="28" fill="#a78335"></circle>
+              <text y="4">文彭</text>
+            </g>
+            <g class="node node--3" transform="translate(492 124)">
+              <circle class="node__ring" r="30" stroke="#32574e"></circle>
+              <circle class="node__core" r="24" fill="#32574e"></circle>
+              <text y="4">何震</text>
+            </g>
+            <g class="node node--4" transform="translate(132 302)">
+              <circle class="node__ring" r="28" stroke="#7f6551"></circle>
+              <circle class="node__core" r="22" fill="#7f6551"></circle>
+              <text y="4">祝允明</text>
+            </g>
+            <g class="node node--5" transform="translate(468 316)">
+              <circle class="node__ring" r="34" stroke="#a78335"></circle>
+              <circle class="node__core" r="26" fill="#a78335"></circle>
+              <text y="4">吴门印派</text>
+            </g>
+            <g class="node node--6" transform="translate(552 242)">
+              <circle class="node__ring" r="24" stroke="#952d18"></circle>
+              <circle class="node__core" r="18" fill="#952d18"></circle>
+              <text y="4">苏宣</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="transition-strip">
+          <article class="transition-card">
+            <h4>页面切换</h4>
+            <p>像册页展开，旧页轻退，新页从纸纹中浮出，而不是普通的瞬时切换。</p>
+          </article>
+          <article class="transition-card">
+            <h4>图谱联动</h4>
+            <p>点击分析结果时，网络图同步高亮，形成“分析结果反向照亮图谱”的展示效果。</p>
+          </article>
+          <article class="transition-card">
+            <h4>答辩观感</h4>
+            <p>老师能直观看到你们做了固定工具、图结构分析、关系网络和专业前端表达，不会显得只是拼页面。</p>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

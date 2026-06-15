@@ -1,307 +1,458 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 
-from .fewshot_sparql import FewShotDraft, FewShotSparqlGenerator
-from .langgraph_workflow import LangGraphWorkflowSkeleton
+from .fewshot_sparql import FewShotSparqlGenerator
+from .llm_workflow_support import WorkflowLlmSupport
 from .models import QueryResult
-from .tools import QueryTools, ToolResult
+from .openai_llm import OpenAIChatCompletionsClient
+from .tool_calling_workflow import ToolCallingWorkflow
+from .tools import QueryTools
 
 
-@dataclass
-class RoutedQuery:
-    intent: str
-    slots: list[str]
+PERSON_CANONICAL_MAP: dict[str, str] = {
+    "\u6587\u5f81\u660e": "\u6587\u5fb5\u660e",
+    "\u6587\u955c\u660e": "\u6587\u5fb5\u660e",
+    "\u5f81\u4ef2": "\u6587\u5fb5\u660e",
+}
+
+SCHOOL_CANONICAL_MAP: dict[str, str] = {
+    "\u5434\u95e8\u5370\u6d3e": "\u5434\u95e8",
+    "\u5434\u95e8\u6d3e": "\u5434\u95e8",
+}
 
 
 @dataclass
 class QuestionPlan:
-    route_type: str
-    routed_query: RoutedQuery | None = None
-    fewshot_draft: FewShotDraft | None = None
+    question: str
+    generated_sparql: str | None = None
+    generation_source: str = ""
+    generation_note: str = ""
+
+
+@dataclass
+class GeneratedQueryExecution:
+    sparql: str
+    rows: list[dict[str, str]]
+    note: str
+    error: str = ""
 
 
 class QueryWorkflow:
-    def __init__(self, tools: QueryTools):
+    def __init__(self, tools: QueryTools, llm_support: WorkflowLlmSupport | None = None):
         self.tools = tools
         self.fewshot_generator = FewShotSparqlGenerator()
-        self.langgraph = LangGraphWorkflowSkeleton(
-            plan_question=self._plan_question,
-            execute_tool_plan=self._execute_tool_plan,
-            execute_generated_plan=self._execute_generated_plan,
+        self.llm_support = llm_support or WorkflowLlmSupport()
+        self.openai_tool_client = self._build_openai_tool_client()
+        self.tool_calling_workflow = ToolCallingWorkflow(
+            query_tools=self.tools,
+            llm_client=self.openai_tool_client,
+            answer_from_result=self._answer_from_result,
+            prepare_generated_execution=self._prepare_generated_execution,
+            finalize_generated_execution=self._finalize_generated_execution,
             build_fallback_result=self._build_fallback_result,
+            build_generated_plan=self._build_generated_plan_from_question,
         )
 
     def answer_question(self, question: str) -> QueryResult:
         question = question.strip()
         if not question:
-            return QueryResult(mode="empty", answer="请输入问题。")
+            return QueryResult(
+                mode="empty",
+                answer="请输入问题。",
+                route_label="等待查询",
+                route_stage="尚未进入问答工作流",
+            )
 
-        if self.langgraph.available:
-            graph_result = self.langgraph.run(question)
-            if graph_result is not None:
-                return graph_result
+        openai_failure_note = ""
+        if self.tool_calling_workflow.available:
+            try:
+                tool_calling_result = self.tool_calling_workflow.run(question)
+            except Exception as exc:
+                tool_calling_result = None
+                openai_failure_note = f"OpenAI 工具调用链暂时不可用，已自动降级到本地图谱链路：{exc}"
+            if tool_calling_result is not None:
+                return tool_calling_result
 
-        return self._answer_question_without_graph(question)
+        deterministic_tool_result = self._run_local_tool_fallback(question)
+        if deterministic_tool_result is not None:
+            if openai_failure_note:
+                deterministic_tool_result.notes.insert(0, openai_failure_note)
+            return deterministic_tool_result
 
-    def _answer_question_without_graph(self, question: str) -> QueryResult:
-        plan = self._plan_question(question)
-        if plan.route_type == "tool":
-            return self._execute_tool_plan(plan)
-        if plan.route_type == "generated_sparql":
-            return self._execute_generated_plan(plan)
-        return self._build_fallback_result(question)
+        plan = self._build_generated_plan_from_question(question)
+        if plan is None:
+            result = self._build_fallback_result(question)
+            if openai_failure_note:
+                result.notes.insert(0, openai_failure_note)
+            return result
 
-    def _plan_question(self, question: str) -> QuestionPlan:
-        routed = self._route_question(question)
-        if routed is not None:
-            return QuestionPlan(route_type="tool", routed_query=routed)
+        execution = self._prepare_generated_execution(plan)
+        result = self._finalize_generated_execution(plan, execution)
+        if openai_failure_note:
+            result.notes.insert(0, openai_failure_note)
+        return result
 
-        draft = self.fewshot_generator.try_generate(question)
-        if draft is not None:
-            return QuestionPlan(route_type="generated_sparql", fewshot_draft=draft)
+    def _build_generated_plan_from_question(self, question: str) -> QuestionPlan | None:
+        normalized_question = self._normalize_question_for_generation(question)
+        llm_draft = self.llm_support.try_generate_sparql(normalized_question, self.fewshot_generator)
+        if llm_draft is not None:
+            return QuestionPlan(
+                question=question,
+                generated_sparql=llm_draft.sparql,
+                generation_source=llm_draft.source,
+                generation_note=llm_draft.note,
+            )
 
-        return QuestionPlan(route_type="fallback")
-
-    def _route_question(self, question: str) -> RoutedQuery | None:
-        normalized = question.strip().rstrip("？?。")
-        if not normalized:
-            return None
-
-        pair_relation = re.match(r"^(.+?)[与和](.+?)是什么关系$", normalized)
-        if pair_relation:
-            person_a = pair_relation.group(1).strip()
-            person_b = pair_relation.group(2).strip()
-            if person_a and person_b:
-                return RoutedQuery(intent="pair_relations", slots=[person_a, person_b])
-
-        intent_rules = [
-            ("courtesy_name", ["的字是什么", "字是什么", "字"]),
-            ("art_name", ["的号是什么", "号是什么", "号"]),
-            ("birth_death", ["的生卒年是什么", "生卒年", "出生", "去世", "卒于"]),
-            ("teacher_relations", ["的师承是", "师承", "老师是谁", "师从"]),
-            ("family_relations", ["的父亲是谁", "的儿子是谁", "亲属", "家族", "父子", "兄弟"]),
-            ("social_relations", ["交游", "朋友", "往来", "交往"]),
-            ("school_membership", ["属于什么流派", "属于哪个流派", "所属流派", "流派"]),
-            ("school_founder", ["谁开创了", "谁创立了", "开创了", "创立了"]),
-            ("person_labels", ["是谁", "介绍", "查一下", "看看"]),
-        ]
-
-        for intent, markers in intent_rules:
-            for marker in markers:
-                if marker in normalized:
-                    slots = self._extract_slots(normalized, marker, intent)
-                    if slots:
-                        return RoutedQuery(intent=intent, slots=slots)
-
-        if len(normalized) <= 8:
-            return RoutedQuery(intent="person_labels", slots=[normalized])
-
+        template_draft = self.fewshot_generator.try_generate(normalized_question)
+        if template_draft is not None:
+            return QuestionPlan(
+                question=question,
+                generated_sparql=template_draft.sparql,
+                generation_source="fewshot_template",
+                generation_note=template_draft.note,
+            )
         return None
 
-    def _extract_slots(self, question: str, marker: str, intent: str) -> list[str]:
-        if intent == "school_founder":
-            if marker.startswith("谁"):
-                slot = question.split(marker, 1)[-1]
-            else:
-                slot = question.split(marker, 1)[0]
-            cleaned = self._clean_slot(slot)
-            return [cleaned] if cleaned else []
-
-        if marker in {"是谁", "的字是什么", "的号是什么", "的生卒年是什么", "的师承是", "的父亲是谁", "的儿子是谁", "亲属", "家族", "父子", "兄弟", "交游", "朋友", "往来", "交往", "属于什么流派", "属于哪个流派", "所属流派", "流派"}:
-            slot = question.split(marker, 1)[0]
-        else:
-            slot = question.split(marker, 1)[-1]
-
-        cleaned = self._clean_slot(slot)
-        return [cleaned] if cleaned else []
-
-    def _clean_slot(self, value: str) -> str:
-        return value.strip().strip("，,：:；;。？?、 ")
-
-    def _execute_tool_plan(self, plan: QuestionPlan) -> QueryResult:
-        routed = plan.routed_query
-        if routed is None:
-            return self._build_fallback_result("")
-
-        try:
-            tool_result = self._call_tool(routed)
-        except Exception as exc:
-            return QueryResult(
-                mode="tool_error",
-                answer="工具查询已命中，但当前图谱数据或 SPARQL 执行还不可用。",
-                notes=[
-                    f"错误信息：{exc}",
-                    "如果这是联调阶段，优先检查 data/kg/ 下是否已经放入 schema.ttl、core.ttl、aligned.ttl。",
-                    self._workflow_status_note(),
-                ],
+    def _prepare_generated_execution(self, plan: QuestionPlan) -> GeneratedQueryExecution:
+        if not plan.generated_sparql:
+            return GeneratedQueryExecution(
+                sparql="",
+                rows=[],
+                note="当前没有可执行的 SPARQL 草稿。",
+                error="missing_sparql",
             )
-
-        answer = self._format_tool_answer(routed, tool_result)
-        return QueryResult(
-            mode="tool",
-            answer=answer,
-            sparql=tool_result.sparql,
-            rows=tool_result.rows,
-            notes=[tool_result.note, self._workflow_status_note()],
-        )
-
-    def _execute_generated_plan(self, plan: QuestionPlan) -> QueryResult:
-        draft = plan.fewshot_draft
-        if draft is None:
-            return self._build_fallback_result("")
-
         try:
-            tool_result = self.tools.run_raw_sparql(draft.sparql)
-            answer = self._format_generated_answer(draft, tool_result)
-            notes = [
-                "当前回答来自 few-shot SPARQL 生成骨架。",
-                f"匹配示例：{draft.example_name}",
-                draft.note,
-                self._workflow_status_note(),
-            ]
-            return QueryResult(
-                mode="generated_sparql",
-                answer=answer,
+            tool_result = self.tools.run_raw_sparql(plan.generated_sparql)
+            return GeneratedQueryExecution(
                 sparql=tool_result.sparql,
                 rows=tool_result.rows,
-                notes=notes,
+                note=tool_result.note,
             )
         except Exception as exc:
-            notes = [
-                "few-shot SPARQL 已生成，但执行失败。",
-                f"错误信息：{exc}",
-                "常见原因是本体属性名尚未和成员 C 的 Turtle 定稿对齐，或图谱文件尚未接入。",
-                draft.note,
-                self._workflow_status_note(),
-            ]
-            return QueryResult(
-                mode="generated_sparql",
-                answer="系统已经根据 few-shot 示例生成了候选 SPARQL，但当前还不能稳定执行。",
-                sparql=draft.sparql,
+            return GeneratedQueryExecution(
+                sparql=plan.generated_sparql,
                 rows=[],
-                notes=notes,
+                note="SPARQL 已生成，但执行失败。",
+                error=str(exc),
             )
 
-    def _build_fallback_result(self, question: str) -> QueryResult:
+    def _finalize_generated_execution(
+        self,
+        plan: QuestionPlan,
+        execution: GeneratedQueryExecution,
+    ) -> QueryResult:
+        if not execution.sparql:
+            return self._build_fallback_result(plan.question)
+
+        if execution.error:
+            failure_reason = (
+                f"候选 SPARQL 已生成，但执行失败：{execution.error}。"
+                " 常见原因是本体属性名尚未与最终 Turtle 定义完全对齐，或图谱文件尚未接入。"
+            )
+            direct_answer = self._build_fallback_result(
+                plan.question,
+                failure_reason=failure_reason,
+                generated_sparql=execution.sparql,
+            )
+            direct_answer.notes = [
+                f"当前生成来源：{plan.generation_source or 'unknown'}",
+                plan.generation_note,
+                self._workflow_status_note(),
+                *[note for note in direct_answer.notes if note],
+            ]
+            direct_answer.sparql = execution.sparql
+            return direct_answer
+
+        route_stage = "LLM / few-shot 生成 SPARQL -> 执行查询 -> LLM 基于结果回答"
         notes = [
-            "当前固定工作流已支持：查字、查号、生卒年、师承、亲属、交游、流派、开创者、两人关系。",
-            "下一步可继续补充：复杂路径查询、子查询、统计类问题、多跳关系问题。",
-            "问答系统工作流已经预留 LangGraph 骨架和 few-shot SPARQL 生成骨架。",
-            "few-shot 提示词模板已写入 src/fewshot_sparql.py，可在接入大模型时直接复用。",
+            f"当前生成来源：{plan.generation_source or 'unknown'}",
+            plan.generation_note or "当前回答来自生成式 SPARQL 查询链路。",
+            execution.note,
+            route_stage,
             self._workflow_status_note(),
         ]
-        return QueryResult(
-            mode="fallback",
-            answer="这条问题目前还没有命中固定工具规则，也没有匹配到可直接复用的 few-shot SPARQL 模板。",
+        answer = self._answer_from_result(
+            question=plan.question,
+            deterministic_answer=self._format_generated_answer(execution.rows),
+            sparql=execution.sparql,
+            rows=execution.rows,
             notes=notes,
         )
+        return QueryResult(
+            mode="generated_sparql",
+            answer=answer,
+            sparql=execution.sparql,
+            rows=execution.rows,
+            notes=notes,
+            route_label="生成式 SPARQL",
+            route_stage=route_stage,
+        )
 
-    def _call_tool(self, routed: RoutedQuery) -> ToolResult:
-        intent = routed.intent
-        slots = routed.slots
+    def _build_fallback_result(
+        self,
+        question: str,
+        failure_reason: str | None = None,
+        generated_sparql: str | None = None,
+    ) -> QueryResult:
+        route_stage = "工具链与 SPARQL 链均未稳定命中 -> fallback 谨慎说明"
+        notes = [
+            "当前主链路为：优先走 LLM function calling 固定工具，不足时转为 LLM / few-shot 生成 SPARQL，再执行查询。",
+            "只有当工具链和 SPARQL 链都没有稳定返回结果时，系统才进入 fallback。",
+            route_stage,
+            self._workflow_status_note(),
+        ]
+        if failure_reason:
+            notes.insert(0, failure_reason)
+        if generated_sparql:
+            notes.insert(1 if failure_reason else 0, "当前问题已经生成过候选 SPARQL，但查询没有稳定完成。")
 
-        if intent == "courtesy_name":
-            return self.tools.get_courtesy_name(slots[0])
-        if intent == "art_name":
-            return self.tools.get_art_name(slots[0])
-        if intent == "birth_death":
-            return self.tools.get_birth_death(slots[0])
-        if intent == "teacher_relations":
-            return self.tools.get_teacher_relations(slots[0])
-        if intent == "family_relations":
-            return self.tools.get_family_relations(slots[0])
-        if intent == "social_relations":
-            return self.tools.get_social_relations(slots[0])
-        if intent == "school_membership":
-            return self.tools.get_school_membership(slots[0])
-        if intent == "school_founder":
-            return self.tools.get_school_founder(slots[0])
-        if intent == "pair_relations":
-            return self.tools.get_pair_relations(slots[0], slots[1])
-        return self.tools.get_person_labels(slots[0])
+        answer = "图谱结论：当前本地图谱未返回足够结果，暂时无法确认。"
+        llm_answer = self.llm_support.direct_answer(
+            question=question,
+            failure_reason=failure_reason or answer,
+            workflow_summary="系统支持 function calling 固定工具、生成式 SPARQL、SPARQL 执行，以及失败后的谨慎 fallback。",
+            allow_reference_knowledge=self._reference_mode_enabled(),
+        )
+        if llm_answer:
+            answer = llm_answer
+            notes.insert(0, f"当前回答来自大模型 fallback 节点（{self.llm_support.provider_name}）。")
 
-    def _format_tool_answer(self, routed: RoutedQuery, tool_result: ToolResult) -> str:
-        rows = tool_result.rows
-        slot_text = "、".join(routed.slots)
+        return QueryResult(
+            mode="fallback",
+            answer=answer,
+            sparql=generated_sparql,
+            notes=notes,
+            route_label="fallback",
+            route_stage=route_stage,
+        )
+
+    def _answer_from_result(
+        self,
+        *,
+        question: str,
+        deterministic_answer: str,
+        sparql: str | None,
+        rows: list[dict[str, str]],
+        notes: list[str],
+    ) -> str:
+        llm_answer = self.llm_support.answer_from_query_result(
+            question=question,
+            deterministic_answer=deterministic_answer,
+            sparql=sparql,
+            rows=rows,
+            notes=notes,
+        )
+        return llm_answer or deterministic_answer
+
+    def _format_generated_answer(self, rows: list[dict[str, str]]) -> str:
         if not rows:
-            return f"图谱中暂时没有查到与“{slot_text}”相关的结果。"
-
-        if routed.intent == "courtesy_name":
-            return self._format_named_answer(slot_text, "字", self._collect_values(rows, "courtesyName"))
-        if routed.intent == "art_name":
-            return self._format_named_answer(slot_text, "号", self._collect_values(rows, "artName"))
-        if routed.intent == "birth_death":
-            values: list[str] = []
-            for row in rows:
-                birth = row.get("birthYear", "").strip()
-                death = row.get("deathYear", "").strip()
-                if birth or death:
-                    values.append(f"{birth} - {death}".strip(" -"))
-            return self._format_named_answer(slot_text, "生卒年", values)
-        if routed.intent == "teacher_relations":
-            return self._format_named_answer(slot_text, "师承对象", self._collect_values(rows, "teacherLabel"))
-        if routed.intent == "family_relations":
-            values = []
-            for row in rows:
-                relative = row.get("relativeLabel", "").strip()
-                relation_type = row.get("relationType", "").strip()
-                if relative and relation_type:
-                    values.append(f"{relation_type}：{relative}")
-                elif relative:
-                    values.append(relative)
-            return self._format_named_answer(slot_text, "亲属关系对象", values)
-        if routed.intent == "social_relations":
-            return self._format_named_answer(slot_text, "交游对象", self._collect_values(rows, "friendLabel"))
-        if routed.intent == "school_membership":
-            return self._format_named_answer(slot_text, "所属流派", self._collect_values(rows, "schoolLabel"))
-        if routed.intent == "school_founder":
-            return self._format_named_answer(slot_text, "开创者", self._collect_values(rows, "founderLabel"))
-        if routed.intent == "pair_relations":
-            values = []
-            for row in rows:
-                relation_label = row.get("relationLabel", "").strip()
-                relation_uri = row.get("relation", "").strip()
-                direction = row.get("direction", "").strip()
-                shown = relation_label or relation_uri
-                if shown:
-                    values.append(f"{direction}：{shown}")
-            return self._format_named_answer(slot_text, "人物关系", values)
-
-        labels = self._collect_values(rows, "label")
-        shown = "、".join(labels[:10]) if labels else "暂无候选标签"
-        return f"图谱里与“{slot_text}”相关的候选标签有：{shown}"
-
-    def _format_generated_answer(self, draft: FewShotDraft, tool_result: ToolResult) -> str:
-        if not tool_result.rows:
             return "系统已经生成并执行了候选 SPARQL，但当前结果集为空。"
-        preview = self._summarize_rows(tool_result.rows)
-        return f"系统已根据 few-shot 示例生成并执行 SPARQL，当前返回结果包括：{preview}"
+        preview = self._summarize_rows(rows)
+        return f"系统已根据示例生成并执行 SPARQL，当前返回结果包括：{preview}"
 
     def _summarize_rows(self, rows: list[dict[str, str]]) -> str:
         chunks: list[str] = []
         for row in rows[:5]:
             parts = [f"{key}={value}" for key, value in row.items() if value]
             if parts:
-                chunks.append("，".join(parts))
+                chunks.append("；".join(parts))
         return "；".join(chunks) if chunks else "结果为空"
 
-    def _collect_values(self, rows: list[dict[str, str]], key: str) -> list[str]:
-        values: list[str] = []
-        for row in rows:
-            value = row.get(key, "").strip()
-            if value and value not in values:
-                values.append(value)
-        return values
+    def _normalize_question_for_generation(self, question: str) -> str:
+        normalized = self._replace_aliases_with_canonical(question, SCHOOL_CANONICAL_MAP)
+        normalized = self._replace_aliases_with_canonical(normalized, PERSON_CANONICAL_MAP)
+        return normalized
 
-    def _format_named_answer(self, slot: str, field_name: str, values: list[str]) -> str:
-        if not values:
-            return f"图谱里查到了“{slot}”的候选实体，但还没有可展示的{field_name}信息。"
-        shown = "、".join(values[:10])
-        return f"“{slot}”的{field_name}信息包括：{shown}"
+    def _replace_aliases_with_canonical(self, text: str, canonical_map: dict[str, str]) -> str:
+        normalized = text
+        for alias in sorted(canonical_map, key=len, reverse=True):
+            normalized = normalized.replace(alias, canonical_map[alias])
+        return normalized
 
     def _workflow_status_note(self) -> str:
-        if self.langgraph.available:
-            return "LangGraph 工作流骨架已启用，可用于答辩时展示节点式路由。"
-        return "LangGraph 工作流骨架已预留；当前环境未安装 langgraph 时自动退回到本地规则工作流。"
+        if self.tool_calling_workflow.available:
+            return "当前已启用真实的 LLM -> ToolNode -> ToolMessage -> LLM 回答链路。"
+        return "当前未启用 OpenAI 工具调用链，系统将直接尝试生成式 SPARQL。"
+
+    def _reference_mode_enabled(self) -> bool:
+        return getattr(self.llm_support, "reference_mode", False)
+
+    def _build_openai_tool_client(self) -> OpenAIChatCompletionsClient | None:
+        provider_name = getattr(self.llm_support, "provider_name", "")
+        if not provider_name.startswith("openai:"):
+            return None
+        client = getattr(self.llm_support, "client", None)
+        if client is None or not hasattr(client, "client"):
+            return None
+        try:
+            raw_api_key = client.client.api_key
+        except Exception:
+            return None
+        model_name = provider_name.split("openai:", 1)[-1] or "gpt-5.5"
+        if not raw_api_key:
+            return None
+        return OpenAIChatCompletionsClient(api_key=raw_api_key, model=model_name)
+
+    def _run_local_tool_fallback(self, question: str) -> QueryResult | None:
+        normalized = self._normalize_question_for_generation(question.strip()).rstrip("\uFF1F?")
+        if not normalized:
+            return None
+
+        if normalized.endswith("\u662F\u8C01") or normalized.endswith("\u662F\u8C01\u554A"):
+            person = normalized[:-2].strip()
+            rows = self.tools.get_person_labels(person).rows
+            if rows:
+                answer = f"{person}在当前图谱中存在对应人物实体，共找到 {len(rows)} 条候选记录。"
+                return QueryResult(
+                    mode="tool",
+                    answer=answer,
+                    rows=rows,
+                    notes=["当前结果来自本地图谱固定工具降级链路。"],
+                    route_label="固定工具降级",
+                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
+                )
+
+        if "\u7684\u5B57\u548C\u53F7" in normalized:
+            person = normalized.split("\u7684\u5B57\u548C\u53F7", 1)[0].strip()
+            courtesy = self.tools.get_courtesy_name(person)
+            art = self.tools.get_art_name(person)
+            courtesy_names = sorted(
+                {
+                    (row.get("courtesyName") or row.get("courtesyLabel") or "").strip()
+                    for row in courtesy.rows
+                    if (row.get("courtesyName") or row.get("courtesyLabel") or "").strip()
+                }
+            )
+            art_names = sorted(
+                {
+                    (row.get("artName") or row.get("artLabel") or "").strip()
+                    for row in art.rows
+                    if (row.get("artName") or row.get("artLabel") or "").strip()
+                }
+            )
+            if courtesy_names or art_names:
+                answer = f"{person}的字为：{'、'.join(courtesy_names) or '暂无'}；号为：{'、'.join(art_names) or '暂无'}。"
+                return QueryResult(
+                    mode="tool",
+                    answer=answer,
+                    sparql=courtesy.sparql,
+                    rows=courtesy.rows + art.rows,
+                    notes=[courtesy.note, art.note, "当前结果来自本地图谱固定工具降级链路。"],
+                    route_label="固定工具降级",
+                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
+                )
+
+        if "\u7684\u5B57" in normalized:
+            person = normalized.split("\u7684\u5B57", 1)[0].strip()
+            result = self.tools.get_courtesy_name(person)
+            if result.rows:
+                names = sorted(
+                    {
+                        (row.get("courtesyName") or row.get("courtesyLabel") or "").strip()
+                        for row in result.rows
+                        if (row.get("courtesyName") or row.get("courtesyLabel") or "").strip()
+                    }
+                )
+                answer = f"{person}的字为：{'、'.join(names)}。"
+                return QueryResult(
+                    mode="tool",
+                    answer=answer,
+                    sparql=result.sparql,
+                    rows=result.rows,
+                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
+                    route_label="固定工具降级",
+                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
+                )
+
+        if "\u7684\u53F7" in normalized:
+            person = normalized.split("\u7684\u53F7", 1)[0].strip()
+            result = self.tools.get_art_name(person)
+            if result.rows:
+                names = sorted(
+                    {
+                        (row.get("artName") or row.get("artLabel") or "").strip()
+                        for row in result.rows
+                        if (row.get("artName") or row.get("artLabel") or "").strip()
+                    }
+                )
+                answer = f"{person}的号为：{'、'.join(names)}。"
+                return QueryResult(
+                    mode="tool",
+                    answer=answer,
+                    sparql=result.sparql,
+                    rows=result.rows,
+                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
+                    route_label="固定工具降级",
+                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
+                )
+
+        if "\u4E0E" in normalized and "\u4EC0\u4E48\u5173\u7CFB" in normalized:
+            left, right = normalized.split("\u4E0E", 1)
+            person_a = left.strip()
+            person_b = right.replace("\u662F\u4EC0\u4E48\u5173\u7CFB", "").replace("\u4EC0\u4E48\u5173\u7CFB", "").strip()
+            result = self.tools.get_pair_relations(person_a, person_b)
+            if result.rows:
+                rels = sorted(
+                    {
+                        (row.get("relationLabel") or row.get("relation") or "").strip()
+                        for row in result.rows
+                        if (row.get("relationLabel") or row.get("relation") or "").strip()
+                    }
+                )
+                answer = f"{person_a}与{person_b}的关系包括：{'、'.join(rels)}。"
+                return QueryResult(
+                    mode="tool",
+                    answer=answer,
+                    sparql=result.sparql,
+                    rows=result.rows,
+                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
+                    route_label="固定工具降级",
+                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
+                )
+
+        if "\u8C01\u5F00\u521B\u4E86" in normalized:
+            school = normalized.split("\u8C01\u5F00\u521B\u4E86", 1)[-1].strip()
+            result = self.tools.get_school_founder(school)
+            if result.rows:
+                founders = sorted(
+                    {
+                        (row.get("founderLabel") or "").strip()
+                        for row in result.rows
+                        if (row.get("founderLabel") or "").strip()
+                    }
+                )
+                answer = f"{school}的开创者包括：{'、'.join(founders)}。"
+                return QueryResult(
+                    mode="tool",
+                    answer=answer,
+                    sparql=result.sparql,
+                    rows=result.rows,
+                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
+                    route_label="固定工具降级",
+                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
+                )
+
+        if "\u7684\u5E08\u627F\u5173\u7CFB" in normalized:
+            person = normalized.split("\u7684\u5E08\u627F\u5173\u7CFB", 1)[0].strip()
+            result = self.tools.get_teacher_relations(person)
+            if result.rows:
+                teachers = sorted(
+                    {
+                        (row.get("teacherLabel") or "").strip()
+                        for row in result.rows
+                        if (row.get("teacherLabel") or "").strip()
+                    }
+                )
+                answer = f"{person}的师承对象包括：{'、'.join(teachers)}。"
+                return QueryResult(
+                    mode="tool",
+                    answer=answer,
+                    sparql=result.sparql,
+                    rows=result.rows,
+                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
+                    route_label="固定工具降级",
+                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
+                )
+
+        return None

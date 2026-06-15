@@ -17,6 +17,7 @@ except ImportError:
 class WorkflowState(TypedDict, total=False):
     question: str
     plan: Any
+    execution: Any
     final_result: QueryResult
 
 
@@ -25,12 +26,14 @@ class LangGraphWorkflowSkeleton:
         self,
         plan_question: Callable[[str], Any],
         execute_tool_plan: Callable[[Any], QueryResult],
-        execute_generated_plan: Callable[[Any], QueryResult],
+        prepare_generated_plan: Callable[[Any], Any],
+        finalize_generated_plan: Callable[[Any, Any], QueryResult],
         build_fallback_result: Callable[[str], QueryResult],
     ):
         self.plan_question = plan_question
         self.execute_tool_plan = execute_tool_plan
-        self.execute_generated_plan = execute_generated_plan
+        self.prepare_generated_plan = prepare_generated_plan
+        self.finalize_generated_plan = finalize_generated_plan
         self.build_fallback_result = build_fallback_result
         self.available = LANGGRAPH_AVAILABLE
         self.app = self._build_graph() if self.available else None
@@ -45,7 +48,8 @@ class LangGraphWorkflowSkeleton:
         graph = StateGraph(WorkflowState)
         graph.add_node("plan_question", self._plan_node)
         graph.add_node("call_tool", self._tool_node)
-        graph.add_node("generate_sparql", self._generated_node)
+        graph.add_node("generate_sparql", self._generated_prepare_node)
+        graph.add_node("answer_from_result", self._generated_finalize_node)
         graph.add_node("fallback", self._fallback_node)
 
         graph.set_entry_point("plan_question")
@@ -59,7 +63,8 @@ class LangGraphWorkflowSkeleton:
             },
         )
         graph.add_edge("call_tool", END)
-        graph.add_edge("generate_sparql", END)
+        graph.add_edge("generate_sparql", "answer_from_result")
+        graph.add_edge("answer_from_result", END)
         graph.add_edge("fallback", END)
         return graph.compile()
 
@@ -75,9 +80,14 @@ class LangGraphWorkflowSkeleton:
         plan = state.get("plan")
         return {"final_result": self.execute_tool_plan(plan)}
 
-    def _generated_node(self, state: WorkflowState) -> WorkflowState:
+    def _generated_prepare_node(self, state: WorkflowState) -> WorkflowState:
         plan = state.get("plan")
-        return {"final_result": self.execute_generated_plan(plan)}
+        return {"execution": self.prepare_generated_plan(plan)}
+
+    def _generated_finalize_node(self, state: WorkflowState) -> WorkflowState:
+        plan = state.get("plan")
+        execution = state.get("execution")
+        return {"final_result": self.finalize_generated_plan(plan, execution)}
 
     def _fallback_node(self, state: WorkflowState) -> WorkflowState:
         question = state.get("question", "")

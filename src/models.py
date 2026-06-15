@@ -19,3 +19,5 @@ class QueryResult(BaseModel):
     sparql: str | None = None
     rows: list[dict[str, Any]] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    route_label: str = ""
+    route_stage: str = ""

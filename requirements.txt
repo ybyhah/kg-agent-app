@@ -6,3 +6,5 @@ langgraph>=0.2.0
 langchain-huggingface>=0.1.0
 transformers>=4.51.0
 accelerate>=1.7.0
+openai>=1.93.0
+python-dotenv>=1.0.1

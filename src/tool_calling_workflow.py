@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, TypedDict
 
-from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
 
@@ -89,12 +90,21 @@ class ToolCallingWorkflow:
 
         system_prompt = (
             "你是《印人传》知识图谱问答系统的问句解析节点。"
-            " 你必须优先判断这个问题能否通过固定工具直接回答。"
-            " 如果能，请调用最合适的一个工具；如果不能，请不要调用工具，而是直接回复 NO_TOOL。"
-            " 只有在确实无法用固定工具回答时，才允许不调用工具。"
+            "你必须优先判断这个问题能否通过固定工具直接回答。"
+            "只要问题是简单事实查询，就必须调用一个最合适的工具，不能直接输出 NO_TOOL。"
+            "下列问题都属于必须优先调工具的类型：人物是谁、字、号、生卒年、师承、亲属、交游、所属流派、流派开创者、两个人物之间的关系。"
+            "对于“吴门印派”“吴门派”应优先按“吴门”处理；"
+            "对于“文徵明”“文征明”“征仲”“文氏”应优先按“文徵明”处理。"
+            "只有在明显需要复杂组合查询、固定工具完全无法覆盖时，才允许不调用工具并返回 NO_TOOL。"
         )
         result = self.llm_client.bind_tools(self.tools, question, system_prompt=system_prompt)
-        return {"messages": state.get("messages", []) + [result.message]}
+        message = result.message
+        tool_calls = getattr(message, "tool_calls", []) or []
+        if not tool_calls:
+            repaired_message = self._repair_missing_tool_call(question)
+            if repaired_message is not None:
+                message = repaired_message
+        return {"messages": state.get("messages", []) + [message]}
 
     def _route_after_llm_decision(self, state: ToolCallingState) -> str:
         messages = state.get("messages", [])
@@ -175,4 +185,75 @@ class ToolCallingWorkflow:
                 visible_items.append(f"{key}={value}")
         if not visible_items:
             return "当前固定工具已命中，但结果字段为空。"
-        return f"图谱工具查询结果包括：{'；'.join(visible_items[:6])}"
+        return f"图谱工具查询结果包括：{'; '.join(visible_items[:6])}"
+
+    def _repair_missing_tool_call(self, question: str) -> AIMessage | None:
+        normalized = question.strip().rstrip("？?。.")
+        if not normalized:
+            return None
+
+        direct_rules = [
+            (["的字", "字是什么"], "get_courtesy_name"),
+            (["的号", "号是什么"], "get_art_name"),
+            (["生卒年", "出生于", "卒于", "生于"], "get_birth_death"),
+            (["老师", "师承"], "get_teacher_relations"),
+            (["父亲", "儿子", "亲属", "家人"], "get_family_relations"),
+            (["朋友", "交游"], "get_social_relations"),
+            (["所属流派", "属于哪个流派", "哪个流派", "哪一派"], "get_school_membership"),
+            (["关系网络", "相关人物", "关联人物"], "get_related_people"),
+        ]
+        for keywords, tool_name in direct_rules:
+            if any(keyword in normalized for keyword in keywords):
+                person_name = self._extract_person_name(normalized, keywords)
+                if person_name:
+                    return self._build_tool_call_message(tool_name, {"person_name": person_name})
+
+        if "开创" in normalized or "创立" in normalized:
+            school_name = self._extract_school_name(normalized)
+            return self._build_tool_call_message("get_school_founder", {"school_name": school_name})
+
+        pair_match = re.match(r"^(.+?)[与和](.+?)是什么关系$", normalized)
+        if pair_match:
+            return self._build_tool_call_message(
+                "get_pair_relations",
+                {
+                    "person_a": pair_match.group(1).strip(),
+                    "person_b": pair_match.group(2).strip(),
+                },
+            )
+
+        if "是谁" in normalized:
+            person_name = self._extract_person_name(normalized, ["是谁"])
+            if person_name:
+                return self._build_tool_call_message("get_person_labels", {"person_name": person_name})
+
+        return None
+
+    def _extract_person_name(self, question: str, keywords: list[str]) -> str:
+        person_name = question
+        for keyword in keywords:
+            if keyword in person_name:
+                person_name = person_name.split(keyword, 1)[0].strip()
+        for prefix in ["请问", "请查询", "帮我查", "帮忙查", "告诉我"]:
+            person_name = person_name.removeprefix(prefix).strip()
+        return person_name
+
+    def _extract_school_name(self, question: str) -> str:
+        cleaned = question
+        for token in ["谁开创了", "谁创立了", "哪位开创了", "哪位创立了", "开创者是谁", "创立者是谁"]:
+            cleaned = cleaned.replace(token, "")
+        cleaned = cleaned.strip()
+        return cleaned or "吴门印派"
+
+    def _build_tool_call_message(self, tool_name: str, args: dict[str, str]) -> AIMessage:
+        return AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": tool_name,
+                    "args": args,
+                    "id": f"repair_{tool_name}",
+                    "type": "tool_call",
+                }
+            ],
+        )

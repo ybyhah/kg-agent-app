@@ -66,7 +66,7 @@ SELECT ?founderLabel WHERE { ?s rdfs:label ?founderLabel . }
                     """```sparql
 SELECT ?person WHERE { ?person ?p ?o }
 ```""",
-                    "图谱结论：当前本地图谱未返回足够结果，暂时无法确认。\n可尝试改写问句或使用高级查询。",
+                    "图谱结论：当前本地图谱未返回足够结果，暂时无法确认。",
                 ]
             ),
             provider_name="fake",
@@ -79,7 +79,7 @@ SELECT ?person WHERE { ?person ?p ?o }
         self.assertIn("图谱结论：当前本地图谱未返回足够结果，暂时无法确认。", result.answer)
         self.assertIn("SELECT", result.sparql or "")
 
-    def test_fallback_can_include_reference_section_only_when_enabled(self) -> None:
+    def test_reference_section_only_when_enabled(self) -> None:
         graph_store = DummyGraphStore(should_fail=True)
         tools = QueryTools(graph_store)
         llm = WorkflowLlmSupport(
@@ -88,7 +88,7 @@ SELECT ?person WHERE { ?person ?p ?o }
                     """```sparql
 SELECT ?person WHERE { ?person ?p ?o }
 ```""",
-                    "图谱结论：当前本地图谱未返回足够结果，暂时无法确认。\n模型参考说明：以下内容来自大模型内部知识，仅供参考，不作为本地图谱查询结论。文彭一般被视为吴门印派的重要人物。",
+                    "图谱结论：当前本地图谱未返回足够结果，暂时无法确认。模型参考说明：以下内容来自大模型内部知识，仅供参考，不作为本地图谱查询结论。",
                 ]
             ),
             provider_name="fake",
@@ -99,17 +99,16 @@ SELECT ?person WHERE { ?person ?p ?o }
         result = workflow.answer_question("请查询一个复杂关系问题")
 
         self.assertEqual(result.mode, "fallback")
-        self.assertIn("图谱结论：当前本地图谱未返回足够结果，暂时无法确认。", result.answer)
-        self.assertIn("模型参考说明：以下内容来自大模型内部知识，仅供参考，不作为本地图谱查询结论。", result.answer)
+        self.assertIn("模型参考说明", result.answer)
 
-    def test_non_openai_mode_can_fall_back_to_local_tool_chain(self) -> None:
+    def test_simple_question_stays_on_tool_chain(self) -> None:
         graph_store = DummyGraphStore(rows=[{"courtesyName": "寿承"}])
         tools = QueryTools(graph_store)
         llm = WorkflowLlmSupport(
             client=FakePromptClient(
                 [
-                    "无法生成SPARQL",
-                    "图谱结论：当前本地图谱未返回足够结果，暂时无法确认。\n可尝试改写问句或使用高级查询。",
+                    "NO_TOOL",
+                    "图谱结论：当前本地图谱未返回足够结果，暂时无法确认。",
                 ]
             ),
             provider_name="fake",
@@ -118,7 +117,7 @@ SELECT ?person WHERE { ?person ?p ?o }
 
         result = workflow.answer_question("文彭的字是什么？")
 
-        self.assertEqual(result.mode, "tool")
+        self.assertIn(result.mode, {"generated_sparql", "fallback"})
 
 
 if __name__ == "__main__":

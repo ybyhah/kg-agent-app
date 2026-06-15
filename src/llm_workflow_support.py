@@ -49,13 +49,17 @@ class WorkflowLlmSupport:
         if config.llm_mode == "openai":
             if not config.openai_api_key:
                 return cls()
+            model_name = config.llm_model_name or "deepseek-v4-flash"
+            base_url = config.openai_base_url or ""
             client = OpenAIResponsesClient(
                 api_key=config.openai_api_key,
-                model=config.llm_model_name or "gpt-5.5",
+                model=model_name,
+                base_url=base_url or None,
             )
+            provider_prefix = cls._provider_prefix(model_name=model_name, base_url=base_url)
             return cls(
                 client=client,
-                provider_name=f"openai:{config.llm_model_name or 'gpt-5.5'}",
+                provider_name=f"{provider_prefix}:{model_name}",
                 reference_mode=config.llm_reference_mode,
             )
 
@@ -79,6 +83,16 @@ class WorkflowLlmSupport:
             )
 
         return cls()
+
+    @staticmethod
+    def _provider_prefix(model_name: str, base_url: str) -> str:
+        lowered_model = (model_name or "").lower()
+        lowered_url = (base_url or "").lower()
+        if lowered_model.startswith("deepseek") or "deepseek" in lowered_url:
+            return "deepseek"
+        if base_url:
+            return "openai-compatible"
+        return "openai"
 
     def try_generate_sparql(
         self,
@@ -132,7 +146,7 @@ class WorkflowLlmSupport:
             f"用户问题：{question}\n"
             f"规则回答草稿：{deterministic_answer}\n"
             f"SPARQL：\n{sparql or '无'}\n"
-            f"结果行 JSON：\n{json.dumps(preview_rows, ensure_ascii=False, indent=2)}\n"
+            f"结果表 JSON：\n{json.dumps(preview_rows, ensure_ascii=False, indent=2)}\n"
             f"补充说明：\n{notes_text or '无'}\n"
         )
         return self._safe_invoke(prompt)

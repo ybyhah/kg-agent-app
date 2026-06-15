@@ -4,9 +4,9 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from openai import OpenAI
 from langchain_core.messages import AIMessage
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from openai import OpenAI
 
 
 @dataclass(frozen=True)
@@ -16,9 +16,13 @@ class OpenAIChatResult:
 
 
 class OpenAIChatCompletionsClient:
-    def __init__(self, api_key: str, model: str = "gpt-5.5"):
-        self.client = OpenAI(api_key=api_key)
+    def __init__(self, api_key: str, model: str = "deepseek-v4-flash", base_url: str | None = None):
+        client_kwargs: dict[str, Any] = {"api_key": api_key}
+        if base_url:
+            client_kwargs["base_url"] = base_url
+        self.client = OpenAI(**client_kwargs)
         self.model = model
+        self.base_url = base_url or ""
 
     def invoke(self, prompt: str) -> str:
         response = self.client.chat.completions.create(

@@ -51,7 +51,7 @@ class AppService:
         llm_available = self.llm_support.available
         provider_name = self.llm_support.provider_name
         if not llm_available and provider_name == "disabled":
-            provider_display = "未启用（请将 KG_AGENT_LLM_MODE 改为 openai）"
+            provider_display = "未启用（请将 KG_AGENT_LLM_MODE 改为 openai，并配置兼容 API）"
         else:
             provider_display = provider_name
         return {

@@ -13,6 +13,19 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX yrz: <http://www.yinrenzhuan.org/ontology#>
 """
 
+PERSON_ALIAS_MAP: dict[str, list[str]] = {
+    "文征明": ["文征明", "文徵明", "征仲", "文氏"],
+    "文徵明": ["文征明", "文徵明", "征仲", "文氏"],
+    "征仲": ["文征明", "文徵明", "征仲"],
+    "文氏": ["文征明", "文徵明", "征仲", "文氏"],
+}
+
+SCHOOL_ALIAS_MAP: dict[str, list[str]] = {
+    "吴门": ["吴门", "吴门印派", "吴门派"],
+    "吴门印派": ["吴门", "吴门印派", "吴门派"],
+    "吴门派": ["吴门", "吴门印派", "吴门派"],
+}
+
 
 @dataclass
 class ToolResult:
@@ -26,6 +39,25 @@ class QueryTools:
     def __init__(self, graph_store: GraphStore):
         self.graph_store = graph_store
 
+    def _normalize_terms(self, value: str, alias_map: dict[str, list[str]]) -> list[str]:
+        base = value.strip()
+        terms = [base]
+        for alias in alias_map.get(base, []):
+            if alias not in terms:
+                terms.append(alias)
+        return [term for term in terms if term]
+
+    def _label_match_clause(self, label_var: str, terms: list[str]) -> str:
+        comparisons: list[str] = []
+        for term in terms:
+            escaped = self._escape_literal(term)
+            comparisons.append(
+                f'CONTAINS(STR({label_var}), "{escaped}") || '
+                f'CONTAINS("{escaped}", STR({label_var})) || '
+                f'STR({label_var}) = "{escaped}"'
+            )
+        return " || ".join(f"({item})" for item in comparisons) if comparisons else "false"
+
     def _run(self, name: str, sparql: str, note: str) -> ToolResult:
         rows = self.graph_store.query(sparql)
         return ToolResult(name=name, sparql=sparql.strip(), rows=rows, note=note)
@@ -34,18 +66,12 @@ class QueryTools:
         return value.replace("\\", "\\\\").replace('"', '\\"')
 
     def _person_filter(self, person_name: str) -> str:
-        return (
-            f'FILTER(?label = "{person_name}" || '
-            f'CONTAINS(STR(?label), "{person_name}") || '
-            f'CONTAINS("{person_name}", STR(?label)))'
-        )
+        terms = self._normalize_terms(person_name, PERSON_ALIAS_MAP)
+        return f"FILTER({self._label_match_clause('?label', terms)})"
 
     def _school_filter(self, school_name: str) -> str:
-        return (
-            f'FILTER(?schoolLabel = "{school_name}" || '
-            f'CONTAINS(STR(?schoolLabel), "{school_name}") || '
-            f'CONTAINS("{school_name}", STR(?schoolLabel)))'
-        )
+        terms = self._normalize_terms(school_name, SCHOOL_ALIAS_MAP)
+        return f"FILTER({self._label_match_clause('?schoolLabel', terms)})"
 
     def _candidate_people_block(self, person_name: str) -> str:
         return f"""
@@ -344,6 +370,8 @@ class QueryTools:
     def get_pair_relations(self, person_a: str, person_b: str) -> ToolResult:
         person_a = self._escape_literal(person_a)
         person_b = self._escape_literal(person_b)
+        source_clause = self._label_match_clause("?sourceLabel", self._normalize_terms(person_a, PERSON_ALIAS_MAP))
+        target_clause = self._label_match_clause("?targetLabel", self._normalize_terms(person_b, PERSON_ALIAS_MAP))
         sparql = f"""
         {BASE_PREFIXES}
         SELECT DISTINCT ?sourceLabel ?targetLabel ?relation ?relationLabel ?direction
@@ -353,7 +381,7 @@ class QueryTools:
             WHERE {{
               ?source rdf:type yrz:Person ;
                       rdfs:label ?sourceLabel .
-              FILTER(?sourceLabel = "{person_a}" || CONTAINS(STR(?sourceLabel), "{person_a}"))
+              FILTER({source_clause})
             }}
             LIMIT 20
           }}
@@ -362,7 +390,7 @@ class QueryTools:
             WHERE {{
               ?target rdf:type yrz:Person ;
                       rdfs:label ?targetLabel .
-              FILTER(?targetLabel = "{person_b}" || CONTAINS(STR(?targetLabel), "{person_b}"))
+              FILTER({target_clause})
             }}
             LIMIT 20
           }}

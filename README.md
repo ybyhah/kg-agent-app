@@ -48,41 +48,46 @@
 - `local_transformers`
 - `openai`
 
-当前 OpenAI 模式负责：
+当前 `openai` 模式表示 OpenAI 兼容 API 接入，可直接连接 DeepSeek。  
+默认模型已切换为 `deepseek-v4-flash`。
+
+当前 OpenAI 兼容模式负责：
 
 1. 工具不足时生成 SPARQL
 2. 查询结果后生成自然语言回答
 3. SPARQL 失败时做 fallback
 
-当前还没有直接做到真正的 function calling 工具调用链；后续升级路径见：
-
-- `docs/openai_upgrade_path.md`
+当前 function calling、`ToolNode` 和生成式 SPARQL 工作流已经接入项目主链路。
 
 ## 运行步骤
 
 1. 安装依赖
+
 ```bash
 pip install -r requirements.txt
 ```
 
 2. 把 TTL 文件放到 `data/kg/`
 
-3. 如需使用 OpenAI，新建本地 `\.env`
+3. 如需使用兼容 API 模型，新建本地 `.env`
 
 示例：
 
 ```env
-OPENAI_API_KEY=你的key
+DEEPSEEK_API_KEY=你的key
 KG_AGENT_LLM_MODE=openai
-KG_AGENT_OPENAI_MODEL=gpt-5.5
+KG_AGENT_OPENAI_MODEL=deepseek-v4-flash
+KG_AGENT_OPENAI_BASE_URL=https://api.deepseek.com
 ```
 
 4. 启动项目
+
 ```bash
 python app.py
 ```
 
 5. 打开
+
 ```text
 http://127.0.0.1:5000
 ```

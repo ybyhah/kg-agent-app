@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import os
-from dotenv import load_dotenv
 from dataclasses import dataclass
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ class AppConfig:
     llm_device: str
     llm_load_in_4bit: bool
     openai_api_key: str
+    openai_base_url: str
     llm_reference_mode: bool
 
     @classmethod
@@ -49,6 +51,7 @@ class AppConfig:
             load_dotenv(env_path)
         elif env_example_path.exists():
             load_dotenv(env_example_path)
+
         data_dir = base_dir / "data"
         source_dir = data_dir / "source"
         kg_dir = data_dir / "kg"
@@ -57,6 +60,13 @@ class AppConfig:
         llm_mode = os.getenv("KG_AGENT_LLM_MODE", "disabled").strip() or "disabled"
         llm_model_dir_raw = os.getenv("KG_AGENT_LLM_MODEL_DIR", "").strip()
         llm_model_dir = Path(llm_model_dir_raw) if llm_model_dir_raw else None
+        llm_model_name = os.getenv("KG_AGENT_OPENAI_MODEL", "deepseek-v4-flash").strip() or "deepseek-v4-flash"
+        deepseek_api_key_raw = os.getenv("DEEPSEEK_API_KEY", "").strip()
+        openai_base_url = os.getenv("KG_AGENT_OPENAI_BASE_URL", "").strip() or os.getenv("OPENAI_BASE_URL", "").strip()
+        if not openai_base_url and llm_model_name.lower().startswith("deepseek"):
+            openai_base_url = "https://api.deepseek.com"
+        openai_api_key = deepseek_api_key_raw
+
         return cls(
             base_dir=base_dir,
             data_dir=data_dir,
@@ -83,11 +93,12 @@ class AppConfig:
             team_interface_md=docs_dir / "team_deliverables_interface.md",
             llm_mode=llm_mode,
             llm_model_dir=llm_model_dir,
-            llm_model_name=os.getenv("KG_AGENT_OPENAI_MODEL", "gpt-5.5").strip() or "gpt-5.5",
+            llm_model_name=llm_model_name,
             llm_max_new_tokens=int(os.getenv("KG_AGENT_LLM_MAX_NEW_TOKENS", "768")),
             llm_temperature=float(os.getenv("KG_AGENT_LLM_TEMPERATURE", "0.1")),
             llm_device=os.getenv("KG_AGENT_LLM_DEVICE", "auto").strip() or "auto",
             llm_load_in_4bit=os.getenv("KG_AGENT_LLM_LOAD_IN_4BIT", "0").strip() in {"1", "true", "True"},
-            openai_api_key=os.getenv("OPENAI_API_KEY", "").strip(),
+            openai_api_key=openai_api_key,
+            openai_base_url=openai_base_url,
             llm_reference_mode=os.getenv("KG_AGENT_LLM_REFERENCE_MODE", "0").strip() in {"1", "true", "True"},
         )

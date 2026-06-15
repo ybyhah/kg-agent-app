@@ -259,7 +259,7 @@ LIMIT 10</textarea>
 
         <p class="intro panel-intro">{{ ui.network_intro }}</p>
 
-        <div class="network-workspace">
+        <div class="network-showcase">
           <aside class="result-card network-sidebar">
             <div class="result-card-head">
               <h3>探索控制</h3>
@@ -313,39 +313,55 @@ LIMIT 10</textarea>
             </div>
           </aside>
 
-          <section class="result-card network-stage-card">
-            <div class="result-card-head">
-              <h3>{{ ui.network_canvas_title }}</h3>
+          <section class="result-card network-stage-card network-stage-card--showcase">
+            <div class="result-card-head network-stage-head">
+              <div>
+                <p class="panel-kicker network-stage-kicker">Network Motion</p>
+                <h3>{{ ui.network_canvas_title }}</h3>
+              </div>
               <span class="muted-note" id="networkStatusText">{{ ui.network_empty }}</span>
             </div>
             <div id="networkCanvasWrap" class="network-canvas-wrap empty-state">{{ ui.network_empty }}</div>
+            <div class="network-motion-strip">
+              <article class="network-motion-card">
+                <h4>页面切换</h4>
+                <p>像册页展开，旧页轻退，新页从纸纹中浮出，不是普通瞬时切换。</p>
+              </article>
+              <article class="network-motion-card">
+                <h4>图谱联动</h4>
+                <p>点击分析结果后，网络图同步高亮，形成“分析结果反向照亮图谱”的展示效果。</p>
+              </article>
+              <article class="network-motion-card">
+                <h4>答辩观感</h4>
+                <p>全量人物图谱、路径追光与关系分层会一起出现，老师能直观看到你们不是只做了静态页面。</p>
+              </article>
+            </div>
           </section>
+        </div>
 
-          <aside class="result-card network-detail-card">
+        <div class="network-bottom-grid">
+          <aside class="result-card network-detail-card network-detail-card--wide">
             <div class="result-card-head">
               <h3>节点详情</h3>
               <span class="muted-note">点击图中节点查看</span>
             </div>
             <div id="networkDetailPanel" class="analysis-block empty-state">点击图中的人物或流派节点后，在这里查看详情。</div>
           </aside>
-        </div>
 
-        <div class="network-grid">
-          <section class="result-card">
+          <section class="result-card network-meta-card">
             <div class="result-card-head">
               <h3>{{ ui.network_meta_title }}</h3>
               <span class="muted-note">nodes / edges / relationTypes</span>
             </div>
             <pre id="networkMeta" class="result-box">{{ ui.result_empty }}</pre>
           </section>
-        </div>
 
-        <section class="result-card network-format-card">
-          <div class="result-card-head">
-            <h3>{{ ui.network_format_title }}</h3>
-            <span class="muted-note">{{ ui.network_format_hint }}</span>
-          </div>
-          <pre id="networkDataPreview" class="result-box">{
+          <section class="result-card network-format-card">
+            <div class="result-card-head">
+              <h3>{{ ui.network_format_title }}</h3>
+              <span class="muted-note">{{ ui.network_format_hint }}</span>
+            </div>
+            <pre id="networkDataPreview" class="result-box">{
   "nodes": [],
   "edges": [],
   "meta": {
@@ -356,7 +372,8 @@ LIMIT 10</textarea>
     "warnings": []
   }
 }</pre>
-        </section>
+          </section>
+        </div>
       </section>
     </section>
 
@@ -385,38 +402,63 @@ LIMIT 10</textarea>
           </button>
         </div>
 
-        <div class="analysis-grid">
-          <section class="result-card result-card--analysis">
-            <div class="result-card-head">
-              <h3><i data-lucide="badge-percent"></i>中心性分析</h3>
-              <span class="muted-note">度中心性 / 介数中心性</span>
+        <div class="analysis-showcase-card">
+          <div class="panel-header analysis-showcase-head">
+            <div>
+              <p class="panel-kicker">Analysis Motion</p>
+              <h3>图结构分析四块的动画语言</h3>
             </div>
-            <div id="centralityBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
-          </section>
+            <span class="panel-badge"><i data-lucide="orbit"></i>附加项高亮展示</span>
+          </div>
+          <div class="analysis-grid analysis-grid--showcase">
+            <section class="result-card result-card--analysis result-card--analysis-showcase">
+              <div class="analysis-card-shell">
+                <div class="analysis-card-icon"><i data-lucide="badge-percent"></i></div>
+                <div class="result-card-head result-card-head--analysis">
+                  <h3>中心性分析</h3>
+                  <span class="muted-note">度中心性 / 介数中心性</span>
+                </div>
+                <p class="analysis-card-copy">卡片带呼吸与扫光，点击人物后网络图同步提亮，用统计结果反向照亮人物脉络。</p>
+                <div id="centralityBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
+              </div>
+            </section>
 
-          <section class="result-card result-card--analysis">
-            <div class="result-card-head">
-              <h3><i data-lucide="users-round"></i>社区发现</h3>
-              <span class="muted-note">交游 / 师承群体</span>
-            </div>
-            <div id="communityBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
-          </section>
+            <section class="result-card result-card--analysis result-card--analysis-showcase">
+              <div class="analysis-card-shell">
+                <div class="analysis-card-icon"><i data-lucide="users-round"></i></div>
+                <div class="result-card-head result-card-head--analysis">
+                  <h3>社区发现</h3>
+                  <span class="muted-note">交游 / 师承群体</span>
+                </div>
+                <p class="analysis-card-copy">不同群体以柔和色雾区分，点击群体卡时，同社区成员在关系图中同步发光与涟漪。</p>
+                <div id="communityBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
+              </div>
+            </section>
 
-          <section class="result-card result-card--analysis">
-            <div class="result-card-head">
-              <h3><i data-lucide="route"></i>路径分析</h3>
-              <span class="muted-note">人物可达路径</span>
-            </div>
-            <div id="pathBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
-          </section>
+            <section class="result-card result-card--analysis result-card--analysis-showcase">
+              <div class="analysis-card-shell">
+                <div class="analysis-card-icon"><i data-lucide="route"></i></div>
+                <div class="result-card-head result-card-head--analysis">
+                  <h3>路径分析</h3>
+                  <span class="muted-note">人物可达路径</span>
+                </div>
+                <p class="analysis-card-copy">路径结果不是文字静态展示，而是边线出现流动追光，从起点人物一路“点亮”到终点人物。</p>
+                <div id="pathBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
+              </div>
+            </section>
 
-          <section class="result-card result-card--analysis">
-            <div class="result-card-head">
-              <h3><i data-lucide="git-branch-plus"></i>流派演变分析</h3>
-              <span class="muted-note">流派核心人物与关联</span>
-            </div>
-            <div id="schoolEvolutionBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
-          </section>
+            <section class="result-card result-card--analysis result-card--analysis-showcase">
+              <div class="analysis-card-shell">
+                <div class="analysis-card-icon"><i data-lucide="git-branch-plus"></i></div>
+                <div class="result-card-head result-card-head--analysis">
+                  <h3>流派演变分析</h3>
+                  <span class="muted-note">流派核心人物与关联</span>
+                </div>
+                <p class="analysis-card-copy">流派卡用金色与朱砂强调传承，核心人物、创建者与关联流派形成层次化动态图谱叙事。</p>
+                <div id="schoolEvolutionBlock" class="analysis-block empty-state">{{ ui.analysis_waiting }}</div>
+              </div>
+            </section>
+          </div>
         </div>
       </section>
     </section>
@@ -790,8 +832,8 @@ LIMIT 10</textarea>
         statusText.textContent = UI_TEXT.networkTooSmall;
         return;
       }
-      const width = 860;
-      const height = 520;
+      const width = 920;
+      const height = 540;
       const positionedNodes = buildForceLikeLayout(graphData.nodes, width, height, graphData.meta.center || "");
       const nodeLookup = Object.fromEntries(positionedNodes.map((node) => [node.id, node]));
       const edgeLines = graphData.edges.map((edge) => {
@@ -838,8 +880,18 @@ LIMIT 10</textarea>
               <stop offset="0%" stop-color="#fffaf3"></stop>
               <stop offset="100%" stop-color="#f4eadc"></stop>
             </linearGradient>
+            <radialGradient id="networkGlowA" cx="18%" cy="16%" r="42%">
+              <stop offset="0%" stop-color="rgba(151, 45, 22, 0.12)"></stop>
+              <stop offset="100%" stop-color="rgba(151, 45, 22, 0)"></stop>
+            </radialGradient>
+            <radialGradient id="networkGlowB" cx="82%" cy="80%" r="44%">
+              <stop offset="0%" stop-color="rgba(50, 89, 80, 0.12)"></stop>
+              <stop offset="100%" stop-color="rgba(50, 89, 80, 0)"></stop>
+            </radialGradient>
           </defs>
           <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="url(#networkBg)"></rect>
+          <circle cx="140" cy="118" r="130" fill="url(#networkGlowA)"></circle>
+          <circle cx="${width - 120}" cy="${height - 90}" r="160" fill="url(#networkGlowB)"></circle>
           ${edgeLines}
           ${nodeCircles}
         </svg>

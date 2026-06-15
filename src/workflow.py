@@ -10,15 +10,23 @@ from .tool_calling_workflow import ToolCallingWorkflow
 from .tools import QueryTools
 
 
+STANDARD_PREFIXES = """PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX yrz: <http://www.yinrenzhuan.org/ontology#>
+"""
+
+
 PERSON_CANONICAL_MAP: dict[str, str] = {
-    "\u6587\u5f81\u660e": "\u6587\u5fb5\u660e",
-    "\u6587\u955c\u660e": "\u6587\u5fb5\u660e",
-    "\u5f81\u4ef2": "\u6587\u5fb5\u660e",
+    "文征明": "文徵明",
+    "文镜明": "文徵明",
+    "征仲": "文徵明",
 }
 
 SCHOOL_CANONICAL_MAP: dict[str, str] = {
-    "\u5434\u95e8\u5370\u6d3e": "\u5434\u95e8",
-    "\u5434\u95e8\u6d3e": "\u5434\u95e8",
+    "吴门印派": "吴门",
+    "吴门派": "吴门",
 }
 
 
@@ -64,34 +72,17 @@ class QueryWorkflow:
                 route_stage="尚未进入问答工作流",
             )
 
-        openai_failure_note = ""
         if self.tool_calling_workflow.available:
-            try:
-                tool_calling_result = self.tool_calling_workflow.run(question)
-            except Exception as exc:
-                tool_calling_result = None
-                openai_failure_note = f"OpenAI 工具调用链暂时不可用，已自动降级到本地图谱链路：{exc}"
+            tool_calling_result = self.tool_calling_workflow.run(question)
             if tool_calling_result is not None:
                 return tool_calling_result
 
-        deterministic_tool_result = self._run_local_tool_fallback(question)
-        if deterministic_tool_result is not None:
-            if openai_failure_note:
-                deterministic_tool_result.notes.insert(0, openai_failure_note)
-            return deterministic_tool_result
-
         plan = self._build_generated_plan_from_question(question)
         if plan is None:
-            result = self._build_fallback_result(question)
-            if openai_failure_note:
-                result.notes.insert(0, openai_failure_note)
-            return result
+            return self._build_fallback_result(question)
 
         execution = self._prepare_generated_execution(plan)
-        result = self._finalize_generated_execution(plan, execution)
-        if openai_failure_note:
-            result.notes.insert(0, openai_failure_note)
-        return result
+        return self._finalize_generated_execution(plan, execution)
 
     def _build_generated_plan_from_question(self, question: str) -> QuestionPlan | None:
         normalized_question = self._normalize_question_for_generation(question)
@@ -99,7 +90,7 @@ class QueryWorkflow:
         if llm_draft is not None:
             return QuestionPlan(
                 question=question,
-                generated_sparql=llm_draft.sparql,
+                generated_sparql=self._sanitize_generated_sparql(llm_draft.sparql),
                 generation_source=llm_draft.source,
                 generation_note=llm_draft.note,
             )
@@ -108,7 +99,7 @@ class QueryWorkflow:
         if template_draft is not None:
             return QuestionPlan(
                 question=question,
-                generated_sparql=template_draft.sparql,
+                generated_sparql=self._sanitize_generated_sparql(template_draft.sparql),
                 generation_source="fewshot_template",
                 generation_note=template_draft.note,
             )
@@ -148,7 +139,7 @@ class QueryWorkflow:
         if execution.error:
             failure_reason = (
                 f"候选 SPARQL 已生成，但执行失败：{execution.error}。"
-                " 常见原因是本体属性名尚未与最终 Turtle 定义完全对齐，或图谱文件尚未接入。"
+                " 常见原因是本体属性名尚未与最终 Turtle 定义完全对齐，或图谱文件尚未稳定接入。"
             )
             direct_answer = self._build_fallback_result(
                 plan.question,
@@ -270,18 +261,32 @@ class QueryWorkflow:
             normalized = normalized.replace(alias, canonical_map[alias])
         return normalized
 
+    def _sanitize_generated_sparql(self, sparql: str) -> str:
+        text = sparql.strip()
+        text = text.replace("http://example.com/yrz/", "http://www.yinrenzhuan.org/ontology#")
+        text = text.replace("http://example.org/yrz/", "http://www.yinrenzhuan.org/ontology#")
+        text = text.replace("http://www.yunshuiyuan.org/ontology/", "http://www.yinrenzhuan.org/ontology#")
+        if "PREFIX yrz:" not in text:
+            text = f"{STANDARD_PREFIXES}\n{text}"
+        else:
+            lines = []
+            for line in text.splitlines():
+                if line.startswith("PREFIX yrz:"):
+                    lines.append("PREFIX yrz: <http://www.yinrenzhuan.org/ontology#>")
+                else:
+                    lines.append(line)
+            text = "\n".join(lines)
+        return text
+
     def _workflow_status_note(self) -> str:
         if self.tool_calling_workflow.available:
             return "当前已启用真实的 LLM -> ToolNode -> ToolMessage -> LLM 回答链路。"
-        return "当前未启用 OpenAI 工具调用链，系统将直接尝试生成式 SPARQL。"
+        return "当前未启用 LLM 工具调用链，系统将直接尝试生成式 SPARQL。"
 
     def _reference_mode_enabled(self) -> bool:
         return getattr(self.llm_support, "reference_mode", False)
 
     def _build_openai_tool_client(self) -> OpenAIChatCompletionsClient | None:
-        provider_name = getattr(self.llm_support, "provider_name", "")
-        if not provider_name.startswith("openai:"):
-            return None
         client = getattr(self.llm_support, "client", None)
         if client is None or not hasattr(client, "client"):
             return None
@@ -289,170 +294,8 @@ class QueryWorkflow:
             raw_api_key = client.client.api_key
         except Exception:
             return None
-        model_name = provider_name.split("openai:", 1)[-1] or "gpt-5.5"
+        model_name = getattr(client, "model", "") or "deepseek-v4-flash"
+        base_url = getattr(client, "base_url", "") or ""
         if not raw_api_key:
             return None
-        return OpenAIChatCompletionsClient(api_key=raw_api_key, model=model_name)
-
-    def _run_local_tool_fallback(self, question: str) -> QueryResult | None:
-        normalized = self._normalize_question_for_generation(question.strip()).rstrip("\uFF1F?")
-        if not normalized:
-            return None
-
-        if normalized.endswith("\u662F\u8C01") or normalized.endswith("\u662F\u8C01\u554A"):
-            person = normalized[:-2].strip()
-            rows = self.tools.get_person_labels(person).rows
-            if rows:
-                answer = f"{person}在当前图谱中存在对应人物实体，共找到 {len(rows)} 条候选记录。"
-                return QueryResult(
-                    mode="tool",
-                    answer=answer,
-                    rows=rows,
-                    notes=["当前结果来自本地图谱固定工具降级链路。"],
-                    route_label="固定工具降级",
-                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
-                )
-
-        if "\u7684\u5B57\u548C\u53F7" in normalized:
-            person = normalized.split("\u7684\u5B57\u548C\u53F7", 1)[0].strip()
-            courtesy = self.tools.get_courtesy_name(person)
-            art = self.tools.get_art_name(person)
-            courtesy_names = sorted(
-                {
-                    (row.get("courtesyName") or row.get("courtesyLabel") or "").strip()
-                    for row in courtesy.rows
-                    if (row.get("courtesyName") or row.get("courtesyLabel") or "").strip()
-                }
-            )
-            art_names = sorted(
-                {
-                    (row.get("artName") or row.get("artLabel") or "").strip()
-                    for row in art.rows
-                    if (row.get("artName") or row.get("artLabel") or "").strip()
-                }
-            )
-            if courtesy_names or art_names:
-                answer = f"{person}的字为：{'、'.join(courtesy_names) or '暂无'}；号为：{'、'.join(art_names) or '暂无'}。"
-                return QueryResult(
-                    mode="tool",
-                    answer=answer,
-                    sparql=courtesy.sparql,
-                    rows=courtesy.rows + art.rows,
-                    notes=[courtesy.note, art.note, "当前结果来自本地图谱固定工具降级链路。"],
-                    route_label="固定工具降级",
-                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
-                )
-
-        if "\u7684\u5B57" in normalized:
-            person = normalized.split("\u7684\u5B57", 1)[0].strip()
-            result = self.tools.get_courtesy_name(person)
-            if result.rows:
-                names = sorted(
-                    {
-                        (row.get("courtesyName") or row.get("courtesyLabel") or "").strip()
-                        for row in result.rows
-                        if (row.get("courtesyName") or row.get("courtesyLabel") or "").strip()
-                    }
-                )
-                answer = f"{person}的字为：{'、'.join(names)}。"
-                return QueryResult(
-                    mode="tool",
-                    answer=answer,
-                    sparql=result.sparql,
-                    rows=result.rows,
-                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
-                    route_label="固定工具降级",
-                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
-                )
-
-        if "\u7684\u53F7" in normalized:
-            person = normalized.split("\u7684\u53F7", 1)[0].strip()
-            result = self.tools.get_art_name(person)
-            if result.rows:
-                names = sorted(
-                    {
-                        (row.get("artName") or row.get("artLabel") or "").strip()
-                        for row in result.rows
-                        if (row.get("artName") or row.get("artLabel") or "").strip()
-                    }
-                )
-                answer = f"{person}的号为：{'、'.join(names)}。"
-                return QueryResult(
-                    mode="tool",
-                    answer=answer,
-                    sparql=result.sparql,
-                    rows=result.rows,
-                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
-                    route_label="固定工具降级",
-                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
-                )
-
-        if "\u4E0E" in normalized and "\u4EC0\u4E48\u5173\u7CFB" in normalized:
-            left, right = normalized.split("\u4E0E", 1)
-            person_a = left.strip()
-            person_b = right.replace("\u662F\u4EC0\u4E48\u5173\u7CFB", "").replace("\u4EC0\u4E48\u5173\u7CFB", "").strip()
-            result = self.tools.get_pair_relations(person_a, person_b)
-            if result.rows:
-                rels = sorted(
-                    {
-                        (row.get("relationLabel") or row.get("relation") or "").strip()
-                        for row in result.rows
-                        if (row.get("relationLabel") or row.get("relation") or "").strip()
-                    }
-                )
-                answer = f"{person_a}与{person_b}的关系包括：{'、'.join(rels)}。"
-                return QueryResult(
-                    mode="tool",
-                    answer=answer,
-                    sparql=result.sparql,
-                    rows=result.rows,
-                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
-                    route_label="固定工具降级",
-                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
-                )
-
-        if "\u8C01\u5F00\u521B\u4E86" in normalized:
-            school = normalized.split("\u8C01\u5F00\u521B\u4E86", 1)[-1].strip()
-            result = self.tools.get_school_founder(school)
-            if result.rows:
-                founders = sorted(
-                    {
-                        (row.get("founderLabel") or "").strip()
-                        for row in result.rows
-                        if (row.get("founderLabel") or "").strip()
-                    }
-                )
-                answer = f"{school}的开创者包括：{'、'.join(founders)}。"
-                return QueryResult(
-                    mode="tool",
-                    answer=answer,
-                    sparql=result.sparql,
-                    rows=result.rows,
-                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
-                    route_label="固定工具降级",
-                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
-                )
-
-        if "\u7684\u5E08\u627F\u5173\u7CFB" in normalized:
-            person = normalized.split("\u7684\u5E08\u627F\u5173\u7CFB", 1)[0].strip()
-            result = self.tools.get_teacher_relations(person)
-            if result.rows:
-                teachers = sorted(
-                    {
-                        (row.get("teacherLabel") or "").strip()
-                        for row in result.rows
-                        if (row.get("teacherLabel") or "").strip()
-                    }
-                )
-                answer = f"{person}的师承对象包括：{'、'.join(teachers)}。"
-                return QueryResult(
-                    mode="tool",
-                    answer=answer,
-                    sparql=result.sparql,
-                    rows=result.rows,
-                    notes=[result.note, "当前结果来自本地图谱固定工具降级链路。"],
-                    route_label="固定工具降级",
-                    route_stage="OpenAI 不可用 -> 本地图谱固定工具",
-                )
-
-        return None
+        return OpenAIChatCompletionsClient(api_key=raw_api_key, model=model_name, base_url=base_url)

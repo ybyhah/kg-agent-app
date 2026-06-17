@@ -71,6 +71,40 @@ LIMIT 20
                 description="适合查询人物的号，已对齐成员 C 的关系实例建模。",
             ),
             FewShotExample(
+                name="查询字和号",
+                question="文彭的字和号是什么？",
+                template="""
+{prefixes}
+SELECT ?person ?label ?courtesyName ?artName
+WHERE {{
+  ?person rdf:type yrz:Person ;
+          rdfs:label ?label .
+
+  OPTIONAL {{
+    ?courtesyRelation rdf:type yrz:Relation ;
+                      yrz:relationType yrz:hasCourtesyName ;
+                      yrz:sourceEntity ?person ;
+                      yrz:targetEntity ?courtesyNode .
+    OPTIONAL {{ ?courtesyNode rdfs:label ?courtesyLabel . }}
+    BIND(COALESCE(?courtesyLabel, STR(?courtesyNode)) AS ?courtesyName)
+  }}
+
+  OPTIONAL {{
+    ?artRelation rdf:type yrz:Relation ;
+                 yrz:relationType yrz:hasArtName ;
+                 yrz:sourceEntity ?person ;
+                 yrz:targetEntity ?artNode .
+    OPTIONAL {{ ?artNode rdfs:label ?artLabel . }}
+    BIND(COALESCE(?artLabel, STR(?artNode)) AS ?artName)
+  }}
+
+  FILTER(CONTAINS(STR(?label), "{person}"))
+}}
+LIMIT 20
+""".strip(),
+                description="适合同时查询人物的字和号，已对齐成员 C 的关系实例建模。",
+            ),
+            FewShotExample(
                 name="查询生卒年",
                 question="文彭的生卒年是什么？",
                 template="""
@@ -212,7 +246,11 @@ LIMIT 20
             school = normalized.split("谁开创了", 1)[-1].strip()
             return self._build_from_example("查询流派开创者", question, school=school)
 
+        # 优先匹配"字和号"
         for suffix, example_name in [
+            ("的字和号是什么", "查询字和号"),
+            ("的字与号是什么", "查询字和号"),
+            ("的字号是什么", "查询字和号"),
             ("的字是什么", "查询字"),
             ("的号是什么", "查询号"),
             ("的生卒年是什么", "查询生卒年"),

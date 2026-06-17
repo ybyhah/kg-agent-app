@@ -1,0 +1,301 @@
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix yrz:   <http://www.yinrenzhuan.org/ontology#> .
+
+# ============================================================
+# 《印人传》知识图谱 — RDFS/OWL 本体定义 (schema.ttl)
+# 作者：成员C
+# 日期：2026-06-12
+# 说明：基于成员B的 extraction_schema.json 翻译为RDFS标准格式
+# ============================================================
+
+# ────────────────────────────────────────────
+# 第一部分：元数据
+# ────────────────────────────────────────────
+
+<http://www.yinrenzhuan.org/ontology>
+    rdf:type      owl:Ontology ;
+    rdfs:label    "《印人传》知识图谱本体"@zh ,
+                  "Yinrenzhuan Knowledge Graph Ontology"@en ;
+    rdfs:comment  "基于周亮工《印人传》构建的篆刻家人物关系知识图谱本体，定义8种实体类型与14种关系类型"@zh ;
+    owl:versionInfo "1.0" .
+
+
+# ────────────────────────────────────────────
+# 第二部分：实体类型定义（8 个 Class）
+# ────────────────────────────────────────────
+
+# --- 2.1 人物 ---
+yrz:Person
+    rdf:type      owl:Class ;
+    rdfs:label    "人物"@zh , "Person"@en ;
+    rdfs:comment  "印人传中出现的篆刻家、文人、官员等相关人物。包含篆刻家、书法家、画家、文人、官员、学者等"@zh ;
+    rdfs:subClassOf  owl:Thing .
+
+# --- 2.2 地名 ---
+yrz:Place
+    rdf:type      owl:Class ;
+    rdfs:label    "地名"@zh , "Place"@en ;
+    rdfs:comment  "人物籍贯、活动地、任职地等地理位置。子类型包含籍贯地、居住地、任职地、游历地"@zh ;
+    rdfs:subClassOf  owl:Thing .
+
+# --- 2.3 时间 ---
+yrz:TimePeriod
+    rdf:type      owl:Class ;
+    rdfs:label    "时间"@zh , "TimePeriod"@en ;
+    rdfs:comment  "朝代、年份、生卒年等时间信息。时间粒度包含朝代、年号年份、干支纪年、生卒时间"@zh ;
+    rdfs:subClassOf  owl:Thing .
+
+# --- 2.4 字号 ---
+yrz:CourtesyName
+    rdf:type      owl:Class ;
+    rdfs:label    "字号"@zh , "CourtesyName"@en ;
+    rdfs:comment  "人物的字、号、别号等。子类型包含字（表字）、号（自号）、别号（其他称号）、室名（书斋名）"@zh ;
+    rdfs:subClassOf  owl:Thing .
+
+# --- 2.5 书体印风 ---
+yrz:CalligraphyStyle
+    rdf:type      owl:Class ;
+    rdfs:label    "书体印风"@zh , "CalligraphyStyle"@en ;
+    rdfs:comment  "篆刻风格、书体类型。包含篆刻流派风格（汉印法、文何旧习）、书法字体（篆书、隶书）、技法特点（六书、刀法）"@zh ;
+    rdfs:subClassOf  owl:Thing .
+
+# --- 2.6 流派 ---
+yrz:School
+    rdf:type      owl:Class ;
+    rdfs:label    "流派"@zh , "School"@en ;
+    rdfs:comment  "篆刻流派、师承体系。属性包含流派名称、创始人、特点描述。示例：文何派、皖派、浙派"@zh ;
+    rdfs:subClassOf  owl:Thing .
+
+# --- 2.7 印章 ---
+yrz:Seal
+    rdf:type      owl:Class ;
+    rdfs:label    "印章"@zh , "Seal"@en ;
+    rdfs:comment  "具体的印章名称或印文内容。属性包含印文内容、材质（玉石/铜/牙章）、印主（印章拥有者）"@zh ;
+    rdfs:subClassOf  owl:Thing .
+
+# --- 2.8 作品 ---
+yrz:Work
+    rdf:type      owl:Class ;
+    rdfs:label    "作品"@zh , "Work"@en ;
+    rdfs:comment  "印谱、诗文集等相关著作。子类型包含印谱（印章作品集）、诗文集、学术著作"@zh ;
+    rdfs:subClassOf  owl:Thing .
+
+
+# ────────────────────────────────────────────
+# 第三部分：关系类型定义（14 个 Property）
+# ────────────────────────────────────────────
+
+# --- 3.1 父子 ---
+yrz:fatherOf
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "父子"@zh , "fatherOf"@en ;
+    rdfs:comment  "父亲与儿子的亲属关系。方向：父亲 → 儿子"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:Person .
+
+# --- 3.2 师承 ---
+yrz:hasTeacher
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "师承"@zh , "hasTeacher"@en ;
+    rdfs:comment  "师徒关系，包括正式拜师和私淑学习。方向：徒弟 → 师父"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:Person .
+
+# --- 3.3 交游 ---
+yrz:hasFriend
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "交游"@zh , "hasFriend"@en ;
+    rdfs:comment  "朋友、同好、交往关系。双向关系，无明确师徒或亲属关系"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:Person .
+
+# --- 3.4 流派归属 ---
+yrz:belongsToSchool
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "流派归属"@zh , "belongsToSchool"@en ;
+    rdfs:comment  "人物属于某个篆刻流派。方向：人物 → 流派"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:School .
+
+# --- 3.5 开创 ---
+yrz:foundsSchool
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "开创"@zh , "foundsSchool"@en ;
+    rdfs:comment  "开创某流派或风格。方向：创始人 → 流派"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:School .
+
+# --- 3.6 字（表字）---
+yrz:hasCourtesyName
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "字"@zh , "hasCourtesyName"@en ;
+    rdfs:comment  "人物的表字。方向：人物 → 字号。古人成年后取字，用于平辈称呼。示例：周亮工→元亮（字）"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:CourtesyName .
+
+# --- 3.6b 号（自号/别号）---
+yrz:hasArtName
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "号"@zh , "hasArtName"@en ;
+    rdfs:comment  "人物的号、自号、别号、室名。方向：人物 → 字号。古人可有多号，用于自称或他人尊称。示例：周亮工→栎园（号）"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:CourtesyName .
+
+# --- 3.7 籍贯 ---
+yrz:birthPlace
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "籍贯"@zh , "birthPlace"@en ;
+    rdfs:comment  "人物的籍贯地。方向：人物 → 地名"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:Place .
+
+# --- 3.8 活动于 ---
+yrz:activeIn
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "活动于"@zh , "activeIn"@en ;
+    rdfs:comment  "人物活动或居住的地方。方向：人物 → 地名"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:Place .
+
+# --- 3.9 任职于 ---
+yrz:officeIn
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "任职于"@zh , "officeIn"@en ;
+    rdfs:comment  "人物任职的地方。方向：人物 → 地名"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:Place .
+
+# --- 3.10 生于 ---
+yrz:bornIn
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "生于"@zh , "bornIn"@en ;
+    rdfs:comment  "人物出生时间。方向：人物 → 时间"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:TimePeriod .
+
+# --- 3.11 卒于 ---
+yrz:diedIn
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "卒于"@zh , "diedIn"@en ;
+    rdfs:comment  "人物去世时间。方向：人物 → 时间"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:TimePeriod .
+
+# --- 3.12 擅长 ---
+yrz:skilledIn
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "擅长"@zh , "skilledIn"@en ;
+    rdfs:comment  "人物擅长的篆刻风格。方向：人物 → 书体印风"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:CalligraphyStyle .
+
+# --- 3.13 创作 ---
+yrz:created
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "创作"@zh , "created"@en ;
+    rdfs:comment  "人物创作的印章。方向：人物 → 印章"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:Seal .
+
+# --- 3.14 著有 ---
+yrz:authored
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "著有"@zh , "authored"@en ;
+    rdfs:comment  "人物撰写的著作。方向：人物 → 作品"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    yrz:Work .
+
+
+# ────────────────────────────────────────────
+# 第四部分：通用属性定义（质量控制用）
+# ────────────────────────────────────────────
+
+yrz:sourceText
+    rdf:type      owl:DatatypeProperty ;
+    rdfs:label    "原文出处"@zh , "sourceText"@en ;
+    rdfs:comment  "抽取该实体或关系的原始文本片段，用于溯源和人工校验"@zh ;
+    rdfs:domain   owl:Thing ;
+    rdfs:range    xsd:string .
+
+yrz:confidence
+    rdf:type      owl:DatatypeProperty ;
+    rdfs:label    "置信度"@zh , "confidence"@en ;
+    rdfs:comment  "实体或关系抽取的置信度分数，取值范围 0.0 ~ 1.0"@zh ;
+    rdfs:domain   owl:Thing ;
+    rdfs:range    xsd:float .
+
+yrz:sourceRecord
+    rdf:type      owl:DatatypeProperty ;
+    rdfs:label    "来源记录"@zh , "sourceRecord"@en ;
+    rdfs:comment  "该实体或关系所属的原始人物记录编号，如 YRZ_00001"@zh ;
+    rdfs:domain   owl:Thing ;
+    rdfs:range    xsd:string .
+
+
+# ────────────────────────────────────────────
+# 第五部分：外部对齐相关属性
+# ────────────────────────────────────────────
+
+yrz:alignmentStatus
+    rdf:type      owl:DatatypeProperty ;
+    rdfs:label    "对齐状态"@zh , "alignmentStatus"@en ;
+    rdfs:comment  "与CBDB/CTEXT的对齐状态：aligned（已对齐）、partial（部分对齐）、unaligned（未对齐）"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    xsd:string .
+
+yrz:alignmentMethod
+    rdf:type      owl:DatatypeProperty ;
+    rdfs:label    "对齐方法"@zh , "alignmentMethod"@en ;
+    rdfs:comment  "记录使用了什么方法进行实体对齐，如'字号+籍贯交叉验证'"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    xsd:string .
+
+yrz:cbdbId
+    rdf:type      owl:DatatypeProperty ;
+    rdfs:label    "CBDB编号"@zh , "CBDB ID"@en ;
+    rdfs:comment  "在CBDB（中国历代人物传记资料库）中对应的ID"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    xsd:string .
+
+yrz:ctextId
+    rdf:type      owl:DatatypeProperty ;
+    rdfs:label    "CText编号"@zh , "CText ID"@en ;
+    rdfs:comment  "在CText（中国哲学书电子化计划）中对应的ID"@zh ;
+    rdfs:domain   yrz:Person ;
+    rdfs:range    xsd:string .
+
+
+# ────────────────────────────────────────────
+# 第六部分：关系事实本身的建模
+# ────────────────────────────────────────────
+# 说明：core.ttl 中的每条关系需要被表示为"可引用的资源"，
+# 这样才能挂 sourceText、confidence 等属性。这里定义一个
+# Relation 类来承载关系元数据。
+
+yrz:Relation
+    rdf:type      owl:Class ;
+    rdfs:label    "关系事实"@zh , "Relation"@en ;
+    rdfs:comment  "表示一条具体的关系事实，关联 sourceEntity（主语）和 targetEntity（宾语），并携带来源文本、置信度等元数据"@zh .
+
+yrz:sourceEntity
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "主语实体"@zh , "sourceEntity"@en ;
+    rdfs:comment  "关系的主语（subject）"@zh ;
+    rdfs:domain   yrz:Relation ;
+    rdfs:range    owl:Thing .
+
+yrz:targetEntity
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "宾语实体"@zh , "targetEntity"@en ;
+    rdfs:comment  "关系的宾语（object）"@zh ;
+    rdfs:domain   yrz:Relation ;
+    rdfs:range    owl:Thing .
+
+yrz:relationType
+    rdf:type      owl:ObjectProperty ;
+    rdfs:label    "关系类型"@zh , "relationType"@en ;
+    rdfs:comment  "指向该关系所属的关系类型定义"@zh ;
+    rdfs:domain   yrz:Relation .

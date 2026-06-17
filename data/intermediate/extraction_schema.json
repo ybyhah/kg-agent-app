@@ -1,0 +1,156 @@
+{
+  "schema_version": "1.0",
+  "description": "《印人传》知识抽取Schema定义",
+  "entity_types": {
+    "人物": {
+      "description": "印人传中出现的篆刻家、文人、官员等相关人物",
+      "attributes": ["姓名", "字", "号", "籍贯", "朝代", "生年", "卒年", "身份"],
+      "examples": ["周亮工", "文彭", "何震", "许友"]
+    },
+    "地名": {
+      "description": "人物籍贯、活动地、任职地等地理位置",
+      "attributes": ["地名", "类型"],
+      "examples": ["河南祥符", "白下", "金陵", "休宁", "婺源"]
+    },
+    "时间": {
+      "description": "朝代、年份、生卒年等时间信息",
+      "attributes": ["时间值", "类型"],
+      "examples": ["明崇祯十三年", "康熙十一年", "万历四十年", "壬子年"]
+    },
+    "字号": {
+      "description": "人物的字、号、别号等",
+      "attributes": ["字号值", "类型"],
+      "examples": ["元亮", "栎园", "减斋", "有介"]
+    },
+    "书体印风": {
+      "description": "篆刻风格、书体类型",
+      "attributes": ["风格名", "描述"],
+      "examples": ["汉印法", "文何旧习", "六书"]
+    },
+    "流派": {
+      "description": "篆刻流派、师承体系",
+      "attributes": ["流派名", "创始人", "特点"],
+      "examples": ["文何派", "皖派", "浙派"]
+    },
+    "印章": {
+      "description": "具体的印章名称或印文内容",
+      "attributes": ["印文", "材质", "印主"],
+      "examples": ["掌风化之官", "东林书院", "努力加餐"]
+    },
+    "作品": {
+      "description": "印谱、诗文集等相关著作",
+      "attributes": ["作品名", "作者", "类型"],
+      "examples": ["《印人传》", "《读画录》", "《印薮》"]
+    }
+  },
+  "relation_types": {
+    "父子": {
+      "description": "父亲与儿子的亲属关系",
+      "domain": "人物",
+      "range": "人物",
+      "examples": ["周亮工 -父子-> 周靖公"]
+    },
+    "师承": {
+      "description": "师徒关系，包括正式拜师和私淑",
+      "domain": "人物",
+      "range": "人物",
+      "examples": ["何震 -师承-> 文彭", "文及先 -师承-> 金光先"]
+    },
+    "交游": {
+      "description": "朋友、同好、交往关系",
+      "domain": "人物",
+      "range": "人物",
+      "examples": ["周亮工 -交游-> 许友", "程穆倩 -交游-> 周亮工"]
+    },
+    "流派归属": {
+      "description": "人物属于某个篆刻流派",
+      "domain": "人物",
+      "range": "流派",
+      "examples": ["何震 -流派归属-> 文何派"]
+    },
+    "开创": {
+      "description": "开创某流派或风格",
+      "domain": "人物",
+      "range": "流派",
+      "examples": ["文彭 -开创-> 文何派"]
+    },
+    "字号对应": {
+      "description": "人物与其字号的关系",
+      "domain": "人物",
+      "range": "字号",
+      "examples": ["周亮工 -字号对应-> 元亮", "周亮工 -字号对应-> 栎园"]
+    },
+    "籍贯": {
+      "description": "人物的籍贯地",
+      "domain": "人物",
+      "range": "地名",
+      "examples": ["周亮工 -籍贯-> 河南祥符", "何震 -籍贯-> 婺源"]
+    },
+    "活动于": {
+      "description": "人物活动或居住的地方",
+      "domain": "人物",
+      "range": "地名",
+      "examples": ["周亮工 -活动于-> 白下", "何震 -活动于-> 金陵"]
+    },
+    "任职于": {
+      "description": "人物任职的地方",
+      "domain": "人物",
+      "range": "地名",
+      "examples": ["周亮工 -任职于-> 潍县", "周亮工 -任职于-> 两淮"]
+    },
+    "生于": {
+      "description": "人物出生时间",
+      "domain": "人物",
+      "range": "时间",
+      "examples": ["周亮工 -生于-> 万历四十年"]
+    },
+    "卒于": {
+      "description": "人物去世时间",
+      "domain": "人物",
+      "range": "时间",
+      "examples": ["周亮工 -卒于-> 康熙十一年"]
+    },
+    "擅长": {
+      "description": "人物擅长的篆刻风格",
+      "domain": "人物",
+      "range": "书体印风",
+      "examples": ["何震 -擅长-> 六书篆刻"]
+    },
+    "创作": {
+      "description": "人物创作的印章",
+      "domain": "人物",
+      "range": "印章",
+      "examples": ["文彭 -创作-> [印章]"]
+    },
+    "著有": {
+      "description": "人物撰写的著作",
+      "domain": "人物",
+      "range": "作品",
+      "examples": ["周亮工 -著有-> 《印人传》", "周亮工 -著有-> 《读画录》"]
+    }
+  },
+  "output_format": {
+    "entities": [
+      {
+        "id": "实体唯一标识",
+        "type": "实体类型",
+        "name": "实体名称",
+        "attributes": {
+          "属性名": "属性值"
+        },
+        "source_text": "原文出处",
+        "confidence": 0.95
+      }
+    ],
+    "relations": [
+      {
+        "id": "关系唯一标识",
+        "type": "关系类型",
+        "source": "头实体id",
+        "target": "尾实体id",
+        "source_text": "原文出处",
+        "confidence": 0.95
+      }
+    ]
+  }
+}

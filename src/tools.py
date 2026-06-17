@@ -458,6 +458,77 @@ class QueryTools:
             note="当前按关系实例抓取人物关联人物，供前端关系网络面板直接消费。",
         )
 
+    def get_courtesy_and_art_name(self, person_name: str) -> ToolResult:
+        """同时查询人物的字和号"""
+        person_name_escaped = self._escape_literal(person_name)
+
+        sparql = f"""
+        {BASE_PREFIXES}
+        SELECT DISTINCT ?person ?label ?courtesyName ?artName
+        WHERE {{
+          {self._candidate_people_block(person_name_escaped)}
+
+          OPTIONAL {{
+            ?courtesyRelation rdf:type yrz:Relation ;
+                              yrz:relationType yrz:hasCourtesyName ;
+                              yrz:sourceEntity ?person ;
+                              yrz:targetEntity ?courtesyNode .
+            OPTIONAL {{ ?courtesyNode rdfs:label ?courtesyLabel . }}
+            BIND(COALESCE(?courtesyLabel, STR(?courtesyNode)) AS ?courtesyName)
+          }}
+
+          OPTIONAL {{
+            ?artRelation rdf:type yrz:Relation ;
+                         yrz:relationType yrz:hasArtName ;
+                         yrz:sourceEntity ?person ;
+                         yrz:targetEntity ?artNode .
+            OPTIONAL {{ ?artNode rdfs:label ?artLabel . }}
+            BIND(COALESCE(?artLabel, STR(?artNode)) AS ?artName)
+          }}
+        }}
+        LIMIT 20
+        """
+        return self._run(
+            name="get_courtesy_and_art_name",
+            sparql=sparql,
+            note="当前按 core.ttl 的关系实例模型同时查询人物的字和号。",
+        )
+
+    def get_classmates(self, person_name: str) -> ToolResult:
+        """查询人物的师兄弟（同门）"""
+        person_name = self._escape_literal(person_name)
+        sparql = f"""
+        {BASE_PREFIXES}
+        SELECT DISTINCT ?person ?label ?classmate ?classmateLabel
+        WHERE {{
+          {self._candidate_people_block(person_name)}
+
+          # 找到此人的老师
+          ?relation1 rdf:type yrz:Relation ;
+                     yrz:relationType yrz:hasTeacher ;
+                     yrz:sourceEntity ?person ;
+                     yrz:targetEntity ?teacher .
+
+          # 找到同一个老师的其他学生（师兄弟）
+          ?relation2 rdf:type yrz:Relation ;
+                     yrz:relationType yrz:hasTeacher ;
+                     yrz:sourceEntity ?classmate ;
+                     yrz:targetEntity ?teacher .
+
+          # 排除自己
+          FILTER(?person != ?classmate)
+
+          OPTIONAL {{ ?classmate rdfs:label ?classmateLabelRaw . }}
+          BIND(COALESCE(?classmateLabelRaw, STR(?classmate)) AS ?classmateLabel)
+        }}
+        LIMIT 50
+        """
+        return self._run(
+            name="get_classmates",
+            sparql=sparql,
+            note="当前按关系实例模型查询同门师兄弟：找到共同的老师，再找该老师的其他学生。",
+        )
+
     def run_raw_sparql(self, sparql: str) -> ToolResult:
         rows = self.graph_store.query(sparql)
         return ToolResult(

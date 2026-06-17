@@ -159,7 +159,12 @@ def build_ui_text():
 
 
 def register_routes(app, config: AppConfig):
-    service = AppService(config)
+    # 使用预加载的服务单例
+    service = app.config.get("APP_SERVICE")
+    if service is None:
+        # 如果没有预加载，创建新实例
+        service = AppService(config)
+
     ui = build_ui_text()
 
     @app.get("/")
@@ -174,6 +179,11 @@ def register_routes(app, config: AppConfig):
             result = service.answer_question(question)
             return jsonify(result.model_dump())
         except Exception as exc:
+            import traceback
+            error_detail = str(exc)
+            # 检查是否是API认证错误
+            if "401" in error_detail or "Incorrect API key" in error_detail:
+                error_detail = f"API密钥验证失败：{error_detail}\n请检查 .env 文件中的 DEEPSEEK_API_KEY 是否正确。"
             return (
                 jsonify(
                     {
@@ -181,7 +191,7 @@ def register_routes(app, config: AppConfig):
                         "answer": "查询流程执行失败。",
                         "sparql": None,
                         "rows": [],
-                        "notes": [str(exc)],
+                        "notes": [error_detail, traceback.format_exc()],
                         "route_label": "fallback",
                         "route_stage": "请求处理异常",
                     }
@@ -290,6 +300,5 @@ def register_routes(app, config: AppConfig):
                     "aligned": config.aligned_ttl.exists(),
                 },
                 "deliverables": build_deliverable_status(config),
-                "interface_doc": str(config.team_interface_md),
             }
         )

@@ -37,6 +37,11 @@ def build_langchain_tools(query_tools: QueryTools) -> list[Callable]:
         return _serialize_tool_result(query_tools.get_art_name(person_name))
 
     @tool
+    def get_courtesy_and_art_name(person_name: str) -> str:
+        """同时查询人物的字和号。参数: person_name，人物姓名。返回: JSON 字符串，包含 name、sparql、rows、note。当用户同时询问字和号时使用此工具。"""
+        return _serialize_tool_result(query_tools.get_courtesy_and_art_name(person_name))
+
+    @tool
     def get_birth_death(person_name: str) -> str:
         """查询人物生卒年。参数: person_name，人物姓名。返回: JSON 字符串，包含 name、sparql、rows、note。"""
         return _serialize_tool_result(query_tools.get_birth_death(person_name))
@@ -76,10 +81,16 @@ def build_langchain_tools(query_tools: QueryTools) -> list[Callable]:
         """查询人物关联网络。参数: person_name，人物姓名。返回: JSON 字符串，包含 name、sparql、rows、note。"""
         return _serialize_tool_result(query_tools.get_related_people(person_name))
 
+    @tool
+    def get_classmates(person_name: str) -> str:
+        """查询人物的师兄弟（同门师兄弟）。参数: person_name，人物姓名。返回: JSON 字符串，包含 name、sparql、rows、note。"""
+        return _serialize_tool_result(query_tools.get_classmates(person_name))
+
     return [
         get_person_labels,
         get_courtesy_name,
         get_art_name,
+        get_courtesy_and_art_name,
         get_birth_death,
         get_teacher_relations,
         get_family_relations,
@@ -88,4 +99,5 @@ def build_langchain_tools(query_tools: QueryTools) -> list[Callable]:
         get_school_founder,
         get_pair_relations,
         get_related_people,
+        get_classmates,
     ]

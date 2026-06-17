@@ -13,7 +13,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--input",
-        default="person_records_v5.json",
+        default="data/source/person_records_v5.json",
         help="输入 JSON 文件路径，默认使用当前目录下的 person_records_v5.json",
     )
     parser.add_argument(

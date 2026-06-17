@@ -89,13 +89,15 @@ class ToolCallingWorkflow:
             return {"route_after_tool": "fallback"}
 
         system_prompt = (
-            "你是《印人传》知识图谱问答系统的问句解析节点。"
-            "你必须优先判断这个问题能否通过固定工具直接回答。"
-            "只要问题是简单事实查询，就必须调用一个最合适的工具，不能直接输出 NO_TOOL。"
-            "下列问题都属于必须优先调工具的类型：人物是谁、字、号、生卒年、师承、亲属、交游、所属流派、流派开创者、两个人物之间的关系。"
-            "对于“吴门印派”“吴门派”应优先按“吴门”处理；"
-            "对于“文徵明”“文征明”“征仲”“文氏”应优先按“文徵明”处理。"
-            "只有在明显需要复杂组合查询、固定工具完全无法覆盖时，才允许不调用工具并返回 NO_TOOL。"
+            "你是《印人传》知识图谱问答系统的工具选择节点。\n"
+            "你的任务是判断问题应该调用哪个工具，而不是直接回答问题。\n"
+            "重要规则：\n"
+            "1. 只要问题可以用工具回答，就必须选择一个最合适的工具，不能直接返回文字答案\n"
+            "2. 简单的事实查询（人物是谁、字、号、生卒年、师承、师兄弟、亲属、交游、流派）都必须调用工具\n"
+            "3. 如果问题同时涉及字和号，使用 get_courtesy_and_art_name 工具\n"
+            "4. 如果问题涉及师兄弟、同门，使用 get_classmates 工具\n"
+            "5. 只有在明确需要复杂推理、多步骤查询、或工具完全无法覆盖时，才允许不调用工具\n"
+            "6. 对于吴门印派/吴门派按吴门处理；对于文徵明/文征明/征仲按文徵明处理\n"
         )
         result = self.llm_client.bind_tools(self.tools, question, system_prompt=system_prompt)
         message = result.message
@@ -193,9 +195,11 @@ class ToolCallingWorkflow:
             return None
 
         direct_rules = [
+            (["的字和号", "字和号", "字与号", "字号"], "get_courtesy_and_art_name"),
             (["的字", "字是什么"], "get_courtesy_name"),
             (["的号", "号是什么"], "get_art_name"),
             (["生卒年", "出生于", "卒于", "生于"], "get_birth_death"),
+            (["师兄弟", "同门", "师兄", "师弟"], "get_classmates"),
             (["老师", "师承"], "get_teacher_relations"),
             (["父亲", "儿子", "亲属", "家人"], "get_family_relations"),
             (["朋友", "交游"], "get_social_relations"),

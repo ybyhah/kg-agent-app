@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "description": "《印人传》知识抽取评测样本",
+  "sample_count": 5,
+  "evaluation_criteria": {
+    "entity_accuracy": "实体名称是否准确从原文提取",
+    "entity_completeness": "是否遗漏重要实体",
+    "relation_accuracy": "关系类型和方向是否正确",
+    "relation_completeness": "是否遗漏重要关系"
+  },
+  "samples": [
+    {
+      "record_id": "YRZ_00001",
+      "person_name": "方仲芝",
+      "source_text": "方仲芝，以其工象牙黄杨也。所蓄不多，次第于左，手泽犹存，不能展视。 印人传合集 书靖公弟自用印章后 弟靖公亦嗜印，在扬署见梁大年为予作印，辄时时向大年问刀法。但性躁，不暇细究原委，又豪于饮，一印未成，...",
+      "entities_count": 16,
+      "relations_count": 8,
+      "evaluation_notes": ""
+    },
+    {
+      "record_id": "YRZ_00101",
+      "person_name": "徐贞木",
+      "source_text": "徐贞木，字士白，号白榆，秀水人。性兀傲不苟同时趋，恒欲青白眼睨天下士。工于诗，周贫谷称其典赡淹贯，非虚誉也。小楷法《黄庭》，可称具体，至于篆刻，海内宗仰，实出程邃、许容之上。子寅，字虎侯，号秋田。能世...",
+      "entities_count": 30,
+      "relations_count": 26,
+      "evaluation_notes": ""
+    },
+    {
+      "record_id": "YRZ_00501",
+      "person_name": "徐夔",
+      "source_text": "徐夔，字龙友，长洲诸生。于书无不窥，诗文悲壮，目空一世。篆刻苍健秀雅，得何文家法，著《里爽亭集》。...",
+      "entities_count": 6,
+      "relations_count": 5,
+      "evaluation_notes": ""
+    },
+    {
+      "record_id": "YRZ_01001",
+      "person_name": "李含光",
+      "source_text": "李含光，甘泉人，孝感子。少工篆籀，而隶书尤精。孝感工篆隶，赏之者谓贤于其父，因投笔不书。又能刻印。 李栩，字蜨厂，江西人。工篆刻，能攻坚，所治晶玉与石章无异，以为翡翠太燥，玛瑙则坚滑无匹，然亦能治之。...",
+      "entities_count": 6,
+      "relations_count": 4,
+      "evaluation_notes": ""
+    },
+    {
+      "record_id": "YRZ_01501",
+      "person_name": "黄吕",
+      "source_text": "黄吕，字次黄，号凤六山人，歙县人。汪《印人传》：「次黄，白山先生之嗣君也，白山著作等身，名藉藉大江南北间。通六书，工篆刻。凤六舞象时即秉庭训，所制印多遒劲苍秀，有秦汉遗风。兼精绘事，山水、人物、花鸟纵...",
+      "entities_count": 10,
+      "relations_count": 8,
+      "evaluation_notes": ""
+    }
+  ]
+}

@@ -24,14 +24,15 @@ class OpenAIChatCompletionsClient:
         self.model = model
         self.base_url = base_url or ""
 
-    def invoke(self, prompt: str) -> str:
+    def invoke(self, prompt: str, timeout: int = 30) -> str:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
+            timeout=timeout,
         )
         return (response.choices[0].message.content or "").strip()
 
-    def bind_tools(self, tools: list[Any], prompt: str, system_prompt: str = "") -> OpenAIChatResult:
+    def bind_tools(self, tools: list[Any], prompt: str, system_prompt: str = "", timeout: int = 30) -> OpenAIChatResult:
         openai_tools = [convert_to_openai_tool(tool) for tool in tools]
         messages: list[dict[str, str]] = []
         if system_prompt.strip():
@@ -43,6 +44,7 @@ class OpenAIChatCompletionsClient:
             messages=messages,
             tools=openai_tools,
             tool_choice="auto",
+            timeout=timeout,
         )
         choice = response.choices[0].message
         tool_calls: list[dict[str, Any]] = []

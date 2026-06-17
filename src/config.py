@@ -31,7 +31,6 @@ class AppConfig:
     alignment_rules_md: Path
     sparql_examples_md: Path
     demo_script_md: Path
-    team_interface_md: Path
     llm_mode: str
     llm_model_dir: Path | None
     llm_model_name: str
@@ -90,7 +89,6 @@ class AppConfig:
             alignment_rules_md=kg_dir / "alignment_rules.md",
             sparql_examples_md=data_dir / "examples" / "fewshot_sparql.md",
             demo_script_md=docs_dir / "demo_script.md",
-            team_interface_md=docs_dir / "team_deliverables_interface.md",
             llm_mode=llm_mode,
             llm_model_dir=llm_model_dir,
             llm_model_name=llm_model_name,

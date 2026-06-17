@@ -189,7 +189,13 @@ class WorkflowLlmSupport:
             return None
         try:
             raw_text = self.client.invoke(prompt).strip()
-        except Exception:
+        except Exception as e:
+            # 记录错误信息以便调试
+            import sys
+            print(f"[LLM调用错误] {type(e).__name__}: {str(e)}", file=sys.stderr)
+            # 如果是认证错误，抛出以便用户看到
+            if "401" in str(e) or "Incorrect API key" in str(e) or "authentication" in str(e).lower():
+                raise
             return None
         return raw_text or None
 

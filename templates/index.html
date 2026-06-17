@@ -1126,6 +1126,35 @@ LIMIT 10</textarea>
     }
 
     async function submitQuestion(question) {
+      if (!question) {
+        renderQaResult({
+          mode: "empty",
+          answer: "请输入问题。",
+          route_label: "等待查询",
+          route_stage: "尚未进入问答工作流",
+        });
+        return;
+      }
+
+      const askBtn = document.getElementById("askBtn");
+      const questionInput = document.getElementById("questionInput");
+
+      // 禁用按钮和输入框，防止重复提交
+      askBtn.disabled = true;
+      questionInput.disabled = true;
+
+      // 显示加载状态
+      document.getElementById("qaModeBadge").textContent = "查询中...";
+      document.getElementById("qaMetaText").textContent = "正在处理您的问题，请稍候...";
+      document.getElementById("qaRouteLabel").textContent = "执行中";
+      document.getElementById("qaRouteStage").textContent = "正在查询知识图谱...";
+      document.getElementById("qaGraphConclusion").textContent = "正在查询中，请稍候...";
+      document.getElementById("qaSparql").textContent = "等待查询结果...";
+      document.getElementById("qaRowCount").textContent = "0 行";
+      document.getElementById("qaNotesBlock").hidden = true;
+      document.getElementById("qaReferenceBlock").hidden = true;
+      renderTable("qaRows", []);
+
       try {
         const data = await postJson("/api/query", { question });
         renderQaResult(data);
@@ -1139,14 +1168,38 @@ LIMIT 10</textarea>
           route_label: "fallback",
           route_stage: "请求异常",
         });
+      } finally {
+        // 恢复按钮和输入框
+        askBtn.disabled = false;
+        questionInput.disabled = false;
       }
     }
 
     async function submitSparql(sparql) {
+      const sparqlBtn = document.getElementById("sparqlBtn");
+      const sparqlInput = document.getElementById("sparqlInput");
+
+      if (!sparql || !sparql.trim()) {
+        renderSparqlResult({ ok: false, error: "SPARQL 不能为空。", rows: [] });
+        return;
+      }
+
+      // 禁用按钮和输入框
+      sparqlBtn.disabled = true;
+      sparqlInput.disabled = true;
+
+      // 显示加载状态
+      document.getElementById("sparqlMeta").textContent = "正在执行查询...";
+      renderTable("sparqlRows", []);
+
       try {
         renderSparqlResult(await postJson("/api/sparql", { sparql }));
       } catch (error) {
         renderSparqlResult({ ok: false, error: error.message, rows: [] });
+      } finally {
+        // 恢复按钮和输入框
+        sparqlBtn.disabled = false;
+        sparqlInput.disabled = false;
       }
     }
 

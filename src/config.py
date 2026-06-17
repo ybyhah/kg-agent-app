@@ -29,6 +29,7 @@ class AppConfig:
     core_ttl: Path
     aligned_ttl: Path
     alignment_rules_md: Path
+    ontology_explanations_json: Path
     sparql_examples_md: Path
     demo_script_md: Path
     llm_mode: str
@@ -87,6 +88,7 @@ class AppConfig:
             core_ttl=kg_dir / "core.ttl",
             aligned_ttl=kg_dir / "aligned.ttl",
             alignment_rules_md=kg_dir / "alignment_rules.md",
+            ontology_explanations_json=kg_dir / "ontology_explanations.json",
             sparql_examples_md=data_dir / "examples" / "fewshot_sparql.md",
             demo_script_md=docs_dir / "demo_script.md",
             llm_mode=llm_mode,

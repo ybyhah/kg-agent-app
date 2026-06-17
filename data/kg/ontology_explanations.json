@@ -1,0 +1,146 @@
+{
+  "hasTeacher": {
+    "label": "师承",
+    "property": "yrz:hasTeacher",
+    "domain": "Person",
+    "range": "Person",
+    "description": "表示人物之间的师承关系，方向为徒弟指向师父。用于描述篆刻技艺的传授脉络，如文彭师承文徵明。"
+  },
+  "fatherOf": {
+    "label": "父子",
+    "property": "yrz:fatherOf",
+    "domain": "Person",
+    "range": "Person",
+    "description": "表示父亲与儿子的亲属关系，方向为父亲指向儿子。"
+  },
+  "hasFriend": {
+    "label": "交游",
+    "property": "yrz:hasFriend",
+    "domain": "Person",
+    "range": "Person",
+    "description": "表示人物之间的交游关系，朋友、同好、交往关系，双向关系无明确师徒或亲属方向。"
+  },
+  "belongsToSchool": {
+    "label": "所属流派",
+    "property": "yrz:belongsToSchool",
+    "domain": "Person",
+    "range": "School",
+    "description": "表示人物所属的篆刻或印学流派，如吴门印派、浙派、皖派等。方向为人物指向流派。"
+  },
+  "foundsSchool": {
+    "label": "开创流派",
+    "property": "yrz:foundsSchool",
+    "domain": "Person",
+    "range": "School",
+    "description": "表示人物开创了某个篆刻流派，方向为创始人指向流派。如文彭开创吴门印派。"
+  },
+  "hasCourtesyName": {
+    "label": "字",
+    "property": "yrz:hasCourtesyName",
+    "domain": "Person",
+    "range": "CourtesyName",
+    "description": "人物的表字，古人成年后取字用于平辈称呼。如周亮工字元亮。"
+  },
+  "hasArtName": {
+    "label": "号",
+    "property": "yrz:hasArtName",
+    "domain": "Person",
+    "range": "CourtesyName",
+    "description": "人物的号、自号、别号、室名，古人用于自称或他人尊称。如周亮工号栎园。"
+  },
+  "birthPlace": {
+    "label": "籍贯",
+    "property": "yrz:birthPlace",
+    "domain": "Person",
+    "range": "Place",
+    "description": "人物的籍贯地，方向为人物指向地名。"
+  },
+  "activeIn": {
+    "label": "活动于",
+    "property": "yrz:activeIn",
+    "domain": "Person",
+    "range": "Place",
+    "description": "人物活动或居住的地方，方向为人物指向地名。"
+  },
+  "officeIn": {
+    "label": "任职于",
+    "property": "yrz:officeIn",
+    "domain": "Person",
+    "range": "Place",
+    "description": "人物任职的地方，方向为人物指向地名。"
+  },
+  "bornIn": {
+    "label": "生于",
+    "property": "yrz:bornIn",
+    "domain": "Person",
+    "range": "TimePeriod",
+    "description": "人物出生时间或朝代，方向为人物指向时间。"
+  },
+  "diedIn": {
+    "label": "卒于",
+    "property": "yrz:diedIn",
+    "domain": "Person",
+    "range": "TimePeriod",
+    "description": "人物去世时间或朝代，方向为人物指向时间。"
+  },
+  "skilledIn": {
+    "label": "擅长",
+    "property": "yrz:skilledIn",
+    "domain": "Person",
+    "range": "CalligraphyStyle",
+    "description": "人物擅长的篆刻风格或书体，如汉印法、文何旧习等。"
+  },
+  "created": {
+    "label": "创作",
+    "property": "yrz:created",
+    "domain": "Person",
+    "range": "Seal",
+    "description": "人物创作的印章，方向为人物指向印章。"
+  },
+  "authored": {
+    "label": "著有",
+    "property": "yrz:authored",
+    "domain": "Person",
+    "range": "Work",
+    "description": "人物撰写的著作，如印谱、诗文集等。"
+  },
+  "_entityTypes": {
+    "Person": {
+      "label": "人物",
+      "description": "印人传中出现的篆刻家、文人、官员等相关人物。"
+    },
+    "Place": {
+      "label": "地名",
+      "description": "人物籍贯、活动地、任职地等地理位置。"
+    },
+    "TimePeriod": {
+      "label": "时间",
+      "description": "朝代、年份、生卒年等时间信息。"
+    },
+    "CourtesyName": {
+      "label": "字号",
+      "description": "人物的字、号、别号等。"
+    },
+    "CalligraphyStyle": {
+      "label": "书体印风",
+      "description": "篆刻风格、书体类型。"
+    },
+    "School": {
+      "label": "流派",
+      "description": "篆刻流派、师承体系。"
+    },
+    "Seal": {
+      "label": "印章",
+      "description": "具体的印章名称或印文内容。"
+    },
+    "Work": {
+      "label": "作品",
+      "description": "印谱、诗文集等相关著作。"
+    }
+  },
+  "_metadata": {
+    "version": "1.0",
+    "description": "《印人传》知识图谱本体解释映射表，供前端点击展示使用",
+    "source": "data/kg/schema.ttl"
+  }
+}

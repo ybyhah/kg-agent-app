@@ -25,6 +25,7 @@ def build_deliverable_status(config: AppConfig):
             "core_ttl": config.core_ttl.exists(),
             "aligned_ttl": config.aligned_ttl.exists(),
             "alignment_rules_md": config.alignment_rules_md.exists(),
+            "ontology_explanations_json": config.ontology_explanations_json.exists(),
         },
         "member_d": {
             "query_tools_py": (config.base_dir / "src" / "tools.py").exists(),
@@ -299,6 +300,7 @@ def register_routes(app, config: AppConfig):
                     "core": config.core_ttl.exists(),
                     "aligned": config.aligned_ttl.exists(),
                 },
+                "ontology_explanations": config.ontology_explanations_json.exists(),
                 "deliverables": build_deliverable_status(config),
             }
         )

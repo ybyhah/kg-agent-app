@@ -17316,3 +17316,19 @@ yrzr:e_YRZ_01673_9  yrz:alignmentStatus  "pending" ;
 #   missed:            2
 #   no_attributes:     3
 # ========================================
+# ==========================================================
+# 对齐时间: 2026-06-17T22:57:26.375121
+# 人物: 文彭
+# 匹配方法: rule_based (score=0.8)
+# ==========================================================
+yrzr:e_e9  owl:sameAs  <http://cbdb.fas.harvard.edu/person/34677> .
+yrzr:e_e9  yrz:cbdbId  "34677" .
+yrzr:e_e9  yrz:alignmentStatus  "aligned" .
+yrzr:e_e9  yrz:alignmentMethod  "rule_based" .
+yrzr:e_e9  yrz:hasCourtesyName  "寿承" .
+yrzr:e_e9  yrz:hasArtName  "三桥" .
+yrzr:e_e9  yrz:bornIn  "1498" .
+yrzr:e_e9  yrz:diedIn  "1573" .
+yrzr:e_e9  yrz:dynasty  "明" .
+yrzr:e_e9  yrz:birthPlace  "长洲（今江苏苏州）" .
+

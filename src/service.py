@@ -34,11 +34,18 @@ class AppService:
     def get_graph_analysis(self):
         return self.graph_analysis.build_overview()
 
-    def get_graph_exploration(self, center: str = "", hop: int = 1, relation_types: list[str] | None = None):
+    def get_graph_exploration(
+        self,
+        center: str = "",
+        hop: int = 1,
+        relation_types: list[str] | None = None,
+        full_view: bool = False,
+    ):
         return self.graph_analysis.get_exploration_graph(
             center=center,
             hop=hop,
             relation_types=relation_types,
+            full_view=full_view,
         )
 
     def get_person_detail(self, person_name: str):

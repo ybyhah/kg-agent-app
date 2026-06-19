@@ -28,6 +28,17 @@ RELATION_COLOR_MAP = {
 }
 
 MAIN_RELATION_LABELS = {"师承", "交游", "亲属", "所属流派", "开创流派"}
+RELATION_PRIORITY = {
+    "师承": 5,
+    "亲属": 4,
+    "交游": 3,
+    "开创流派": 2,
+    "所属流派": 1,
+}
+DEFAULT_PREVIEW_NODES = 54
+DEFAULT_PREVIEW_EDGES = 88
+EXPANDED_PREVIEW_NODES = 120
+EXPANDED_PREVIEW_EDGES = 180
 
 
 @dataclass(frozen=True)
@@ -43,6 +54,8 @@ class RelationEdge:
 class GraphAnalysisService:
     def __init__(self, graph_store: GraphStore):
         self.graph_store = graph_store
+        self._relation_edges_cache: list[RelationEdge] | None = None
+        self._person_detail_cache: dict[str, dict[str, Any]] = {}
 
     def build_overview(self) -> dict[str, Any]:
         edges = self._load_relation_edges()
@@ -149,6 +162,7 @@ class GraphAnalysisService:
         center: str = "",
         hop: int = 1,
         relation_types: list[str] | None = None,
+        full_view: bool = False,
     ) -> dict[str, Any]:
         edges = self._load_relation_edges()
         normalized_types = {item.strip() for item in (relation_types or []) if item.strip()}
@@ -158,7 +172,7 @@ class GraphAnalysisService:
 
         if center.strip():
             return self._build_center_graph(edges, center=center.strip(), hop=max(1, min(hop, 2)))
-        return self._build_full_graph(edges)
+        return self._build_full_graph(edges, expanded=full_view)
 
     def get_person_detail(self, person_name: str) -> dict[str, Any]:
         resolved = self._resolve_person_detail_name(person_name)
@@ -167,6 +181,8 @@ class GraphAnalysisService:
                 "ok": False,
                 "error": "未找到对应人物。",
             }
+        if resolved in self._person_detail_cache:
+            return self._person_detail_cache[resolved]
 
         detail_rows = self.graph_store.query(
             f"""
@@ -278,13 +294,17 @@ class GraphAnalysisService:
             for row in relation_rows
             if row.get("relatedLabel", "").strip()
         ]
-        return {
+        result = {
             "ok": True,
             "profile": profile,
             "relations": relations,
         }
+        self._person_detail_cache[resolved] = result
+        return result
 
     def _load_relation_edges(self) -> list[RelationEdge]:
+        if self._relation_edges_cache is not None:
+            return self._relation_edges_cache
         rows = self.graph_store.query(
             f"""
             {BASE_PREFIXES}
@@ -332,6 +352,7 @@ class GraphAnalysisService:
                     target_type=self._local_name(row.get("targetClass", "")),
                 )
             )
+        self._relation_edges_cache = edges
         return edges
 
     def _build_people_graph(self, edges: list[RelationEdge]) -> dict[str, set[str]]:
@@ -564,23 +585,39 @@ class GraphAnalysisService:
             adjacency[edge.target].append((edge.source, edge.relation_label))
         return adjacency
 
-    def _build_full_graph(self, edges: list[RelationEdge]) -> dict[str, Any]:
-        nodes = self._nodes_from_edges(edges)
+    def _build_full_graph(self, edges: list[RelationEdge], *, expanded: bool = False) -> dict[str, Any]:
+        preview_edges = self._select_preview_edges(
+            edges,
+            max_nodes=EXPANDED_PREVIEW_NODES if expanded else DEFAULT_PREVIEW_NODES,
+            max_edges=EXPANDED_PREVIEW_EDGES if expanded else DEFAULT_PREVIEW_EDGES,
+        )
+        nodes = self._nodes_from_edges(preview_edges)
         centrality_map = self._build_people_centrality_map(edges)
         communities = self._community_lookup(edges)
         graph_nodes = [self._graph_node_dict(node, centrality_map, communities) for node in sorted(nodes, key=lambda item: item["label"])]
-        graph_edges = [self._graph_edge_dict(edge) for edge in edges]
+        graph_edges = [self._graph_edge_dict(edge) for edge in preview_edges]
+        total_counts = self._build_node_counts(edges)
         return {
             "ok": True,
             "nodes": graph_nodes,
             "edges": graph_edges,
             "meta": {
-                "mode": "full",
+                "mode": "full" if expanded else "preview",
                 "center": "",
                 "hop": 0,
                 "nodeCount": len(graph_nodes),
                 "edgeCount": len(graph_edges),
+                "totalNodeCount": total_counts["node_count"],
+                "totalPersonCount": total_counts["person_count"],
+                "totalSchoolCount": total_counts["school_count"],
+                "totalEdgeCount": len(edges),
+                "isSubset": len(graph_nodes) < total_counts["node_count"] or len(graph_edges) < len(edges),
                 "relationTypes": sorted({edge["relationLabel"] for edge in graph_edges}),
+                "note": (
+                    "当前展示精选子图预览，优先保留高连接度人物、关键流派与主要关系。"
+                    if not expanded
+                    else "当前展示扩展视图，为了保证前端流畅度仍保留了子图采样。"
+                ),
             },
         }
 
@@ -696,7 +733,103 @@ class GraphAnalysisService:
             "width": 2.6 if edge.source == center or edge.target == center else 1.9,
             "isCenterEdge": edge.source == center or edge.target == center,
             "edgeClass": edge_class_map.get(edge.relation_type, ""),
+            "ontology": {
+                "relationType": edge.relation_type,
+                "domain": self._node_kind(edge.source_type),
+                "range": self._node_kind(edge.target_type),
+            },
         }
+
+    def _select_preview_edges(
+        self,
+        edges: list[RelationEdge],
+        *,
+        max_nodes: int,
+        max_edges: int,
+    ) -> list[RelationEdge]:
+        if len(edges) <= max_edges:
+            return edges
+
+        adjacency: dict[str, list[RelationEdge]] = defaultdict(list)
+        node_degree: Counter[str] = Counter()
+        school_degree: Counter[str] = Counter()
+        for edge in edges:
+            adjacency[edge.source].append(edge)
+            adjacency[edge.target].append(edge)
+            node_degree[edge.source] += 1
+            node_degree[edge.target] += 1
+            if edge.source_type == "School":
+                school_degree[edge.source] += 1
+            if edge.target_type == "School":
+                school_degree[edge.target] += 1
+
+        people_graph = self._build_people_graph(edges)
+        degree_map = self._build_centrality_analysis(people_graph)["degree_map"]
+        seed_names = [name for name, _score in sorted(degree_map.items(), key=lambda item: (-item[1], item[0]))[:6]]
+        seed_names.extend(
+            name for name, _count in sorted(school_degree.items(), key=lambda item: (-item[1], item[0]))[:3]
+        )
+        if not seed_names:
+            seed_names.extend(name for name, _count in node_degree.most_common(6))
+
+        chosen_edges: dict[tuple[str, str, str], RelationEdge] = {}
+        chosen_nodes: set[str] = set()
+        queue: deque[str] = deque(dict.fromkeys(seed_names))
+        visited_nodes: set[str] = set()
+
+        def edge_sort_key(item: RelationEdge) -> tuple[int, int, str, str]:
+            peer = item.target if item.source in visited_nodes else item.source
+            return (
+                RELATION_PRIORITY.get(item.relation_label, 0),
+                node_degree.get(peer, 0),
+                item.source,
+                item.target,
+            )
+
+        while queue and len(chosen_edges) < max_edges and len(chosen_nodes) < max_nodes:
+            node = queue.popleft()
+            if node in visited_nodes:
+                continue
+            visited_nodes.add(node)
+            for edge in sorted(adjacency.get(node, []), key=edge_sort_key, reverse=True):
+                edge_key = (edge.source, edge.target, edge.relation_label)
+                if edge_key in chosen_edges:
+                    continue
+                prospective_nodes = chosen_nodes | {edge.source, edge.target}
+                if len(prospective_nodes) > max_nodes:
+                    continue
+                chosen_edges[edge_key] = edge
+                chosen_nodes = prospective_nodes
+                if len(chosen_edges) >= max_edges:
+                    break
+                for next_node in (edge.source, edge.target):
+                    if next_node not in visited_nodes:
+                        queue.append(next_node)
+
+        if len(chosen_edges) < max_edges:
+            remaining_edges = sorted(
+                edges,
+                key=lambda edge: (
+                    RELATION_PRIORITY.get(edge.relation_label, 0),
+                    node_degree.get(edge.source, 0) + node_degree.get(edge.target, 0),
+                    edge.source,
+                    edge.target,
+                ),
+                reverse=True,
+            )
+            for edge in remaining_edges:
+                edge_key = (edge.source, edge.target, edge.relation_label)
+                if edge_key in chosen_edges:
+                    continue
+                prospective_nodes = chosen_nodes | {edge.source, edge.target}
+                if len(prospective_nodes) > max_nodes:
+                    continue
+                chosen_edges[edge_key] = edge
+                chosen_nodes = prospective_nodes
+                if len(chosen_edges) >= max_edges:
+                    break
+
+        return list(chosen_edges.values())
 
     def _node_kind(self, raw_type: str) -> str:
         if raw_type == "School":

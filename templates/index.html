@@ -9,9 +9,26 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+SC:wght@400;500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
   <div class="opening-screen" id="openingScreen" aria-hidden="true">
+    <div class="opening-screen__book" aria-hidden="true">
+      <div class="opening-screen__book-shell">
+        <div class="opening-screen__book-spine"></div>
+        <div class="opening-screen__book-cover opening-screen__book-cover--front">
+          <span class="opening-screen__book-title">印人传</span>
+          <span class="opening-screen__book-mark">印谱长卷</span>
+        </div>
+        <div class="opening-screen__book-pages">
+          <span class="opening-screen__book-page opening-screen__book-page--one"></span>
+          <span class="opening-screen__book-page opening-screen__book-page--two"></span>
+          <span class="opening-screen__book-page opening-screen__book-page--three"></span>
+        </div>
+        <div class="opening-screen__book-cover opening-screen__book-cover--back"></div>
+      </div>
+    </div>
     <div class="opening-screen__panel opening-screen__panel--left"></div>
     <div class="opening-screen__panel opening-screen__panel--right"></div>
     <div class="opening-screen__inner">
@@ -72,7 +89,22 @@
     </nav>
 
     <section class="tab-panel is-active" id="overviewTab">
-      <header class="hero hero--compact">
+      <header class="hero hero--compact hero--overview-immersive">
+        <div class="overview-immersive-layer" id="overviewImmersiveLayer" aria-hidden="true">
+          <span class="overview-immersive-layer__mist overview-immersive-layer__mist--one"></span>
+          <span class="overview-immersive-layer__mist overview-immersive-layer__mist--two"></span>
+          <span class="overview-immersive-layer__mist overview-immersive-layer__mist--three"></span>
+          <span class="overview-immersive-layer__seal overview-immersive-layer__seal--one">印</span>
+          <span class="overview-immersive-layer__seal overview-immersive-layer__seal--two">谱</span>
+          <span class="overview-immersive-layer__seal overview-immersive-layer__seal--three">传</span>
+          <div class="hero-vertical-texts" id="heroVerticalTexts">
+            <span class="hero-vertical-text hero-vertical-text--far">印者信也 信以载道</span>
+            <span class="hero-vertical-text hero-vertical-text--mid">人物 师承 交游 流派 题跋 链接</span>
+            <span class="hero-vertical-text hero-vertical-text--near">以图谱为卷 以问答为灯 以关系为路</span>
+            <span class="hero-vertical-text hero-vertical-text--far-right">方寸之间 气象万千</span>
+            <span class="hero-vertical-text hero-vertical-text--mid-right">文彭 文徵明 吴门印派 关系脉络</span>
+          </div>
+        </div>
         <div class="hero-copy">
           <p class="eyebrow">{{ ui.eyebrow }}</p>
           <span class="hero-script">{{ ui.hero_script }}</span>
@@ -86,7 +118,7 @@
             </button>
             <button class="ghost-btn" data-go-tab="networkTab">
               <i data-lucide="share-2"></i>
-              <span>进入关系图谱</span>
+              <span>{{ ui.hero_secondary }}</span>
             </button>
           </div>
         </div>
@@ -112,91 +144,100 @@
           <span class="panel-badge"><i data-lucide="database-zap"></i>{{ ui.qa_badge }}</span>
         </div>
 
-        <div class="runtime-toolbar form-row">
-          <div class="runtime-card">
-            <span class="runtime-card__label">{{ ui.runtime_status_label }}</span>
-            <strong id="runtimeProviderText">
-              {{ runtime_status.provider_name if runtime_status.llm_available else ui.runtime_llm_disabled }}
-            </strong>
-          </div>
-          <div class="runtime-card">
-            <span class="runtime-card__label">{{ ui.runtime_reference_label }}</span>
-            <strong id="referenceModeState">
-              {{ ui.runtime_reference_on if runtime_status.reference_mode else ui.runtime_reference_off }}
-            </strong>
-          </div>
-          <button id="toggleReferenceModeBtn" class="ghost-btn">
-            <i data-lucide="shield-question"></i>
-            <span>{{ ui.reference_toggle_off if runtime_status.reference_mode else ui.reference_toggle_on }}</span>
-          </button>
-        </div>
-
-        <div class="form-row">
-          <input id="questionInput" type="text" placeholder="{{ ui.qa_placeholder }}">
-          <button id="askBtn" class="primary-btn">
-            <i data-lucide="search"></i>
-            <span>{{ ui.qa_button }}</span>
-          </button>
-        </div>
-
-        <div class="chips">
-          {% for question in ui.qa_examples %}
-          <button class="chip" data-question="{{ question }}">
-            <i data-lucide="sparkle"></i>
-            <span>{{ question }}</span>
-          </button>
-          {% endfor %}
-        </div>
-
-        <div class="result-dashboard">
-          <div class="answer-card">
-            <div class="result-topline">
-              <span class="status-pill" id="qaModeBadge">{{ ui.empty_mode }}</span>
-              <span class="muted-note" id="qaMetaText">{{ ui.qa_result_hint }}</span>
+        <div class="qa-workspace">
+          <aside class="qa-history-panel result-card">
+            <div class="result-card-head">
+              <h3>{{ ui.qa_history_title }}</h3>
+              <button id="clearQaHistoryBtn" class="ghost-btn ghost-btn--compact">
+                <i data-lucide="eraser"></i>
+                <span>{{ ui.qa_clear_history }}</span>
+              </button>
             </div>
-            <div class="route-strip">
+            <div id="qaHistoryList" class="qa-history-list empty-state">{{ ui.qa_history_empty }}</div>
+          </aside>
+
+          <section class="qa-chat-panel result-card">
+            <div class="qa-chat-topbar">
+              <div class="qa-chat-status">
+                <span class="status-pill" id="qaModeBadge">{{ ui.empty_mode }}</span>
+                <span class="muted-note" id="qaMetaText">{{ ui.qa_result_hint }}</span>
+              </div>
+              <button id="toggleReferenceModeBtn" class="ghost-btn ghost-btn--compact">
+                <i data-lucide="shield-question"></i>
+                <span>{{ ui.reference_toggle_off if runtime_status.reference_mode else ui.reference_toggle_on }}</span>
+              </button>
+            </div>
+
+            <div id="qaChatStream" class="qa-chat-stream">
+              <article class="qa-message qa-message--assistant qa-message--welcome">
+                <div class="qa-avatar">A</div>
+                <div class="qa-bubble qa-bubble--assistant">
+                  <div class="qa-bubble__label">知识图谱问答</div>
+                  <p class="answer-text">{{ ui.qa_chat_intro }}</p>
+                </div>
+              </article>
+            </div>
+
+            <div class="chips qa-example-chips">
+              {% for question in ui.qa_examples %}
+              <button class="chip" data-question="{{ question }}">
+                <i data-lucide="sparkle"></i>
+                <span>{{ question }}</span>
+              </button>
+              {% endfor %}
+            </div>
+
+            <div class="qa-input-shell">
+              <div class="qa-input-row">
+                <input id="questionInput" type="text" placeholder="{{ ui.qa_placeholder }}">
+                <button id="askBtn" class="primary-btn">
+                  <i data-lucide="send-horizontal"></i>
+                  <span>{{ ui.qa_button }}</span>
+                </button>
+              </div>
+              <div class="qa-input-foot">
+                <span class="muted-note">{{ ui.qa_input_hint }}</span>
+                <span class="muted-note" id="referenceModeState">{{ ui.runtime_reference_on if runtime_status.reference_mode else ui.runtime_reference_off }}</span>
+              </div>
+            </div>
+          </section>
+
+          <aside class="qa-trace-panel result-card">
+            <div class="result-card-head">
+              <div>
+                <h3>{{ ui.qa_trace_title }}</h3>
+                <span class="muted-note">{{ ui.qa_trace_hint }}</span>
+              </div>
+            </div>
+
+            <div class="route-strip qa-route-strip">
               <div class="route-chip">
                 <span class="route-chip__label">{{ ui.route_label }}</span>
                 <strong id="qaRouteLabel">{{ ui.empty_mode }}</strong>
               </div>
               <div class="route-chip route-chip--wide">
                 <span class="route-chip__label">{{ ui.route_stage_label }}</span>
-                <strong id="qaRouteStage">尚未进入工作流</strong>
+                <strong id="qaRouteStage">尚未进入问答工作流</strong>
               </div>
             </div>
-            <div class="answer-stack">
-              <div class="answer-block answer-block--primary">
-                <span class="block-label">{{ ui.graph_conclusion_label }}</span>
-                <p class="answer-text" id="qaGraphConclusion">{{ ui.qa_waiting }}</p>
-              </div>
-              <div class="answer-block answer-block--secondary" id="qaReferenceBlock" hidden>
-                <span class="block-label">{{ ui.model_reference_label }}</span>
-                <p class="answer-text answer-text--secondary" id="qaReferenceText"></p>
-              </div>
-              <div class="notes-block" id="qaNotesBlock" hidden>
-                <span class="block-label">{{ ui.notes_label }}</span>
-                <ul class="notes-list" id="qaNotesList"></ul>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="result-columns">
-          <section class="result-card">
-            <div class="result-card-head">
-              <h3>{{ ui.sparql_label }}</h3>
-              <span class="muted-note">本次查询使用的语句</span>
-            </div>
-            <pre id="qaSparql" class="result-box">{{ ui.result_empty }}</pre>
-          </section>
+            <div class="qa-trace-stack">
+              <section class="result-card result-card--subpanel">
+                <div class="result-card-head">
+                  <h3>{{ ui.sparql_label }}</h3>
+                </div>
+                <pre id="qaSparql" class="result-box">{{ ui.result_empty }}</pre>
+              </section>
 
-          <section class="result-card">
-            <div class="result-card-head">
-              <h3>{{ ui.rows_label }}</h3>
-              <span class="muted-note" id="qaRowCount">0 行</span>
+              <section class="result-card result-card--subpanel">
+                <div class="result-card-head">
+                  <h3>{{ ui.rows_label }}</h3>
+                  <span class="muted-note" id="qaRowCount">0 行</span>
+                </div>
+                <div id="qaRows" class="table-wrap empty-state">{{ ui.result_empty }}</div>
+              </section>
             </div>
-            <div id="qaRows" class="table-wrap empty-state">{{ ui.result_empty }}</div>
-          </section>
+          </aside>
         </div>
       </section>
     </section>
@@ -319,59 +360,35 @@ LIMIT 10</textarea>
                 <p class="panel-kicker network-stage-kicker">Network Motion</p>
                 <h3>{{ ui.network_canvas_title }}</h3>
               </div>
-              <span class="muted-note" id="networkStatusText">{{ ui.network_empty }}</span>
+              <div class="network-stage-actions">
+                <span class="muted-note" id="networkStatusText">{{ ui.network_empty }}</span>
+                <button id="openImmersiveGraphBtn" class="ghost-btn ghost-btn--compact network-immersive-btn">
+                  <i data-lucide="expand"></i>
+                  <span>沉浸查看</span>
+                </button>
+              </div>
             </div>
-            <div id="networkCanvasWrap" class="network-canvas-wrap empty-state">{{ ui.network_empty }}</div>
-            <div class="network-motion-strip">
-              <article class="network-motion-card">
-                <h4>页面切换</h4>
-                <p>像册页展开，旧页轻退，新页从纸纹中浮出，不是普通瞬时切换。</p>
-              </article>
-              <article class="network-motion-card">
-                <h4>图谱联动</h4>
-                <p>点击分析结果后，网络图同步高亮，形成“分析结果反向照亮图谱”的展示效果。</p>
-              </article>
-              <article class="network-motion-card">
-                <h4>答辩观感</h4>
-                <p>全量人物图谱、路径追光与关系分层会一起出现，老师能直观看到你们不是只做了静态页面。</p>
-              </article>
+            <div class="network-stage-frame">
+              <div class="network-gallery-stage" id="networkGalleryStage" aria-hidden="true">
+                <span class="network-gallery-stage__beam network-gallery-stage__beam--left"></span>
+                <span class="network-gallery-stage__beam network-gallery-stage__beam--right"></span>
+                <span class="network-gallery-stage__panel network-gallery-stage__panel--one"></span>
+                <span class="network-gallery-stage__panel network-gallery-stage__panel--two"></span>
+                <span class="network-gallery-stage__panel network-gallery-stage__panel--three"></span>
+                <div class="network-gallery-stage__caption" id="networkSpatialHint">
+                  自由拖拽漫游 · 点击节点或关系 · 在空间中查看实体与本体说明
+                </div>
+              </div>
+              <div id="networkCanvasWrap" class="network-canvas-wrap empty-state">{{ ui.network_empty }}</div>
+              <aside id="networkInspector" class="network-inspector network-inspector--empty">
+                <div class="network-inspector__glow"></div>
+                <div class="network-inspector__content">
+                  <p class="network-inspector__eyebrow">Graph Inspector</p>
+                  <h4 class="network-inspector__title">点击节点或关系</h4>
+                  <p class="network-inspector__body">节点详情、关系说明、本体映射与当前高亮状态会直接出现在这里。</p>
+                </div>
+              </aside>
             </div>
-          </section>
-        </div>
-
-        <div class="network-bottom-grid">
-          <aside class="result-card network-detail-card network-detail-card--wide">
-            <div class="result-card-head">
-              <h3>节点详情</h3>
-              <span class="muted-note">点击图中节点查看</span>
-            </div>
-            <div id="networkDetailPanel" class="analysis-block empty-state">点击图中的人物或流派节点后，在这里查看详情。</div>
-          </aside>
-
-          <section class="result-card network-meta-card">
-            <div class="result-card-head">
-              <h3>{{ ui.network_meta_title }}</h3>
-              <span class="muted-note">nodes / edges / relationTypes</span>
-            </div>
-            <pre id="networkMeta" class="result-box">{{ ui.result_empty }}</pre>
-          </section>
-
-          <section class="result-card network-format-card">
-            <div class="result-card-head">
-              <h3>{{ ui.network_format_title }}</h3>
-              <span class="muted-note">{{ ui.network_format_hint }}</span>
-            </div>
-            <pre id="networkDataPreview" class="result-box">{
-  "nodes": [],
-  "edges": [],
-  "meta": {
-    "source": "",
-    "rowCount": 0,
-    "nodeCount": 0,
-    "edgeCount": 0,
-    "warnings": []
-  }
-}</pre>
           </section>
         </div>
       </section>
@@ -494,15 +511,28 @@ LIMIT 10</textarea>
 
     let lastQaRows = [];
     let lastSparqlRows = [];
-    let lastGraphData = { nodes: [], edges: [], meta: { source: "", rowCount: 0, nodeCount: 0, edgeCount: 0, warnings: [] } };
+    let initialNetworkGraph = {{ initial_network_graph | tojson }};
+    let lastGraphData = initialNetworkGraph && initialNetworkGraph.nodes ? initialNetworkGraph : { nodes: [], edges: [], meta: { source: "", rowCount: 0, nodeCount: 0, edgeCount: 0, warnings: [] } };
     let runtimeStatus = {{ runtime_status | tojson }};
     let selectedGraphNodeId = "";
     let highlightedCommunityMembers = [];
     let highlightedPathNodes = [];
     let highlightedQueryNodes = [];
-    let currentExploreGraph = { nodes: [], edges: [], meta: { mode: "", center: "", hop: 0, nodeCount: 0, edgeCount: 0, relationTypes: [] } };
+    let currentExploreGraph = initialNetworkGraph && initialNetworkGraph.nodes ? initialNetworkGraph : { nodes: [], edges: [], meta: { mode: "", center: "", hop: 0, nodeCount: 0, edgeCount: 0, relationTypes: [] } };
+    let selectedGraphEdgeId = "";
+    let networkCameraState = { scale: 1.08, offsetX: 0, offsetY: 16, tiltX: 4, tiltY: 0 };
+    let immersiveGraphOpen = false;
+    let graphDragState = { dragging: false, startX: 0, startY: 0, baseX: 0, baseY: 0 };
+    let networkInspectorPinned = false;
+    let renderedGraphSignature = "";
+    let networkRenderRaf = 0;
+    let networkCameraRaf = 0;
+    let qaHistory = [];
+    let qaMessageCounter = 0;
+    let currentAssistantMessageId = "";
     let networkLoadedOnce = false;
     let analysisLoadedOnce = false;
+    let networkPreloadPromise = null;
 
     function createLucideIcons() {
       if (window.lucide && typeof window.lucide.createIcons === "function") {
@@ -534,7 +564,7 @@ LIMIT 10</textarea>
       }
       if (tabId === "networkTab" && !networkLoadedOnce) {
         networkLoadedOnce = true;
-        void loadExploreGraph();
+        networkPreloadPromise = networkPreloadPromise || loadExploreGraph();
       }
       if (tabId === "analysisTab" && !analysisLoadedOnce) {
         analysisLoadedOnce = true;
@@ -546,14 +576,10 @@ LIMIT 10</textarea>
     function renderRuntimeStatus(data) {
       runtimeStatus = data;
       const badge = document.getElementById("runtimeBadge");
-      const providerText = document.getElementById("runtimeProviderText");
       const referenceState = document.getElementById("referenceModeState");
       const toggleBtn = document.getElementById("toggleReferenceModeBtn");
       if (badge) {
-        badge.textContent = data.llm_available ? (data.provider_name || UI_TEXT.llmEnabled) : UI_TEXT.llmDisabled;
-      }
-      if (providerText) {
-        providerText.textContent = data.llm_available ? (data.provider_name || UI_TEXT.llmEnabled) : UI_TEXT.llmDisabled;
+        badge.textContent = data.llm_available ? UI_TEXT.llmEnabled : UI_TEXT.llmDisabled;
       }
       if (referenceState) {
         referenceState.textContent = data.reference_mode ? UI_TEXT.referenceOn : UI_TEXT.referenceOff;
@@ -632,6 +658,87 @@ LIMIT 10</textarea>
       };
     }
 
+    function renderQaHistory() {
+      const target = document.getElementById("qaHistoryList");
+      if (!qaHistory.length) {
+        target.className = "qa-history-list empty-state";
+        target.textContent = "{{ ui.qa_history_empty }}";
+        return;
+      }
+      target.className = "qa-history-list";
+      target.innerHTML = qaHistory.map((item) => `
+        <button class="qa-history-item" data-history-question="${escapeHtml(item.question)}">
+          <span class="qa-history-item__question">${escapeHtml(item.question)}</span>
+          <span class="qa-history-item__meta">${escapeHtml(item.timeLabel)}</span>
+        </button>
+      `).join("");
+      target.querySelectorAll("[data-history-question]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const question = button.dataset.historyQuestion || "";
+          document.getElementById("questionInput").value = question;
+          await submitQuestion(question, { fromHistory: true });
+        });
+      });
+    }
+
+    function appendQaMessage(role, html, options = {}) {
+      const stream = document.getElementById("qaChatStream");
+      qaMessageCounter += 1;
+      const id = options.id || `qa-message-${qaMessageCounter}`;
+      const article = document.createElement("article");
+      article.className = `qa-message qa-message--${role}`;
+      article.id = id;
+      article.innerHTML = `
+        <div class="qa-avatar">${role === "user" ? "U" : "A"}</div>
+        <div class="qa-bubble qa-bubble--${role}">${html}</div>
+      `;
+      stream.appendChild(article);
+      stream.scrollTop = stream.scrollHeight;
+      createLucideIcons();
+      return article;
+    }
+
+    function upsertAssistantMessage(contentHtml, options = {}) {
+      const id = options.id || currentAssistantMessageId || `qa-assistant-${qaMessageCounter + 1}`;
+      let node = document.getElementById(id);
+      if (!node) {
+        currentAssistantMessageId = id;
+        node = appendQaMessage("assistant", contentHtml, { id });
+      } else {
+        const bubble = node.querySelector(".qa-bubble");
+        if (bubble) bubble.innerHTML = contentHtml;
+      }
+      const stream = document.getElementById("qaChatStream");
+      stream.scrollTop = stream.scrollHeight;
+      return node;
+    }
+
+    function buildAssistantMessageHtml(answerSections, notes) {
+      const noteHtml = notes && notes.length
+        ? `
+            <div class="qa-inline-notes">
+            <div class="qa-bubble__label">查询提示</div>
+            <ul class="notes-list">${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+          </div>
+        `
+        : "";
+      return `
+        <div class="qa-bubble__label">图谱回答</div>
+        <p class="answer-text">${escapeHtml(answerSections.graphConclusion || UI_TEXT.resultEmpty)}</p>
+        ${noteHtml}
+      `;
+    }
+
+    function pushQaHistory(question) {
+      const now = new Date();
+      const timeLabel = now.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+      const existingIndex = qaHistory.findIndex((item) => item.question === question);
+      if (existingIndex !== -1) qaHistory.splice(existingIndex, 1);
+      qaHistory.unshift({ question, timeLabel });
+      qaHistory = qaHistory.slice(0, 12);
+      renderQaHistory();
+    }
+
     function renderQaResult(data) {
       const modeMap = {
         tool: UI_TEXT.toolMode,
@@ -645,22 +752,13 @@ LIMIT 10</textarea>
       document.getElementById("qaMetaText").textContent = UI_TEXT.queryDescriptions[data.mode] || UI_TEXT.queryDescriptions.empty;
       document.getElementById("qaRouteLabel").textContent = data.route_label || UI_TEXT.emptyMode;
       document.getElementById("qaRouteStage").textContent = data.route_stage || "未提供链路阶段信息";
-      document.getElementById("qaGraphConclusion").textContent = answerSections.graphConclusion || UI_TEXT.resultEmpty;
-      const referenceBlock = document.getElementById("qaReferenceBlock");
-      const referenceText = document.getElementById("qaReferenceText");
-      if (answerSections.modelReference) {
-        referenceBlock.hidden = false;
-        referenceText.textContent = answerSections.modelReference;
-      } else {
-        referenceBlock.hidden = true;
-        referenceText.textContent = "";
-      }
       document.getElementById("qaSparql").textContent = data.sparql || UI_TEXT.resultEmpty;
       document.getElementById("qaRowCount").textContent = `${(data.rows || []).length} 行`;
       renderNotes(data.notes || []);
       lastQaRows = data.rows || [];
       renderTable("qaRows", lastQaRows);
       highlightRowsInGraph(lastQaRows);
+      upsertAssistantMessage(buildAssistantMessageHtml(answerSections, data.notes || []), { id: currentAssistantMessageId });
     }
 
     function renderSparqlResult(data) {
@@ -800,40 +898,223 @@ LIMIT 10</textarea>
 
     function buildForceLikeLayout(nodes, width, height, centerId = "") {
       const cx = width / 2;
-      const cy = height / 2;
-      const radius = Math.max(140, Math.min(width, height) / 2 - 90);
+      const cy = height * 0.53;
+      const total = Math.max(nodes.length, 1);
       return nodes.map((node, index) => {
-        if (node.id === centerId) return { ...node, x: cx, y: cy };
-        const offsetIndex = centerId ? index + 1 : index;
-        const angle = (Math.PI * 2 * offsetIndex) / Math.max(nodes.length, 1) - Math.PI / 2;
-        const radial = node.type === "school" ? radius * 0.72 : radius;
-        return { ...node, x: cx + radial * Math.cos(angle), y: cy + radial * Math.sin(angle) };
+        if (node.id === centerId) {
+          return { ...node, x: cx, y: cy - 24, z: 0.94, curve: 0 };
+        }
+        const orbitBand = total > 40 ? (index % 4) : total > 22 ? (index % 3) : (index % 2);
+        const ringBase = Math.max(150, Math.min(width, height) / 2 - 88);
+        const bandOffset = orbitBand * 56;
+        const angularIndex = centerId ? index + 1 : index;
+        const angle = (Math.PI * 2 * angularIndex) / total - Math.PI / 2 + orbitBand * 0.22;
+        const radial = (node.type === "school" ? ringBase * 0.62 : ringBase) - bandOffset;
+        const x = cx + radial * Math.cos(angle);
+        const curve = Math.sin(angle) * 110 + orbitBand * 18;
+        const y = cy + radial * 0.3 * Math.sin(angle) + curve;
+        const z = 1 + Math.cos(angle) * 0.2 - orbitBand * 0.04;
+        return { ...node, x, y, z, curve };
       });
     }
 
-    function renderNetworkGraph(graphData) {
-      const wrap = document.getElementById("networkCanvasWrap");
-      const metaBox = document.getElementById("networkMeta");
-      const previewBox = document.getElementById("networkDataPreview");
-      const statusText = document.getElementById("networkStatusText");
-      lastGraphData = graphData;
-      currentExploreGraph = graphData;
-      metaBox.textContent = JSON.stringify(graphData.meta, null, 2);
-      previewBox.textContent = JSON.stringify(graphData, null, 2);
-      if (!graphData.nodes.length) {
-        wrap.className = "network-canvas-wrap empty-state";
-        wrap.textContent = UI_TEXT.networkEmpty;
-        statusText.textContent = UI_TEXT.networkEmpty;
-        return;
+    function cameraTransformStyle(width, height) {
+      const state = networkCameraState;
+      return [
+        `translate(${state.offsetX}px, ${state.offsetY}px)`,
+        `scale(${state.scale})`,
+        `rotateX(${state.tiltX}deg)`,
+        `rotateY(${state.tiltY}deg)`,
+        `translateZ(0px)`
+      ].join(" ");
+    }
+
+    function applyNetworkCameraTransform() {
+      const camera = document.querySelector("#networkCanvasWrap .network-camera");
+      const svg = document.querySelector("#networkCanvasWrap .network-svg");
+      if (!camera || !svg) return;
+      const viewBox = svg.getAttribute("viewBox")?.split(" ").map(Number) || [0, 0, 980, 620];
+      const width = viewBox[2] || 980;
+      const height = viewBox[3] || 620;
+      camera.style.transform = cameraTransformStyle(width, height);
+    }
+
+    function requestApplyNetworkCameraTransform() {
+      if (networkCameraRaf) cancelAnimationFrame(networkCameraRaf);
+      networkCameraRaf = requestAnimationFrame(() => {
+        networkCameraRaf = 0;
+        applyNetworkCameraTransform();
+      });
+    }
+
+    function buildNetworkBackdrop(width, height) {
+      return `
+        <defs>
+          <linearGradient id="networkBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fffaf3"></stop>
+            <stop offset="100%" stop-color="#f1e6d8"></stop>
+          </linearGradient>
+          <radialGradient id="networkGlowA" cx="18%" cy="16%" r="42%">
+            <stop offset="0%" stop-color="rgba(151, 45, 22, 0.16)"></stop>
+            <stop offset="100%" stop-color="rgba(151, 45, 22, 0)"></stop>
+          </radialGradient>
+          <radialGradient id="networkGlowB" cx="82%" cy="80%" r="44%">
+            <stop offset="0%" stop-color="rgba(50, 89, 80, 0.16)"></stop>
+            <stop offset="100%" stop-color="rgba(50, 89, 80, 0)"></stop>
+          </radialGradient>
+          <radialGradient id="networkGlowC" cx="54%" cy="24%" r="34%">
+            <stop offset="0%" stop-color="rgba(157, 125, 56, 0.14)"></stop>
+            <stop offset="100%" stop-color="rgba(157, 125, 56, 0)"></stop>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="${width}" height="${height}" rx="30" fill="url(#networkBg)"></rect>
+        <circle cx="140" cy="118" r="130" fill="url(#networkGlowA)"></circle>
+        <circle cx="${width - 120}" cy="${height - 90}" r="160" fill="url(#networkGlowB)"></circle>
+        <circle cx="${width * 0.56}" cy="${height * 0.22}" r="120" fill="url(#networkGlowC)"></circle>
+      `;
+    }
+
+    function graphSummaryText(meta = {}) {
+      const nodeCount = meta.nodeCount || 0;
+      const edgeCount = meta.edgeCount || 0;
+      if (meta.isSubset) {
+        return `当前展示 ${nodeCount} 个节点、${edgeCount} 条边的精选子图，便于演示与交互。`;
       }
-      if (graphData.nodes.length < 2 || graphData.edges.length < 1) {
-        wrap.className = "network-canvas-wrap empty-state";
-        wrap.textContent = UI_TEXT.networkTooSmall;
-        statusText.textContent = UI_TEXT.networkTooSmall;
-        return;
-      }
-      const width = 920;
-      const height = 540;
+      return `已生成 ${nodeCount} 个节点、${edgeCount} 条边。`;
+    }
+
+    function primeSpatialCamera(meta = {}) {
+      if (selectedGraphNodeId || selectedGraphEdgeId) return;
+      const centerBias = meta.center ? -16 : 0;
+      networkCameraState = immersiveGraphOpen
+        ? { scale: 1.42, offsetX: 0, offsetY: 42 + centerBias, tiltX: 9, tiltY: 0 }
+        : { scale: 1.08, offsetX: 0, offsetY: 16 + centerBias, tiltX: 4, tiltY: 0 };
+    }
+
+    function updateNetworkInspector(html, empty = false) {
+      const inspector = document.getElementById("networkInspector");
+      if (!inspector) return;
+      inspector.classList.toggle("network-inspector--empty", empty);
+      inspector.classList.toggle("network-inspector--pinned", networkInspectorPinned);
+      inspector.innerHTML = `
+        <div class="network-inspector__glow"></div>
+        <div class="network-inspector__content">${html}</div>
+      `;
+    }
+
+    function renderMetaTags(meta = {}) {
+      const tags = [];
+      if (meta.mode) tags.push(`<span class="network-meta-tag">${escapeHtml(meta.mode === "preview" ? "精选子图" : meta.mode === "full" ? "扩展视图" : meta.mode)}</span>`);
+      if (meta.relationTypes?.length) tags.push(`<span class="network-meta-tag">${escapeHtml(meta.relationTypes.join(" / "))}</span>`);
+      if (meta.totalEdgeCount) tags.push(`<span class="network-meta-tag">总关系 ${escapeHtml(meta.totalEdgeCount)}</span>`);
+      return tags.join("");
+    }
+
+    function showNetworkMetaSummary(meta = {}) {
+      const note = meta.note || graphSummaryText(meta);
+      updateNetworkInspector(`
+        <p class="network-inspector__eyebrow">Graph Summary</p>
+        <h4 class="network-inspector__title">${escapeHtml(meta.center ? `以 ${meta.center} 为中心` : "人物关系网络")}</h4>
+        <p class="network-inspector__body">${escapeHtml(note)}</p>
+        <div class="network-meta-cluster">
+          <div class="network-stat">
+            <strong>${escapeHtml(meta.nodeCount || 0)}</strong>
+            <span>可视节点</span>
+          </div>
+          <div class="network-stat">
+            <strong>${escapeHtml(meta.edgeCount || 0)}</strong>
+            <span>可视边</span>
+          </div>
+          <div class="network-stat">
+            <strong>${escapeHtml(meta.totalPersonCount || meta.nodeCount || 0)}</strong>
+            <span>人物基数</span>
+          </div>
+        </div>
+        <div class="network-meta-tags">${renderMetaTags(meta)}</div>
+      `, false);
+      networkInspectorPinned = false;
+    }
+
+    function renderNodeDetailHtml(profile, relations, nodeId) {
+      const directRelations = relations.slice(0, 10).map((item) => `
+        <article class="network-relation-chip">
+          <strong>${escapeHtml(item.relatedLabel)}</strong>
+          <span>${escapeHtml(item.relationLabel)} / ${escapeHtml(item.direction)}</span>
+        </article>
+      `).join("");
+      return `
+        <p class="network-inspector__eyebrow">Node Focus</p>
+        <h4 class="network-inspector__title">${escapeHtml(profile.name || nodeId)}</h4>
+        <div class="network-meta-cluster">
+          <div class="network-stat"><strong>${escapeHtml((profile.courtesyNames || []).join("、") || "暂无")}</strong><span>字</span></div>
+          <div class="network-stat"><strong>${escapeHtml((profile.artNames || []).join("、") || "暂无")}</strong><span>号</span></div>
+          <div class="network-stat"><strong>${escapeHtml((profile.schools || []).join("、") || "暂无")}</strong><span>流派</span></div>
+        </div>
+        <div class="network-profile-lines">
+          <span>生年：${escapeHtml((profile.birthYears || []).join("、") || "暂无")}</span>
+          <span>卒年：${escapeHtml((profile.deathYears || []).join("、") || "暂无")}</span>
+        </div>
+        <div class="network-related-list">
+          ${directRelations || `<p class="network-inspector__body">暂无直接关联。</p>`}
+        </div>
+      `;
+    }
+
+    function renderEdgeDetailHtml(edge) {
+      const ontology = edge.ontology || {};
+      return `
+        <p class="network-inspector__eyebrow">Relation Focus</p>
+        <h4 class="network-inspector__title">${escapeHtml(edge.source)} → ${escapeHtml(edge.target)}</h4>
+        <p class="network-inspector__body">${escapeHtml(edge.relationLabel || edge.label || "关联")} 会作为图谱中的一条显式关系边展示，同时带出本体中的关系类型说明。</p>
+        <div class="network-meta-cluster">
+          <div class="network-stat"><strong>${escapeHtml(edge.relationLabel || edge.label || "关联")}</strong><span>关系标签</span></div>
+          <div class="network-stat"><strong>${escapeHtml(ontology.domain || "unknown")}</strong><span>Domain</span></div>
+          <div class="network-stat"><strong>${escapeHtml(ontology.range || "unknown")}</strong><span>Range</span></div>
+        </div>
+        <div class="network-meta-tags">
+          <span class="network-meta-tag">${escapeHtml(ontology.relationType || edge.relationType || "")}</span>
+          <span class="network-meta-tag">${escapeHtml(edge.edgeClass || "edge")}</span>
+        </div>
+      `;
+    }
+
+    function focusCameraOnNode(nodeId) {
+      const graphData = currentExploreGraph;
+      if (!graphData?.nodes?.length) return;
+      const width = immersiveGraphOpen ? 1680 : 1320;
+      const height = immersiveGraphOpen ? 940 : 760;
+      const nodes = buildForceLikeLayout(graphData.nodes, width, height, graphData.meta.center || "");
+      const targetNode = nodes.find((item) => item.id === nodeId);
+      if (!targetNode) return;
+      const zoomLevel = immersiveGraphOpen ? 1.84 : 1.36;
+      const desiredX = width * 0.5 - targetNode.x * zoomLevel;
+      const desiredY = height * 0.46 - targetNode.y * zoomLevel;
+      networkCameraState = {
+        scale: zoomLevel,
+        offsetX: desiredX,
+        offsetY: desiredY,
+        tiltX: immersiveGraphOpen ? 12 : 6,
+        tiltY: Math.max(-10, Math.min(10, ((targetNode.x - width / 2) / width) * 20)),
+      };
+    }
+
+    function graphRenderSignature(graphData, width, height) {
+      return JSON.stringify({
+        nodeCount: graphData.nodes?.length || 0,
+        edgeCount: graphData.edges?.length || 0,
+        center: graphData.meta?.center || "",
+        selectedNode: selectedGraphNodeId,
+        selectedEdge: selectedGraphEdgeId,
+        highlightedCommunityMembers,
+        highlightedPathNodes,
+        highlightedQueryNodes,
+        immersiveGraphOpen,
+        width,
+        height,
+      });
+    }
+
+    function buildNetworkSvgMarkup(graphData, width, height) {
       const positionedNodes = buildForceLikeLayout(graphData.nodes, width, height, graphData.meta.center || "");
       const nodeLookup = Object.fromEntries(positionedNodes.map((node) => [node.id, node]));
       const edgeLines = graphData.edges.map((edge) => {
@@ -841,16 +1122,19 @@ LIMIT 10</textarea>
         const target = nodeLookup[edge.target];
         if (!source || !target) return "";
         const midX = (source.x + target.x) / 2;
-        const midY = (source.y + target.y) / 2;
-        const isHighlighted = highlightedPathNodes.includes(edge.source) && highlightedPathNodes.includes(edge.target);
+        const midY = (source.y + target.y) / 2 - ((source.z + target.z) * 12);
+        const isPathEdge = highlightedPathNodes.includes(edge.source) && highlightedPathNodes.includes(edge.target);
+        const isQueryEdge = highlightedQueryNodes.includes(edge.source) || highlightedQueryNodes.includes(edge.target);
+        const isSelected = selectedGraphEdgeId === edge.id;
+        const controlY = Math.min(source.y, target.y) - 28 - Math.abs(source.x - target.x) * 0.06;
         return `
-          <g class="network-edge-group ${edge.edgeClass || ""} ${isHighlighted ? "is-highlighted" : ""}">
-            <line
-              x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}"
-              class="network-edge-line ${isHighlighted ? "is-highlighted" : ""}"
+          <g class="network-edge-group ${edge.edgeClass || ""} ${isPathEdge ? "is-highlighted" : ""} ${isSelected ? "is-selected" : ""}" data-edge-id="${escapeHtml(edge.id)}" data-source-id="${escapeHtml(edge.source)}" data-target-id="${escapeHtml(edge.target)}">
+            <path
+              d="M ${source.x} ${source.y} Q ${midX} ${controlY} ${target.x} ${target.y}"
+              class="network-edge-line ${isPathEdge ? "is-highlighted" : ""} ${isQueryEdge ? "is-query-highlighted" : ""} ${isSelected ? "is-selected" : ""}"
               stroke="${edge.color || "#6f6458"}"
               stroke-width="${edge.width || 2}">
-            </line>
+            </path>
             <text x="${midX}" y="${midY - 6}" class="network-edge-label">${escapeHtml(edge.relationLabel || edge.label)}</text>
           </g>
         `;
@@ -861,63 +1145,183 @@ LIMIT 10</textarea>
         const isPathHighlighted = highlightedPathNodes.includes(node.id);
         const isQueryHighlighted = highlightedQueryNodes.includes(node.id);
         const isSelected = selectedGraphNodeId === node.id;
+        const nodeRadius = Math.max(12, node.size * (node.z || 1));
         return `
-          <g class="network-node-group" data-node-id="${escapeHtml(node.id)}" style="animation-delay:${index * 90}ms">
-            <circle cx="${node.x}" cy="${node.y}" r="${node.size + 8}" class="network-node-ripple ${isCommunityHighlighted ? "is-community-highlighted" : ""} ${isPathHighlighted ? "is-path-highlighted" : ""}"></circle>
+          <g class="network-node-group" data-node-id="${escapeHtml(node.id)}" style="animation-delay:${index * 60}ms; transform: translateZ(${Math.round((node.z || 1) * 60)}px);">
+            <ellipse cx="${node.x}" cy="${node.y + nodeRadius + 26}" rx="${nodeRadius * 1.45}" ry="${Math.max(10, nodeRadius * 0.4)}" class="network-node-shadow"></ellipse>
+            <circle cx="${node.x}" cy="${node.y}" r="${nodeRadius + 9}" class="network-node-ripple ${isCommunityHighlighted ? "is-community-highlighted" : ""} ${isPathHighlighted ? "is-path-highlighted" : ""}"></circle>
             <circle
-              cx="${node.x}" cy="${node.y}" r="${node.size}" fill="${fill}"
+              cx="${node.x}" cy="${node.y}" r="${nodeRadius}" fill="${fill}"
               class="network-node-circle ${node.isCenter ? "is-center" : ""} ${isSelected ? "is-selected" : ""} ${isCommunityHighlighted ? "is-community-highlighted" : ""} ${isPathHighlighted ? "is-path-highlighted" : ""} ${isQueryHighlighted ? "is-query-highlighted" : ""}">
             </circle>
             <text x="${node.x}" y="${node.y + 5}" class="network-node-text">${escapeHtml(node.label)}</text>
           </g>
         `;
       }).join("");
-      wrap.className = "network-canvas-wrap";
-      wrap.innerHTML = `
+      return `
         <svg viewBox="0 0 ${width} ${height}" class="network-svg" role="img" aria-label="人物关系网络预览">
-          <defs>
-            <linearGradient id="networkBg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#fffaf3"></stop>
-              <stop offset="100%" stop-color="#f4eadc"></stop>
-            </linearGradient>
-            <radialGradient id="networkGlowA" cx="18%" cy="16%" r="42%">
-              <stop offset="0%" stop-color="rgba(151, 45, 22, 0.12)"></stop>
-              <stop offset="100%" stop-color="rgba(151, 45, 22, 0)"></stop>
-            </radialGradient>
-            <radialGradient id="networkGlowB" cx="82%" cy="80%" r="44%">
-              <stop offset="0%" stop-color="rgba(50, 89, 80, 0.12)"></stop>
-              <stop offset="100%" stop-color="rgba(50, 89, 80, 0)"></stop>
-            </radialGradient>
-          </defs>
-          <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="url(#networkBg)"></rect>
-          <circle cx="140" cy="118" r="130" fill="url(#networkGlowA)"></circle>
-          <circle cx="${width - 120}" cy="${height - 90}" r="160" fill="url(#networkGlowB)"></circle>
-          ${edgeLines}
-          ${nodeCircles}
+          ${buildNetworkBackdrop(width, height)}
+          <g class="network-space-grid">
+            <path d="M 76 ${height - 152} C ${width * 0.24} ${height - 300}, ${width * 0.76} ${height - 300}, ${width - 76} ${height - 152}" class="network-space-curve"></path>
+            <path d="M 148 ${height - 68} C ${width * 0.28} ${height - 176}, ${width * 0.72} ${height - 176}, ${width - 148} ${height - 68}" class="network-space-floor"></path>
+            <path d="M ${width * 0.14} ${height * 0.28} C ${width * 0.26} ${height * 0.2}, ${width * 0.34} ${height * 0.2}, ${width * 0.42} ${height * 0.28}" class="network-space-floor"></path>
+            <path d="M ${width * 0.62} ${height * 0.24} C ${width * 0.72} ${height * 0.16}, ${width * 0.84} ${height * 0.16}, ${width * 0.92} ${height * 0.24}" class="network-space-floor"></path>
+          </g>
+          <g class="network-camera" style="transform-origin:${width / 2}px ${height / 2}px; transform: ${cameraTransformStyle(width, height)};">
+            ${edgeLines}
+            ${nodeCircles}
+          </g>
         </svg>
       `;
-      statusText.textContent = `已生成 ${graphData.meta.nodeCount} 个节点、${graphData.meta.edgeCount} 条边`;
-      wrap.querySelectorAll(".network-node-group").forEach((group) => {
+    }
+
+    function bindGraphViewportInteractions(container) {
+      if (!container) return;
+      container.onwheel = (event) => {
+        event.preventDefault();
+        const direction = event.deltaY > 0 ? -0.1 : 0.1;
+        networkCameraState.scale = Math.max(0.78, Math.min(3.2, networkCameraState.scale + direction));
+        networkCameraState.tiltX = immersiveGraphOpen ? Math.max(-10, Math.min(18, 4 + (networkCameraState.scale - 1) * 9)) : Math.max(-4, Math.min(10, 2 + (networkCameraState.scale - 1) * 5));
+        requestApplyNetworkCameraTransform();
+      };
+      container.onpointerdown = (event) => {
+        graphDragState.dragging = true;
+        graphDragState.startX = event.clientX;
+        graphDragState.startY = event.clientY;
+        graphDragState.baseX = networkCameraState.offsetX;
+        graphDragState.baseY = networkCameraState.offsetY;
+        container.classList.add("is-dragging");
+      };
+      container.onpointermove = (event) => {
+        if (!graphDragState.dragging) {
+          const rect = container.getBoundingClientRect();
+          const px = (event.clientX - rect.left) / rect.width - 0.5;
+          const py = (event.clientY - rect.top) / rect.height - 0.5;
+          networkCameraState.tiltY = immersiveGraphOpen ? Math.max(-12, Math.min(12, px * 14)) : Math.max(-8, Math.min(8, px * 7));
+          networkCameraState.tiltX = immersiveGraphOpen ? Math.max(-8, Math.min(16, -py * 12 + (networkCameraState.scale - 1) * 8)) : Math.max(-5, Math.min(11, -py * 7 + (networkCameraState.scale - 1) * 4));
+          requestApplyNetworkCameraTransform();
+          return;
+        }
+        networkCameraState.offsetX = graphDragState.baseX + (event.clientX - graphDragState.startX);
+        networkCameraState.offsetY = graphDragState.baseY + (event.clientY - graphDragState.startY);
+        requestApplyNetworkCameraTransform();
+      };
+      const release = () => {
+        graphDragState.dragging = false;
+        container.classList.remove("is-dragging");
+      };
+      container.onpointerup = release;
+      container.onpointerleave = release;
+    }
+
+    function bindGraphInteractions(container) {
+      if (!container) return;
+      bindGraphViewportInteractions(container);
+      container.addEventListener("click", (event) => {
+        if (event.target === container || event.target.closest("svg")) {
+          if (!event.target.closest(".network-node-group") && !event.target.closest(".network-edge-group")) {
+            selectedGraphNodeId = "";
+            selectedGraphEdgeId = "";
+            networkInspectorPinned = false;
+            requestRenderNetworkGraph();
+          }
+        }
+      });
+      container.querySelectorAll(".network-node-group").forEach((group) => {
         group.addEventListener("click", async () => {
           const nodeId = group.dataset.nodeId || "";
+          if (!nodeId) return;
           selectedGraphNodeId = nodeId;
-          renderNetworkGraph(currentExploreGraph);
+          selectedGraphEdgeId = "";
+          networkInspectorPinned = true;
+          focusCameraOnNode(nodeId);
+          requestRenderNetworkGraph();
           await loadPersonDetail(nodeId);
         });
       });
+      container.querySelectorAll(".network-edge-group").forEach((group) => {
+        group.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const edgeId = group.dataset.edgeId || "";
+          const edge = (currentExploreGraph.edges || []).find((item) => item.id === edgeId);
+          if (!edge) return;
+          selectedGraphEdgeId = edge.id;
+          selectedGraphNodeId = "";
+          networkInspectorPinned = true;
+          requestRenderNetworkGraph();
+          updateNetworkInspector(renderEdgeDetailHtml(edge), false);
+        });
+      });
+    }
+
+    function requestRenderNetworkGraph() {
+      if (networkRenderRaf) cancelAnimationFrame(networkRenderRaf);
+      networkRenderRaf = requestAnimationFrame(() => {
+        networkRenderRaf = 0;
+        renderNetworkGraph(currentExploreGraph);
+      });
+    }
+
+    function renderNetworkGraph(graphData) {
+      const wrap = document.getElementById("networkCanvasWrap");
+      const statusText = document.getElementById("networkStatusText");
+      lastGraphData = graphData;
+      currentExploreGraph = graphData;
+      if (!graphData.nodes.length) {
+        wrap.className = "network-canvas-wrap empty-state";
+        wrap.textContent = UI_TEXT.networkEmpty;
+        statusText.textContent = UI_TEXT.networkEmpty;
+        updateNetworkInspector(`
+          <p class="network-inspector__eyebrow">Graph Inspector</p>
+          <h4 class="network-inspector__title">还没有可展示的数据</h4>
+          <p class="network-inspector__body">${escapeHtml(UI_TEXT.networkEmpty)}</p>
+        `, true);
+        return;
+      }
+      if (graphData.nodes.length < 2 || graphData.edges.length < 1) {
+        wrap.className = "network-canvas-wrap empty-state";
+        wrap.textContent = UI_TEXT.networkTooSmall;
+        statusText.textContent = UI_TEXT.networkTooSmall;
+        updateNetworkInspector(`
+          <p class="network-inspector__eyebrow">Graph Inspector</p>
+          <h4 class="network-inspector__title">当前结果过少</h4>
+          <p class="network-inspector__body">${escapeHtml(UI_TEXT.networkTooSmall)}</p>
+        `, true);
+        return;
+      }
+      const width = immersiveGraphOpen ? 1680 : 1320;
+      const height = immersiveGraphOpen ? 940 : 760;
+      const signature = graphRenderSignature(graphData, width, height);
+      if (signature === renderedGraphSignature && wrap.classList.contains("network-canvas-wrap")) {
+        statusText.textContent = graphSummaryText(graphData.meta || {});
+        return;
+      }
+      renderedGraphSignature = signature;
+      wrap.className = "network-canvas-wrap";
+      primeSpatialCamera(graphData.meta || {});
+      wrap.innerHTML = buildNetworkSvgMarkup(graphData, width, height);
+      statusText.textContent = graphSummaryText(graphData.meta || {});
+      bindGraphInteractions(wrap);
+      applyNetworkCameraTransform();
+      if (!selectedGraphNodeId && !selectedGraphEdgeId) {
+        showNetworkMetaSummary(graphData.meta || {});
+      }
     }
 
     function buildNetworkFromRows(rows, sourceName) {
       highlightRowsInGraph(rows);
       const preview = adaptRowsToGraphData(rows, sourceName);
-      document.getElementById("networkMeta").textContent = JSON.stringify({
-        graphMode: currentExploreGraph.meta?.mode || "full",
-        highlightSource: sourceName,
-        highlightNodeCount: highlightedQueryNodes.length,
-        previewMeta: preview.meta
-      }, null, 2);
-      document.getElementById("networkDataPreview").textContent = JSON.stringify(preview, null, 2);
-      renderNetworkGraph(currentExploreGraph);
+      updateNetworkInspector(`
+        <p class="network-inspector__eyebrow">Query Highlight</p>
+        <h4 class="network-inspector__title">${escapeHtml(sourceName)}</h4>
+        <p class="network-inspector__body">已从当前结果中识别出 ${escapeHtml(highlightedQueryNodes.length)} 个相关标签，并同步映射到关系图高亮。</p>
+        <div class="network-meta-cluster">
+          <div class="network-stat"><strong>${escapeHtml(preview.meta.nodeCount)}</strong><span>识别节点</span></div>
+          <div class="network-stat"><strong>${escapeHtml(preview.meta.edgeCount)}</strong><span>识别边</span></div>
+          <div class="network-stat"><strong>${escapeHtml(preview.meta.rowCount)}</strong><span>来源行数</span></div>
+        </div>
+      `, false);
+      requestRenderNetworkGraph();
     }
 
     function highlightRowsInGraph(rows) {
@@ -931,17 +1335,19 @@ LIMIT 10</textarea>
       highlightedQueryNodes = Array.from(labels);
     }
 
-    async function loadExploreGraph(center = "", hop = 1) {
+    async function loadExploreGraph(center = "", hop = 1, options = {}) {
+      const { fullView = false } = options;
       const statusText = document.getElementById("networkStatusText");
       const wrap = document.getElementById("networkCanvasWrap");
       if (statusText) statusText.textContent = "正在加载图谱网络...";
       if (wrap && (!currentExploreGraph.nodes || currentExploreGraph.nodes.length === 0)) {
         wrap.className = "network-canvas-wrap empty-state";
-        wrap.textContent = "正在构建全量人物关系图谱...";
+        wrap.textContent = fullView ? "正在展开关系网络..." : "正在构建精选人物关系图谱...";
       }
       const params = new URLSearchParams();
       if (center) params.set("center", center);
       params.set("hop", String(hop));
+      if (fullView) params.set("full_view", "1");
       for (const relationType of getActiveRelationFilters()) {
         params.append("relation_type", relationType);
       }
@@ -954,49 +1360,38 @@ LIMIT 10</textarea>
       }
       highlightedCommunityMembers = [];
       highlightedPathNodes = [];
+      selectedGraphEdgeId = "";
+      networkInspectorPinned = false;
+      renderedGraphSignature = "";
       renderNetworkGraph(payload.data);
       if (payload.data.meta?.center) {
         selectedGraphNodeId = payload.data.meta.center;
         await loadPersonDetail(payload.data.meta.center);
       }
+      return payload.data;
     }
 
     async function loadPersonDetail(nodeId) {
       if (!nodeId) return;
-      const panel = document.getElementById("networkDetailPanel");
-      panel.className = "analysis-block";
-      panel.innerHTML = `<div class="empty-state">正在加载 ${escapeHtml(nodeId)} 的详情...</div>`;
+      updateNetworkInspector(`
+        <p class="network-inspector__eyebrow">Node Focus</p>
+        <h4 class="network-inspector__title">${escapeHtml(nodeId)}</h4>
+        <p class="network-inspector__body">正在提取人物属性、直接关系与流派信息...</p>
+      `, false);
       const response = await fetch(`/api/person-detail?name=${encodeURIComponent(nodeId)}`);
       const payload = await response.json();
       if (!payload.ok) {
-        panel.className = "analysis-block empty-state";
-        panel.textContent = payload.error || UI_TEXT.resultError;
+        updateNetworkInspector(`
+          <p class="network-inspector__eyebrow">Node Focus</p>
+          <h4 class="network-inspector__title">${escapeHtml(nodeId)}</h4>
+          <p class="network-inspector__body">${escapeHtml(payload.error || UI_TEXT.resultError)}</p>
+        `, true);
         return;
       }
       const profile = payload.profile || {};
       const relations = payload.relations || [];
-      panel.className = "analysis-block";
-      panel.innerHTML = `
-        <div class="analysis-subsection">
-          <h4>${escapeHtml(profile.name || nodeId)}</h4>
-          <article class="analysis-item analysis-item--stack">
-            <span>字：${escapeHtml((profile.courtesyNames || []).join("、") || "暂无")}</span>
-            <span>号：${escapeHtml((profile.artNames || []).join("、") || "暂无")}</span>
-            <span>生年：${escapeHtml((profile.birthYears || []).join("、") || "暂无")}</span>
-            <span>卒年：${escapeHtml((profile.deathYears || []).join("、") || "暂无")}</span>
-            <span>流派：${escapeHtml((profile.schools || []).join("、") || "暂无")}</span>
-          </article>
-        </div>
-        <div class="analysis-subsection">
-          <h4>直接关联</h4>
-          ${renderAnalysisList(relations.slice(0, 20), (item) => `
-            <article class="analysis-item analysis-item--stack">
-              <strong>${escapeHtml(item.relatedLabel)}</strong>
-              <span>${escapeHtml(item.relationLabel)} / ${escapeHtml(item.direction)}</span>
-            </article>
-          `)}
-        </div>
-      `;
+      networkInspectorPinned = true;
+      updateNetworkInspector(renderNodeDetailHtml(profile, relations, nodeId), false);
     }
 
     function renderAnalysisList(items, mapper) {
@@ -1101,6 +1496,8 @@ LIMIT 10</textarea>
           highlightedCommunityMembers = (item.dataset.communityMembers || "").split("||").filter(Boolean);
           highlightedPathNodes = [];
           highlightedQueryNodes = [];
+          selectedGraphNodeId = "";
+          selectedGraphEdgeId = "";
           activateTab("networkTab");
           renderNetworkGraph(currentExploreGraph);
         });
@@ -1110,6 +1507,8 @@ LIMIT 10</textarea>
           highlightedPathNodes = (item.dataset.pathNodes || "").split("||").filter(Boolean);
           highlightedCommunityMembers = [];
           highlightedQueryNodes = [];
+          selectedGraphNodeId = "";
+          selectedGraphEdgeId = "";
           activateTab("networkTab");
           renderNetworkGraph(currentExploreGraph);
         });
@@ -1125,7 +1524,7 @@ LIMIT 10</textarea>
       });
     }
 
-    async function submitQuestion(question) {
+    async function submitQuestion(question, options = {}) {
       if (!question) {
         renderQaResult({
           mode: "empty",
@@ -1139,20 +1538,29 @@ LIMIT 10</textarea>
       const askBtn = document.getElementById("askBtn");
       const questionInput = document.getElementById("questionInput");
 
-      // 禁用按钮和输入框，防止重复提交
+      if (!options.fromHistory) {
+        appendQaMessage("user", `
+          <div class="qa-bubble__label">当前问题</div>
+          <p class="answer-text">${escapeHtml(question)}</p>
+        `);
+      }
+      pushQaHistory(question);
+      currentAssistantMessageId = `qa-assistant-${Date.now()}`;
+      upsertAssistantMessage(`
+        <div class="qa-bubble__label">图谱回答</div>
+        <p class="answer-text">正在整理相关人物、关系与图谱结果，请稍候...</p>
+      `, { id: currentAssistantMessageId });
+
       askBtn.disabled = true;
       questionInput.disabled = true;
 
-      // 显示加载状态
       document.getElementById("qaModeBadge").textContent = "查询中...";
       document.getElementById("qaMetaText").textContent = "正在处理您的问题，请稍候...";
       document.getElementById("qaRouteLabel").textContent = "执行中";
       document.getElementById("qaRouteStage").textContent = "正在查询知识图谱...";
-      document.getElementById("qaGraphConclusion").textContent = "正在查询中，请稍候...";
       document.getElementById("qaSparql").textContent = "等待查询结果...";
       document.getElementById("qaRowCount").textContent = "0 行";
       document.getElementById("qaNotesBlock").hidden = true;
-      document.getElementById("qaReferenceBlock").hidden = true;
       renderTable("qaRows", []);
 
       try {
@@ -1169,9 +1577,10 @@ LIMIT 10</textarea>
           route_stage: "请求异常",
         });
       } finally {
-        // 恢复按钮和输入框
         askBtn.disabled = false;
         questionInput.disabled = false;
+        questionInput.value = "";
+        questionInput.focus();
       }
     }
 
@@ -1255,6 +1664,10 @@ LIMIT 10</textarea>
       button.addEventListener("click", () => activateTab(button.dataset.goTab));
     });
     document.getElementById("toggleReferenceModeBtn").addEventListener("click", toggleReferenceMode);
+    document.getElementById("clearQaHistoryBtn").addEventListener("click", () => {
+      qaHistory = [];
+      renderQaHistory();
+    });
     document.getElementById("askBtn").addEventListener("click", async () => submitQuestion(document.getElementById("questionInput").value.trim()));
     document.getElementById("questionInput").addEventListener("keydown", async (event) => {
       if (event.key !== "Enter") return;
@@ -1264,7 +1677,7 @@ LIMIT 10</textarea>
     document.getElementById("sparqlBtn").addEventListener("click", async () => submitSparql(document.getElementById("sparqlInput").value));
     document.getElementById("buildNetworkFromQaBtn").addEventListener("click", () => buildNetworkFromRows(lastQaRows, "问答结果"));
     document.getElementById("buildNetworkFromSparqlBtn").addEventListener("click", () => buildNetworkFromRows(lastSparqlRows, "图谱查询结果"));
-    document.getElementById("loadFullGraphBtn").addEventListener("click", async () => loadExploreGraph("", Number(document.querySelector(".network-hop-toggle .is-active")?.dataset.hop || "1")));
+    document.getElementById("loadFullGraphBtn").addEventListener("click", async () => loadExploreGraph("", Number(document.querySelector(".network-hop-toggle .is-active")?.dataset.hop || "1"), { fullView: true }));
     document.getElementById("expandPersonGraphBtn").addEventListener("click", async () => {
       const center = document.getElementById("networkCenterInput").value.trim();
       const hop = Number(document.querySelector(".network-hop-toggle .is-active")?.dataset.hop || "1");
@@ -1285,6 +1698,16 @@ LIMIT 10</textarea>
     });
     document.getElementById("refreshAnalysisBtn").addEventListener("click", loadGraphAnalysis);
     document.getElementById("pathAnalysisBtn").addEventListener("click", loadPathAnalysis);
+    document.getElementById("openImmersiveGraphBtn").addEventListener("click", () => {
+      immersiveGraphOpen = !immersiveGraphOpen;
+      networkCameraState = immersiveGraphOpen
+        ? { scale: 1.42, offsetX: 0, offsetY: 42, tiltX: 9, tiltY: 0 }
+        : { scale: 1.08, offsetX: 0, offsetY: 16, tiltX: 4, tiltY: 0 };
+      document.body.classList.toggle("graph-immersive-open", immersiveGraphOpen);
+      document.getElementById("openImmersiveGraphBtn").querySelector("span").textContent = immersiveGraphOpen ? "退出沉浸" : "沉浸查看";
+      renderedGraphSignature = "";
+      renderNetworkGraph(currentExploreGraph);
+    });
     document.querySelectorAll(".chips .chip").forEach((button) => {
       button.addEventListener("click", async () => {
         const question = button.dataset.question;
@@ -1295,12 +1718,16 @@ LIMIT 10</textarea>
     });
 
     renderRuntimeStatus(runtimeStatus);
+    renderQaHistory();
     renderNetworkGraph(lastGraphData);
     refreshRuntimeStatus();
     createLucideIcons();
 
     window.addEventListener("load", () => {
       const openingScreen = document.getElementById("openingScreen");
+      if (!initialNetworkGraph || !initialNetworkGraph.nodes || initialNetworkGraph.nodes.length === 0) {
+        networkPreloadPromise = loadExploreGraph();
+      }
       window.setTimeout(() => {
         openingScreen.classList.add("opening-screen--hidden");
       }, 1250);

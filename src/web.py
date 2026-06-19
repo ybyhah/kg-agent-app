@@ -42,12 +42,12 @@ def build_ui_text():
         "title": "印人传知识图谱智能体",
         "eyebrow": "Seal Lineage Knowledge Agent",
         "hero_title": "印人传知识图谱智能体",
-        "hero_script": "印谱人物 · 流派脉络 · 关系追踪",
-        "hero_quote": "从人物传记进入印学世界，让姓名、字号、师承、交游与流派在同一张图谱中彼此照见。",
+        "hero_script": "古籍抽取 · 图谱建模 · 智能问答",
+        "hero_quote": "让人物传记、关系规则与结构化图谱在同一幅知识长卷中并置呈现，让查询、追踪与分析拥有清晰的来路。",
         "hero_intro": (
-            "围绕《印人传》构建的人物知识图谱问答系统。"
-            "你可以直接提问人物生平、字号、师承、亲属、交游与流派问题，"
-            "也可以使用图谱查询台执行 SPARQL，进一步查看结构化结果、关系网络与图结构分析。"
+            "这是一个围绕《印人传》构建的知识图谱智能体。"
+            "首页集中展示我们如何把古籍文本整理为人物记录，如何通过人工规则与 AI 协同完成抽取、"
+            "RDF/Turtle 建模、实体对齐与 LangGraph 问答，再把结果落到关系网络与图结构分析中。"
         ),
         "hero_primary": "开始查询",
         "hero_secondary": "进入图谱查询",
@@ -58,16 +58,16 @@ def build_ui_text():
         "nav_analysis": "图结构分析",
         "hero_cards": [
             {
-                "title": "人物检索",
-                "text": "查询人物姓名、字号、生卒年与基础传记信息。",
+                "title": "人工规则骨架",
+                "text": "抽取 Schema、数据清洗、关系分类与消歧规则先行，保证知识图谱不是黑盒生成。",
             },
             {
-                "title": "关系追踪",
-                "text": "查看师承、亲属、交游与人物之间的关联线索。",
+                "title": "图谱问答链路",
+                "text": "固定工具、few-shot SPARQL 与 fallback 组成 LangGraph 工作流，让自然语言问题落到可执行查询。",
             },
             {
-                "title": "流派脉络",
-                "text": "观察印派的开创者、代表人物与演变中的关键节点。",
+                "title": "可视化分析面板",
+                "text": "关系网络图、本体解释与图结构分析联动展示，让人物、流派与关系脉络被直接看见。",
             },
         ],
         "qa_kicker": "自然语言问答",
@@ -85,12 +85,19 @@ def build_ui_text():
         ],
         "qa_result_hint": "系统会优先依据本地知识图谱返回结果。",
         "qa_waiting": "请输入问题并开始查询。",
+        "qa_history_title": "历史查询",
+        "qa_history_empty": "这里会保留本次会话中的问题记录。",
+        "qa_chat_intro": "你好，这里会优先根据本地知识图谱回答问题，并同步展示对应的查询链路。",
+        "qa_trace_title": "查询轨迹",
+        "qa_trace_hint": "右侧保留本次问答的链路、SPARQL 与结果表。",
+        "qa_input_hint": "按 Enter 发送问题",
+        "qa_clear_history": "清空记录",
         "runtime_status_label": "模型状态",
         "runtime_reference_label": "参考模式",
         "runtime_reference_on": "已开启",
         "runtime_reference_off": "已关闭",
         "runtime_llm_disabled": "当前未启用大模型链路",
-        "runtime_llm_enabled": "当前已启用 DeepSeek 链路",
+        "runtime_llm_enabled": "问答增强已启用",
         "reference_toggle_on": "开启参考模式",
         "reference_toggle_off": "关闭参考模式",
         "graph_conclusion_label": "图谱结论",
@@ -170,7 +177,22 @@ def register_routes(app, config: AppConfig):
 
     @app.get("/")
     def index():
-        return render_template("index.html", ui=ui, runtime_status=service.get_runtime_status())
+        initial_network_graph = {
+            "ok": False,
+            "nodes": [],
+            "edges": [],
+            "meta": {"mode": "", "center": "", "hop": 0, "nodeCount": 0, "edgeCount": 0, "relationTypes": []},
+        }
+        try:
+            initial_network_graph = service.get_graph_exploration()
+        except Exception:
+            pass
+        return render_template(
+            "index.html",
+            ui=ui,
+            runtime_status=service.get_runtime_status(),
+            initial_network_graph=initial_network_graph,
+        )
 
     @app.post("/api/query")
     def query():
@@ -231,6 +253,7 @@ def register_routes(app, config: AppConfig):
     def graph_explore():
         center = str(request.args.get("center", "")).strip()
         hop = request.args.get("hop", default=1, type=int) or 1
+        full_view = str(request.args.get("full_view", "")).strip().lower() in {"1", "true", "yes", "on"}
         relation_types = request.args.getlist("relation_type")
         try:
             return jsonify(
@@ -240,6 +263,7 @@ def register_routes(app, config: AppConfig):
                         center=center,
                         hop=hop,
                         relation_types=relation_types,
+                        full_view=full_view,
                     ),
                 }
             )

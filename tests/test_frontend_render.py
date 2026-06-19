@@ -20,6 +20,10 @@ class FrontendRenderTests(unittest.TestCase):
         self.assertIn("networkTab", html)
         self.assertIn("analysisTab", html)
         self.assertIn("toggleReferenceModeBtn", html)
+        self.assertIn("overviewImmersiveLayer", html)
+        self.assertIn("heroVerticalTexts", html)
+        self.assertIn("networkGalleryStage", html)
+        self.assertIn("networkSpatialHint", html)
 
 
 if __name__ == "__main__":

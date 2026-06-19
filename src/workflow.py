@@ -288,14 +288,21 @@ class QueryWorkflow:
 
     def _build_openai_tool_client(self) -> OpenAIChatCompletionsClient | None:
         client = getattr(self.llm_support, "client", None)
-        if client is None or not hasattr(client, "client"):
+        if client is None:
             return None
+        # 如果 client 本身就是 OpenAIChatCompletionsClient，直接返回
+        if isinstance(client, OpenAIChatCompletionsClient):
+            return client
+        # 兼容其他情况
         try:
-            raw_api_key = client.client.api_key
+            if hasattr(client, "client") and hasattr(client.client, "api_key"):
+                raw_api_key = client.client.api_key
+            else:
+                raw_api_key = getattr(client, "api_key", None)
+            if not raw_api_key:
+                return None
+            model_name = getattr(client, "model", "") or "deepseek-v4-flash"
+            base_url = getattr(client, "base_url", "") or ""
+            return OpenAIChatCompletionsClient(api_key=raw_api_key, model=model_name, base_url=base_url)
         except Exception:
             return None
-        model_name = getattr(client, "model", "") or "deepseek-v4-flash"
-        base_url = getattr(client, "base_url", "") or ""
-        if not raw_api_key:
-            return None
-        return OpenAIChatCompletionsClient(api_key=raw_api_key, model=model_name, base_url=base_url)

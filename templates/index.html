@@ -633,17 +633,26 @@ LIMIT 10</textarea>
       `;
     }
 
-    function renderNotes(notes) {
-      const block = document.getElementById("qaNotesBlock");
-      const list = document.getElementById("qaNotesList");
-      if (!notes || notes.length === 0) {
-        block.hidden = true;
-        list.innerHTML = "";
+  function renderNotes(notes) {
+    const block = document.getElementById("qaNotesBlock");
+    const list = document.getElementById("qaNotesList");
+
+    console.log("block =", block);
+    console.log("list =", list);
+
+    if (!notes || notes.length === 0) {
+        if (block) block.hidden = true;
+        if (list) list.innerHTML = "";
         return;
-      }
-      block.hidden = false;
-      list.innerHTML = notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
     }
+
+    if (block) block.hidden = false;
+    if (list) {
+        list.innerHTML = notes
+            .map(note => `<li>${escapeHtml(note)}</li>`)
+            .join("");
+    }
+}
 
     function splitAnswerSections(answer) {
       const raw = String(answer || "").trim();
@@ -1560,7 +1569,15 @@ LIMIT 10</textarea>
       document.getElementById("qaRouteStage").textContent = "正在查询知识图谱...";
       document.getElementById("qaSparql").textContent = "等待查询结果...";
       document.getElementById("qaRowCount").textContent = "0 行";
-      document.getElementById("qaNotesBlock").hidden = true;
+     
+      const qaNotesBlock = document.getElementById("qaNotesBlock");
+
+        console.log("qaNotesBlock:", qaNotesBlock);
+
+        if (qaNotesBlock) {
+            qaNotesBlock.hidden = true;
+        }
+
       renderTable("qaRows", []);
 
       try {

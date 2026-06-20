@@ -314,6 +314,19 @@ def register_routes(app, config: AppConfig):
             }
         )
 
+    @app.get("/api/ontology-explanations")
+    def ontology_explanations():
+        ontology_path = config.ontology_explanations_json
+        if not ontology_path.exists():
+            return jsonify({"ok": False, "error": "本体解释文件不存在。"}), 404
+        try:
+            import json
+            with open(ontology_path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+            return jsonify({"ok": True, "data": data})
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
     @app.get("/api/health")
     def health():
         return jsonify(

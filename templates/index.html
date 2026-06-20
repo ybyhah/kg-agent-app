@@ -533,6 +533,35 @@ LIMIT 10</textarea>
     let networkLoadedOnce = false;
     let analysisLoadedOnce = false;
     let networkPreloadPromise = null;
+    let ontologyExplanations = null;
+
+    async function loadOntologyExplanations() {
+      if (ontologyExplanations) return ontologyExplanations;
+      try {
+        const response = await fetch("/api/ontology-explanations");
+        const payload = await response.json();
+        if (payload.ok) {
+          ontologyExplanations = payload.data;
+        }
+      } catch (_err) {
+        // 本体解释加载失败不影响主功能
+      }
+      return ontologyExplanations;
+    }
+
+    function lookupRelationOntology(relationType) {
+      if (!ontologyExplanations || !relationType) return null;
+      return ontologyExplanations[relationType] || null;
+    }
+
+    function lookupEntityType(entityTypeUri) {
+      if (!ontologyExplanations || !entityTypeUri) return null;
+      // entityTypeUri like "yrz:Person" — extract "Person"
+      const parts = entityTypeUri.split(":");
+      const localName = parts[parts.length - 1];
+      const entityTypes = ontologyExplanations._entityTypes || {};
+      return entityTypes[localName] || null;
+    }
 
     function createLucideIcons() {
       if (window.lucide && typeof window.lucide.createIcons === "function") {
@@ -1051,9 +1080,16 @@ LIMIT 10</textarea>
           <span>${escapeHtml(item.relationLabel)} / ${escapeHtml(item.direction)}</span>
         </article>
       `).join("");
+      const entityType = lookupEntityType(profile.entityType || "");
+      const entityTypeDisplay = entityType
+        ? `<span class="network-meta-tag">${escapeHtml(entityType.label)}</span><span class="network-meta-tag network-meta-tag--dim">${escapeHtml(profile.entityType || "")}</span>`
+        : "";
+      const entityDesc = entityType ? `<p class="network-inspector__body" style="margin-bottom:10px;">${escapeHtml(entityType.description)}</p>` : "";
       return `
         <p class="network-inspector__eyebrow">Node Focus</p>
         <h4 class="network-inspector__title">${escapeHtml(profile.name || nodeId)}</h4>
+        ${entityDesc}
+        <div class="network-meta-tags">${entityTypeDisplay}</div>
         <div class="network-meta-cluster">
           <div class="network-stat"><strong>${escapeHtml((profile.courtesyNames || []).join("、") || "暂无")}</strong><span>字</span></div>
           <div class="network-stat"><strong>${escapeHtml((profile.artNames || []).join("、") || "暂无")}</strong><span>号</span></div>
@@ -1071,17 +1107,25 @@ LIMIT 10</textarea>
 
     function renderEdgeDetailHtml(edge) {
       const ontology = edge.ontology || {};
+      const relationDef = lookupRelationOntology(ontology.relationType || edge.relationType);
+      const domainName = relationDef ? relationDef.domain : (ontology.domain || "unknown");
+      const rangeName = relationDef ? relationDef.range : (ontology.range || "unknown");
+      const domainLabel = lookupEntityType("yrz:" + domainName);
+      const rangeLabel = lookupEntityType("yrz:" + rangeName);
+      const domainDisplay = domainLabel ? domainLabel.label : domainName;
+      const rangeDisplay = rangeLabel ? rangeLabel.label : rangeName;
+      const descText = relationDef ? relationDef.description : (edge.relationLabel || "关联") + " 会作为图谱中的一条显式关系边展示。";
       return `
         <p class="network-inspector__eyebrow">Relation Focus</p>
         <h4 class="network-inspector__title">${escapeHtml(edge.source)} → ${escapeHtml(edge.target)}</h4>
-        <p class="network-inspector__body">${escapeHtml(edge.relationLabel || edge.label || "关联")} 会作为图谱中的一条显式关系边展示，同时带出本体中的关系类型说明。</p>
+        <p class="network-inspector__body">${escapeHtml(descText)}</p>
         <div class="network-meta-cluster">
-          <div class="network-stat"><strong>${escapeHtml(edge.relationLabel || edge.label || "关联")}</strong><span>关系标签</span></div>
-          <div class="network-stat"><strong>${escapeHtml(ontology.domain || "unknown")}</strong><span>Domain</span></div>
-          <div class="network-stat"><strong>${escapeHtml(ontology.range || "unknown")}</strong><span>Range</span></div>
+          <div class="network-stat"><strong>${escapeHtml(relationDef ? relationDef.label : (edge.relationLabel || "关联"))}</strong><span>关系</span></div>
+          <div class="network-stat"><strong>${escapeHtml(domainDisplay)}</strong><span>定义域 (Domain)</span></div>
+          <div class="network-stat"><strong>${escapeHtml(rangeDisplay)}</strong><span>值域 (Range)</span></div>
         </div>
         <div class="network-meta-tags">
-          <span class="network-meta-tag">${escapeHtml(ontology.relationType || edge.relationType || "")}</span>
+          <span class="network-meta-tag">${escapeHtml(relationDef ? relationDef.property : (ontology.relationType || edge.relationType || ""))}</span>
           <span class="network-meta-tag">${escapeHtml(edge.edgeClass || "edge")}</span>
         </div>
       `;
@@ -1245,7 +1289,24 @@ LIMIT 10</textarea>
           networkInspectorPinned = true;
           focusCameraOnNode(nodeId);
           requestRenderNetworkGraph();
-          await loadPersonDetail(nodeId);
+          const node = (currentExploreGraph.nodes || []).find((n) => n.id === nodeId);
+          if (node && node.type !== "person") {
+            // 非人物节点（流派/地名等）：直接展示本体类型说明
+            const entityType = lookupEntityType(node.entityType || "");
+            const entityLabel = entityType ? entityType.label : node.type;
+            const entityDesc = entityType ? entityType.description : "";
+            updateNetworkInspector(`
+              <p class="network-inspector__eyebrow">Node Focus</p>
+              <h4 class="network-inspector__title">${escapeHtml(node.label || nodeId)}</h4>
+              <p class="network-inspector__body">${escapeHtml(entityDesc)}</p>
+              <div class="network-meta-tags">
+                <span class="network-meta-tag">${escapeHtml(entityLabel)}</span>
+                <span class="network-meta-tag network-meta-tag--dim">${escapeHtml(node.entityType || node.type)}</span>
+              </div>
+            `, false);
+          } else {
+            await loadPersonDetail(nodeId);
+          }
         });
       });
       container.querySelectorAll(".network-edge-group").forEach((group) => {
@@ -1739,6 +1800,7 @@ LIMIT 10</textarea>
     renderNetworkGraph(lastGraphData);
     refreshRuntimeStatus();
     createLucideIcons();
+    loadOntologyExplanations();
 
     window.addEventListener("load", () => {
       const openingScreen = document.getElementById("openingScreen");

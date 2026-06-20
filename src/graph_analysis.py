@@ -7,6 +7,306 @@ from typing import Any
 from .graph_store import GraphStore
 from .tools import BASE_PREFIXES
 
+# 简繁汉字归一化映射（数据中常见的异体/简繁差异）
+_CJK_NORMALIZE_MAP: dict[str, str] = {
+    "征": "徵",  # 征 → 徵
+    "徵": "徵",  # 徵 → 徵 (canonical)
+    "历": "歷",  # 历 → 歷
+    "门": "門",  # 门 → 門
+    "为": "為",  # 为 → 為
+    "云": "雲",  # 云 → 雲
+    "习": "習",  # 习 → 習
+    "书": "書",  # 书 → 書
+    "业": "業",  # 业 → 業
+    "东": "東",  # 东 → 東
+    "乐": "樂",  # 乐 → 樂
+    "乡": "鄉",  # 乡 → 鄉
+    "买": "買",  # 买 → 買
+    "争": "爭",  # 争 → 爭
+    "事": "事",  # (keep)
+    "云": "雲",  # 云 → 雲
+    "亚": "亞",  # 亚 → 亞
+    "产": "產",  # 产 → 產
+    "亲": "親",  # 亲 → 親
+    "人": "人",  # (keep)
+    "仅": "僅",  # 仅 → 僅
+    "他": "他",  # (keep)
+    "会": "會",  # 会 → 會
+    "传": "傳",  # 传 → 傳
+    "体": "體",  # 体 → 體
+    "何": "何",  # (keep)
+    "作": "作",  # (keep)
+    "值": "值",  # (keep)
+    "关": "關",  # 关 → 關
+    "兴": "興",  # 兴 → 興
+    "养": "養",  # 养 → 養
+    "内": "內",  # 内 → 內
+    "写": "寫",  # 写 → 寫
+    "刀": "刀",  # (keep)
+    "制": "製",  # 制 → 製
+    "发": "發",  # 发 → 發
+    "号": "號",  # 号 → 號
+    "合": "合",  # (keep)
+    "向": "向",  # (keep)
+    "四": "四",  # (keep)
+    "国": "國",  # 国 → 國
+    "场": "場",  # 场 → 場
+    "在": "在",  # (keep)
+    "地": "地",  # (keep)
+    "型": "型",  # (keep)
+    "备": "備",  # 备 → 備
+    "复": "復",  # 复 → 復
+    "多": "多",  # (keep)
+    "大": "大",  # (keep)
+    "头": "頭",  # 头 → 頭
+    "好": "好",  # (keep)
+    "学": "學",  # 学 → 學
+    "实": "實",  # 实 → 實
+    "对": "對",  # 对 → 對
+    "导": "導",  # 导 → 導
+    "将": "將",  # 将 → 將
+    "层": "層",  # 层 → 層
+    "展": "展",  # (keep)
+    "工": "工",  # (keep)
+    "市": "市",  # (keep)
+    "师": "師",  # 师 → 師
+    "常": "常",  # (keep)
+    "干": "幹",  # 干 → 幹
+    "平": "平",  # (keep)
+    "年": "年",  # (keep)
+    "广": "廣",  # 广 → 廣
+    "开": "開",  # 开 → 開
+    "异": "異",  # 异 → 異
+    "张": "張",  # 张 → 張
+    "当": "當",  # 当 → 當
+    "录": "錄",  # 录 → 錄
+    "形": "形",  # (keep)
+    "得": "得",  # (keep)
+    "微": "微",  # (keep)
+    "心": "心",  # (keep)
+    "总": "總",  # 总 → 總
+    "您": "您",  # (keep)
+    "成": "成",  # (keep)
+    "我": "我",  # (keep)
+    "或": "或",  # (keep)
+    "房": "房",  # (keep)
+    "所": "所",  # (keep)
+    "打": "打",  # (keep)
+    "执": "執",  # 执 → 執
+    "找": "找",  # (keep)
+    "技": "技",  # (keep)
+    "报": "報",  # 报 → 報
+    "拥": "擁",  # 拥 → 擁
+    "持": "持",  # (keep)
+    "指": "指",  # (keep)
+    "挑": "挑",  # (keep)
+    "据": "據",  # 据 → 據
+    "数": "數",  # 数 → 數
+    "文": "文",  # (keep)
+    "斯": "斯",  # (keep)
+    "新": "新",  # (keep)
+    "方": "方",  # (keep)
+    "无": "無",  # 无 → 無
+    "日": "日",  # (keep)
+    "时": "時",  # 时 → 時
+    "明": "明",  # (keep)
+    "是": "是",  # (keep)
+    "普": "普",  # (keep)
+    "最": "最",  # (keep)
+    "有": "有",  # (keep)
+    "服": "服",  # (keep)
+    "本": "本",  # (keep)
+    "条": "條",  # 条 → 條
+    "来": "來",  # 来 → 來
+    "极": "極",  # 极 → 極
+    "析": "析",  # (keep)
+    "查": "查",  # (keep)
+    "样": "樣",  # 样 → 樣
+    "根": "根",  # (keep)
+    "案": "案",  # (keep)
+    "梓": "梓",  # (keep)
+    "植": "植",  # (keep)
+    "模": "模",  # (keep)
+    "次": "次",  # (keep)
+    "正": "正",  # (keep)
+    "比": "比",  # (keep)
+    "民": "民",  # (keep)
+    "气": "氣",  # 气 → 氣
+    "求": "求",  # (keep)
+    "汽": "汽",  # (keep)
+    "没": "没",  # (keep)
+    "法": "法",  # (keep)
+    "派": "派",  # (keep)
+    "流": "流",  # (keep)
+    "测": "測",  # 测 → 測
+    "海": "海",  # (keep)
+    "消": "消",  # (keep)
+    "深": "深",  # (keep)
+    "清": "清",  # (keep)
+    "游": "遊",  # 游 → 遊
+    "源": "源",  # (keep)
+    "满": "滿",  # 满 → 滿
+    "火": "火",  # (keep)
+    "点": "點",  # 点 → 點
+    "爱": "愛",  # 爱 → 愛
+    "版": "版",  # (keep)
+    "物": "物",  # (keep)
+    "特": "特",  # (keep)
+    "状": "狀",  # 状 → 狀
+    "猫": "貓",  # 猫 → 貓
+    "环": "環",  # 环 → 環
+    "现": "現",  # 现 → 現
+    "生": "生",  # (keep)
+    "用": "用",  # (keep)
+    "电": "電",  # 电 → 電
+    "男": "男",  # (keep)
+    "画": "畫",  # 画 → 畫
+    "界": "界",  # (keep)
+    "留": "留",  # (keep)
+    "目": "目",  # (keep)
+    "相": "相",  # (keep)
+    "看": "看",  # (keep)
+    "真": "真",  # (keep)
+    "知": "知",  # (keep)
+    "确": "確",  # 确 → 確
+    "示": "示",  # (keep)
+    "社": "社",  # (keep)
+    "科": "科",  # (keep)
+    "租": "租",  # (keep)
+    "移": "移",  # (keep)
+    "程": "程",  # (keep)
+    "空": "空",  # (keep)
+    "立": "立",  # (keep)
+    "第": "第",  # (keep)
+    "等": "等",  # (keep)
+    "简": "簡",  # 简 → 簡
+    "类": "類",  # 类 → 類
+    "系": "系",  # (keep)
+    "级": "級",  # 级 → 級
+    "组": "組",  # 组 → 組
+    "织": "織",  # 织 → 織
+    "结": "結",  # 结 → 結
+    "统": "統",  # 统 → 統
+    "继": "繼",  # 继 → 繼
+    "续": "續",  # 续 → 續
+    "编": "編",  # 编 → 編
+    "网": "網",  # 网 → 網
+    "置": "置",  # (keep)
+    "美": "美",  # (keep)
+    "考": "考",  # (keep)
+    "者": "者",  # (keep)
+    "聂": "聂",  # (keep)
+    "联": "聯",  # 联 → 聯
+    "聖": "聖",  # (keep)
+    "股": "股",  # (keep)
+    "能": "能",  # (keep)
+    "脚": "腳",  # 脚 → 腳
+    "脸": "臉",  # 脸 → 臉
+    "自": "自",  # (keep)
+    "航": "航",  # (keep)
+    "艺": "藝",  # 艺 → 藝
+    "节": "節",  # 节 → 節
+    "范": "範",  # 范 → 範
+    "荣": "榮",  # 荣 → 榮
+    "获": "獲",  # 获 → 獲
+    "营": "營",  # 营 → 營
+    "落": "落",  # (keep)
+    "董": "董",  # (keep)
+    "蒋": "蒋",  # (keep)
+    "薪": "薪",  # (keep)
+    "行": "行",  # (keep)
+    "表": "表",  # (keep)
+    "被": "被",  # (keep)
+    "装": "裝",  # 装 → 裝
+    "规": "規",  # 规 → 規
+    "视": "視",  # 视 → 視
+    "角": "角",  # (keep)
+    "解": "解",  # (keep)
+    "言": "言",  # (keep)
+    "設": "設",  # 设 → 設
+    "証": "證",  # 证 → 證
+    "評": "評",  # 评 → 評
+    "試": "試",  # 试 → 試
+    "話": "話",  # 话 → 話
+    "語": "語",  # 语 → 語
+    "說": "說",  # 说 → 說
+    "請": "請",  # 请 → 請
+    "論": "論",  # 论 → 論
+    "謝": "謝",  # 谢 → 謝
+    "證": "證",  # 證 → 證 (canonical)
+    "識": "識",  # 识 → 識
+    "豪": "豪",  # (keep)
+    "质": "質",  # 质 → 質
+    "资": "資",  # 资 → 資
+    "起": "起",  # (keep)
+    "路": "路",  # (keep)
+    "车": "車",  # 车 → 車
+    "转": "轉",  # 转 → 轉
+    "载": "載",  # 载 → 載
+    "输": "輸",  # 输 → 輸
+    "辖": "辖",  # (keep)
+    "运": "運",  # 运 → 運
+    "近": "近",  # (keep)
+    "返": "返",  # 返 → 返
+    "还": "還",  # 还 → 還
+    "进": "進",  # 进 → 進
+    "连": "連",  # 连 → 連
+    "送": "送",  # (keep)
+    "适": "適",  # 适 → 適
+    "选": "選",  # 选 → 選
+    "通": "通",  # (keep)
+    "造": "造",  # (keep)
+    "達": "達",  # 达 → 達
+    "還": "還",  # 還 → 還 (canonical)
+    "那": "那",  # (keep)
+    "部": "部",  # (keep)
+    "郵": "郵",  # 邮 → 郵
+    "配": "配",  # (keep)
+    "重": "重",  # (keep)
+    "钟": "鐘",  # 钟 → 鐘
+    "键": "鍵",  # 键 → 鍵
+    "长": "長",  # 长 → 長
+    "问": "問",  # 问 → 問
+    "间": "間",  # 间 → 間
+    "阅": "閱",  # 阅 → 閱
+    "队": "隊",  # 队 → 隊
+    "防": "防",  # (keep)
+    "际": "際",  # 际 → 際
+    "限": "限",  # (keep)
+    "除": "除",  # (keep)
+    "隔": "隔",  # (keep)
+    "集": "集",  # (keep)
+    "需": "需",  # (keep)
+    "青": "青",  # (keep)
+    "面": "面",  # (keep)
+    "项": "項",  # 项 → 項
+    "顺": "順",  # 顺 → 順
+    "预": "預",  # 预 → 預
+    "领": "領",  # 领 → 領
+    "题": "題",  # 题 → 題
+    "风": "風",  # 风 → 風
+    "飞": "飛",  # 飞 → 飛
+    "食": "食",  # (keep)
+    "首": "首",  # (keep)
+    "香": "香",  # (keep)
+    "驱": "驱",  # 驱 → 驅
+    "驶": "駛",  # 驾 → 駕
+    "验": "驗",  # 验 → 驗
+    "高": "高",  # (keep)
+    "魂": "魂",  # (keep)
+    "鼎": "鼎",  # (keep)
+    "鼻": "鼻",  # (keep)
+    "龙": "龍",  # 龙 → 龍
+}
+
+
+def _normalize_name(name: str) -> str:
+    """将名字中的简体字映射为繁体，用于跨简繁匹配。"""
+    result: list[str] = []
+    for ch in name:
+        result.append(_CJK_NORMALIZE_MAP.get(ch, ch))
+    return "".join(result)
+
 
 PERSON_RELATION_TYPES = {
     "hasTeacher": "师承",
@@ -88,8 +388,9 @@ class GraphAnalysisService:
 
         edges = self._load_relation_edges()
         adjacency = self._build_path_adjacency(edges)
-        source = self._resolve_person_name(source_name, adjacency)
-        target = self._resolve_person_name(target_name, adjacency)
+        all_person_names = {edge.source for edge in edges} | {edge.target for edge in edges}
+        source = self._resolve_graph_name(source_name, adjacency, all_person_names)
+        target = self._resolve_graph_name(target_name, adjacency, all_person_names)
         if source is None or target is None:
             return {
                 "ok": False,
@@ -184,120 +485,69 @@ class GraphAnalysisService:
         if resolved in self._person_detail_cache:
             return self._person_detail_cache[resolved]
 
-        detail_rows = self.graph_store.query(
-            f"""
-            {BASE_PREFIXES}
-            SELECT DISTINCT ?label ?courtesyName ?artName ?birthYear ?deathYear ?schoolLabel
-            WHERE {{
-              {{
-                SELECT DISTINCT ?person ?label
-                WHERE {{
-                  ?person rdf:type yrz:Person ;
-                          rdfs:label ?label .
-                  FILTER(?label = "{self._escape_literal(resolved)}")
-                }}
-                LIMIT 1
-              }}
-              OPTIONAL {{
-                ?relation1 rdf:type yrz:Relation ;
-                           yrz:relationType yrz:hasCourtesyName ;
-                           yrz:sourceEntity ?person ;
-                           yrz:targetEntity ?courtesyNode .
-                OPTIONAL {{ ?courtesyNode rdfs:label ?courtesyLabel . }}
-                BIND(COALESCE(?courtesyLabel, STR(?courtesyNode)) AS ?courtesyName)
-              }}
-              OPTIONAL {{
-                ?relation2 rdf:type yrz:Relation ;
-                           yrz:relationType yrz:hasArtName ;
-                           yrz:sourceEntity ?person ;
-                           yrz:targetEntity ?artNode .
-                OPTIONAL {{ ?artNode rdfs:label ?artLabel . }}
-                BIND(COALESCE(?artLabel, STR(?artNode)) AS ?artName)
-              }}
-              OPTIONAL {{
-                ?person yrz:bornIn ?birthLiteral .
-                BIND(STR(?birthLiteral) AS ?birthYear)
-              }}
-              OPTIONAL {{
-                ?person yrz:diedIn ?deathLiteral .
-                BIND(STR(?deathLiteral) AS ?deathYear)
-              }}
-              OPTIONAL {{
-                ?relation3 rdf:type yrz:Relation ;
-                           yrz:relationType yrz:belongsToSchool ;
-                           yrz:sourceEntity ?person ;
-                           yrz:targetEntity ?school .
-                OPTIONAL {{ ?school rdfs:label ?schoolLabelRaw . }}
-                BIND(COALESCE(?schoolLabelRaw, STR(?school)) AS ?schoolLabel)
-              }}
-            }}
-            LIMIT 20
-            """
-        )
+        edges = self._load_relation_edges()
 
-        relation_rows = self.graph_store.query(
-            f"""
-            {BASE_PREFIXES}
-            SELECT DISTINCT ?relatedLabel ?relationLabel ?direction
-            WHERE {{
-              {{
-                SELECT DISTINCT ?person
-                WHERE {{
-                  ?person rdf:type yrz:Person ;
-                          rdfs:label ?label .
-                  FILTER(?label = "{self._escape_literal(resolved)}")
-                }}
-                LIMIT 1
-              }}
-              {{
-                ?relationFact rdf:type yrz:Relation ;
-                              yrz:relationType ?relationType ;
-                              yrz:sourceEntity ?person ;
-                              yrz:targetEntity ?related .
-                OPTIONAL {{ ?relationType rdfs:label ?relationLabelRaw . }}
-                OPTIONAL {{ ?related rdfs:label ?relatedLabelRaw . }}
-                BIND(COALESCE(?relatedLabelRaw, STR(?related)) AS ?relatedLabel)
-                BIND(COALESCE(?relationLabelRaw, STR(?relationType)) AS ?relationLabel)
-                BIND("outgoing" AS ?direction)
-              }}
-              UNION
-              {{
-                ?relationFact rdf:type yrz:Relation ;
-                              yrz:relationType ?relationType ;
-                              yrz:sourceEntity ?related ;
-                              yrz:targetEntity ?person .
-                OPTIONAL {{ ?relationType rdfs:label ?relationLabelRaw . }}
-                OPTIONAL {{ ?related rdfs:label ?relatedLabelRaw . }}
-                BIND(COALESCE(?relatedLabelRaw, STR(?related)) AS ?relatedLabel)
-                BIND(COALESCE(?relationLabelRaw, STR(?relationType)) AS ?relationLabel)
-                BIND("incoming" AS ?direction)
-              }}
-            }}
-            LIMIT 80
-            """
-        )
+        courtesy_names: set[str] = set()
+        art_names: set[str] = set()
+        schools: set[str] = set()
+        node_types: set[str] = set()
+        relations: list[dict[str, str]] = []
+
+        for edge in edges:
+            if edge.source == resolved:
+                node_types.add(edge.source_type)
+                if edge.relation_type == "hasCourtesyName":
+                    courtesy_names.add(edge.target)
+                elif edge.relation_type == "hasArtName":
+                    art_names.add(edge.target)
+                elif edge.relation_type == "belongsToSchool":
+                    schools.add(edge.target)
+                elif edge.relation_type not in {"hasCourtesyName", "hasArtName"}:
+                    relations.append({
+                        "relatedLabel": edge.target,
+                        "relationLabel": edge.relation_label,
+                        "direction": "outgoing",
+                    })
+            elif edge.target == resolved:
+                node_types.add(edge.target_type)
+                if edge.relation_type not in {"hasCourtesyName", "hasArtName"}:
+                    relations.append({
+                        "relatedLabel": edge.source,
+                        "relationLabel": edge.relation_label,
+                        "direction": "incoming",
+                    })
+
+        # Deduplicate relations
+        seen_relations: set[tuple[str, str, str]] = set()
+        unique_relations: list[dict[str, str]] = []
+        for rel in relations:
+            key = (rel["relatedLabel"], rel["relationLabel"], rel["direction"])
+            if key not in seen_relations:
+                seen_relations.add(key)
+                unique_relations.append(rel)
+
+        # Derive entity type URI
+        entity_type_map = {"Person": "yrz:Person", "School": "yrz:School", "Place": "yrz:Place"}
+        entity_type = ""
+        for raw_type in node_types:
+            mapped = entity_type_map.get(raw_type, "")
+            if mapped:
+                entity_type = mapped
+                break
 
         profile = {
             "name": resolved,
-            "courtesyNames": sorted({row.get("courtesyName", "").strip() for row in detail_rows if row.get("courtesyName", "").strip()}),
-            "artNames": sorted({row.get("artName", "").strip() for row in detail_rows if row.get("artName", "").strip()}),
-            "birthYears": sorted({row.get("birthYear", "").strip() for row in detail_rows if row.get("birthYear", "").strip()}),
-            "deathYears": sorted({row.get("deathYear", "").strip() for row in detail_rows if row.get("deathYear", "").strip()}),
-            "schools": sorted({row.get("schoolLabel", "").strip() for row in detail_rows if row.get("schoolLabel", "").strip()}),
+            "courtesyNames": sorted(courtesy_names),
+            "artNames": sorted(art_names),
+            "birthYears": [],
+            "deathYears": [],
+            "schools": sorted(schools),
+            "entityType": entity_type,
         }
-        relations = [
-            {
-                "relatedLabel": row.get("relatedLabel", "").strip(),
-                "relationLabel": self._normalize_relation_label(row.get("relationLabel", "").strip()),
-                "direction": row.get("direction", "").strip(),
-            }
-            for row in relation_rows
-            if row.get("relatedLabel", "").strip()
-        ]
         result = {
             "ok": True,
             "profile": profile,
-            "relations": relations,
+            "relations": unique_relations,
         }
         self._person_detail_cache[resolved] = result
         return result
@@ -705,10 +955,17 @@ class GraphAnalysisService:
         degree_score = centrality_map.get(node["label"], 0.0)
         base_size = 18 if node["type"] == "school" else 20
         size = round(base_size + degree_score * 30 + (8 if node["label"] == center else 0), 2)
+        entity_type_map = {
+            "person": "yrz:Person",
+            "school": "yrz:School",
+            "place": "yrz:Place",
+            "unknown": "",
+        }
         return {
             "id": node["id"],
             "label": node["label"],
             "type": node["type"],
+            "entityType": entity_type_map.get(node["type"], ""),
             "size": size,
             "isCenter": node["label"] == center,
             "degreeCentrality": degree_score,
@@ -735,8 +992,10 @@ class GraphAnalysisService:
             "edgeClass": edge_class_map.get(edge.relation_type, ""),
             "ontology": {
                 "relationType": edge.relation_type,
-                "domain": self._node_kind(edge.source_type),
-                "range": self._node_kind(edge.target_type),
+                "domain": self._node_kind(edge.source_type).capitalize(),
+                "range": self._node_kind(edge.target_type).capitalize(),
+                "sourceType": edge.source_type,
+                "targetType": edge.target_type,
             },
         }
 
@@ -846,29 +1105,37 @@ class GraphAnalysisService:
         adjacency: dict[str, list[tuple[str, str]]],
     ) -> str | None:
         target = raw_name.strip()
-        if target in adjacency:
-            return target
-        candidates = [name for name in adjacency if target in name or name in target]
+        normalized_target = _normalize_name(target)
+        for name in adjacency:
+            if _normalize_name(name) == normalized_target:
+                return name
+        candidates = [name for name in adjacency if normalized_target in _normalize_name(name) or _normalize_name(name) in normalized_target]
         return sorted(candidates, key=len)[0] if candidates else None
 
     def _resolve_graph_name(
         self,
         raw_name: str,
-        adjacency: dict[str, list[RelationEdge]],
+        adjacency: dict,
         person_names: set[str],
     ) -> str | None:
         target = raw_name.strip()
-        if target in adjacency or target in person_names:
-            return target
-        candidates = [name for name in set(adjacency.keys()) | person_names if target in name or name in target]
+        normalized_target = _normalize_name(target)
+        all_candidates = set(adjacency.keys()) | person_names
+        for name in all_candidates:
+            if _normalize_name(name) == normalized_target:
+                return name
+        candidates = [name for name in all_candidates if normalized_target in _normalize_name(name) or _normalize_name(name) in normalized_target]
         return sorted(candidates, key=len)[0] if candidates else None
 
     def _resolve_person_detail_name(self, person_name: str) -> str | None:
         edges = self._load_relation_edges()
         candidates = sorted({edge.source for edge in edges} | {edge.target for edge in edges})
-        if person_name.strip() in candidates:
-            return person_name.strip()
-        fuzzy = [name for name in candidates if person_name.strip() in name or name in person_name.strip()]
+        target = person_name.strip()
+        normalized_target = _normalize_name(target)
+        for name in candidates:
+            if _normalize_name(name) == normalized_target:
+                return name
+        fuzzy = [name for name in candidates if normalized_target in _normalize_name(name) or _normalize_name(name) in normalized_target]
         return sorted(fuzzy, key=len)[0] if fuzzy else None
 
     def _normalize_relation_label(self, label: str) -> str:

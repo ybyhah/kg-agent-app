@@ -184,6 +184,26 @@ class WorkflowLlmSupport:
         )
         return self._safe_invoke(prompt)
 
+    def reference_answer(
+        self,
+        *,
+        question: str,
+        failure_reason: str,
+    ) -> str | None:
+        if not self.available:
+            return None
+
+        prompt = (
+            "你是《印人传》知识图谱问答系统的参考说明节点。\n"
+            "当前本地图谱未稳定返回结果，但系统已开启参考模式。\n"
+            "请只输出一段以“模型参考说明：”开头的简短补充，内容可以基于模型内部知识进行概括。\n"
+            "必须明确声明这段内容仅供参考，不作为本地图谱查询结论。\n"
+            "回答用中文，最多3句，不要重复“图谱结论”。\n\n"
+            f"用户问题：{question}\n"
+            f"失败原因：{failure_reason}\n"
+        )
+        return self._safe_invoke(prompt)
+
     def _safe_invoke(self, prompt: str) -> str | None:
         if self.client is None:
             return None

@@ -1231,9 +1231,10 @@ button.primary-btn:hover {
 
 .qa-workspace {
   display: grid;
-  grid-template-columns: minmax(220px, 0.84fr) minmax(0, 2.1fr) minmax(280px, 0.96fr);
-  gap: 26px;
+  grid-template-columns: minmax(190px, 0.62fr) minmax(0, 1.9fr) minmax(420px, 1.18fr);
+  gap: 24px;
   min-height: 760px;
+  align-items: stretch;
 }
 
 .qa-history-panel,
@@ -1272,10 +1273,10 @@ button.primary-btn:hover {
 }
 
 .qa-chat-stream {
-  min-height: 420px;
-  max-height: 620px;
+  min-height: 460px;
+  max-height: 660px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 6px;
   display: grid;
   align-content: start;
   gap: 18px;
@@ -1310,10 +1311,13 @@ button.primary-btn:hover {
 }
 
 .qa-bubble {
-  max-width: min(92%, 760px);
-  padding: 16px 18px;
+  width: min(100%, 840px);
+  max-width: min(94%, 840px);
+  padding: 18px 20px;
   border-radius: 18px;
   box-shadow: 0 10px 24px rgba(71, 40, 18, 0.04);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .qa-bubble--assistant {
@@ -1343,9 +1347,21 @@ button.primary-btn:hover {
 }
 
 .qa-inline-notes {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(151, 114, 79, 0.14);
+}
+
+.qa-inline-reference {
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px dashed rgba(151, 114, 79, 0.14);
+  border-top: 1px solid rgba(151, 114, 79, 0.12);
+}
+
+.answer-text--reference {
+  font-size: 0.98rem;
+  line-height: 1.92;
+  color: var(--ink-soft);
 }
 
 .qa-example-chips {
@@ -1354,7 +1370,7 @@ button.primary-btn:hover {
 
 .qa-input-shell {
   border-top: 1px solid rgba(151, 114, 79, 0.08);
-  padding-top: 14px;
+  padding-top: 16px;
   display: grid;
   gap: 10px;
 }
@@ -1413,6 +1429,7 @@ button.primary-btn:hover {
 .qa-trace-panel {
   background:
     linear-gradient(180deg, rgba(255, 252, 246, 0.72), rgba(246, 236, 220, 0.54));
+  overflow: hidden;
 }
 
 .qa-route-strip {
@@ -1423,6 +1440,17 @@ button.primary-btn:hover {
 .qa-trace-stack {
   display: grid;
   gap: 10px;
+  min-height: 0;
+}
+
+.qa-example-guide {
+  display: grid;
+  gap: 12px;
+}
+
+.qa-example-guide__head {
+  display: grid;
+  gap: 4px;
 }
 
 .result-card--subpanel {
@@ -1473,7 +1501,7 @@ button.primary-btn:hover {
 }
 
 .qa-trace-panel {
-  padding-left: 18px;
+  padding-left: 16px;
   border-left: 1px solid rgba(151, 114, 79, 0.08);
 }
 
@@ -1483,6 +1511,7 @@ button.primary-btn:hover {
   border: 0;
   border-bottom: 1px solid rgba(151, 114, 79, 0.08);
   background: transparent;
+  min-width: 0;
 }
 
 .route-chip--wide {
@@ -1491,6 +1520,10 @@ button.primary-btn:hover {
 
 .route-chip strong {
   font-size: 0.96rem;
+  line-height: 1.65;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .result-card--subpanel .result-card-head {
@@ -1499,16 +1532,24 @@ button.primary-btn:hover {
 
 .result-card--subpanel .result-box {
   min-height: 132px;
+  max-height: 340px;
   padding: 14px 0 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .result-card--subpanel .table-wrap {
   border-top: 1px solid rgba(151, 114, 79, 0.08);
   padding-top: 12px;
+  max-height: 340px;
+  overflow: auto;
+  min-width: 0;
 }
 
 .result-card--subpanel .empty-state {
@@ -1624,15 +1665,37 @@ button.primary-btn:hover {
 
 .answer-text {
   margin: 0;
-  font-size: 1.14rem;
-  line-height: 1.95;
+  font-size: 1.08rem;
+  line-height: 1.86;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#qaRows .result-table,
+#sparqlRows .result-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 0;
+}
+
+#qaRows .result-table th,
+#qaRows .result-table td,
+#sparqlRows .result-table th,
+#sparqlRows .result-table td {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+  white-space: normal;
 }
 
 .notes-list {
   margin: 0;
   padding-left: 20px;
-  line-height: 1.9;
+  line-height: 1.75;
   color: var(--ink-soft);
+  display: grid;
+  gap: 6px;
 }
 
 .result-card-head {
@@ -2809,6 +2872,10 @@ body.graph-immersive-open .network-inspector {
 
   .qa-chat-stream {
     max-height: 520px;
+  }
+
+  .qa-example-legend {
+    grid-template-columns: 1fr;
   }
 
   .top-nav {

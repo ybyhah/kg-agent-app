@@ -76,18 +76,32 @@ def build_ui_text():
         "qa_placeholder": "例如：文彭的号是什么？",
         "qa_button": "查询",
         "qa_examples": [
-            "文彭是谁？",
-            "文彭的字和号是什么？",
-            "文彭与文徵明是什么关系？",
-            "谁开创了吴门印派？",
-            "文彭的师承关系有哪些？",
-            "吴门印派有哪些代表人物？",
+            {
+                "question": "文彭的字和号是什么？",
+                "route": "tool",
+                "description": "测试固定工具：get_courtesy_and_art_name",
+            },
+            {
+                "question": "吴门印派代表人物有哪些？",
+                "route": "generated_sparql",
+                "description": "测试生成式 SPARQL：流派代表人物复杂查询",
+            },
+            {
+                "question": "比较文彭与丁敬的篆刻理论差异。",
+                "route": "fallback",
+                "description": "测试开放式问题直接进入 fallback，由大模型生成谨慎回答",
+            },
         ],
         "qa_result_hint": "系统会优先依据本地知识图谱返回结果。",
         "qa_waiting": "请输入问题并开始查询。",
         "qa_history_title": "历史查询",
         "qa_history_empty": "这里会保留本次会话中的问题记录。",
         "qa_chat_intro": "你好，这里会优先根据本地知识图谱回答问题，并同步展示对应的查询链路。",
+        "qa_examples_title": "示例问题",
+        "qa_examples_hint": "保留 3 条可演示链路：固定工具、生成式 SPARQL、失败后 fallback。",
+        "qa_notes_label": "链路说明",
+        "qa_answer_label": "图谱回答",
+        "qa_user_label": "当前问题",
         "qa_trace_title": "查询轨迹",
         "qa_trace_hint": "右侧保留本次问答的链路、SPARQL 与结果表。",
         "qa_input_hint": "按 Enter 发送问题",
@@ -178,15 +192,19 @@ def register_routes(app, config: AppConfig):
     @app.get("/")
     def index():
         initial_network_graph = {
-            "ok": False,
+            "ok": True,
             "nodes": [],
             "edges": [],
-            "meta": {"mode": "", "center": "", "hop": 0, "nodeCount": 0, "edgeCount": 0, "relationTypes": []},
+            "meta": {
+                "mode": "",
+                "center": "",
+                "hop": 0,
+                "nodeCount": 0,
+                "edgeCount": 0,
+                "relationTypes": [],
+                "note": "关系网络改为页面渲染后再异步加载，避免首页首屏阻塞。",
+            },
         }
-        try:
-            initial_network_graph = service.get_graph_exploration()
-        except Exception:
-            pass
         return render_template(
             "index.html",
             ui=ui,

@@ -172,19 +172,24 @@
               <article class="qa-message qa-message--assistant qa-message--welcome">
                 <div class="qa-avatar">A</div>
                 <div class="qa-bubble qa-bubble--assistant">
-                  <div class="qa-bubble__label">知识图谱问答</div>
+                  <div class="qa-bubble__label">{{ ui.qa_answer_label }}</div>
                   <p class="answer-text">{{ ui.qa_chat_intro }}</p>
                 </div>
               </article>
             </div>
 
-            <div class="chips qa-example-chips">
-              {% for question in ui.qa_examples %}
-              <button class="chip" data-question="{{ question }}">
+            <div class="qa-example-guide">
+              <div class="qa-example-guide__head">
+                <strong>{{ ui.qa_examples_title }}</strong>
+              </div>
+              <div class="chips qa-example-chips">
+              {% for item in ui.qa_examples %}
+              <button class="chip" data-question="{{ item.question }}">
                 <i data-lucide="sparkle"></i>
-                <span>{{ question }}</span>
+                <span>{{ item.question }}</span>
               </button>
               {% endfor %}
+              </div>
             </div>
 
             <div class="qa-input-shell">
@@ -512,13 +517,17 @@ LIMIT 10</textarea>
     let lastQaRows = [];
     let lastSparqlRows = [];
     let initialNetworkGraph = {{ initial_network_graph | tojson }};
-    let lastGraphData = initialNetworkGraph && initialNetworkGraph.nodes ? initialNetworkGraph : { nodes: [], edges: [], meta: { source: "", rowCount: 0, nodeCount: 0, edgeCount: 0, warnings: [] } };
+    let lastGraphData = initialNetworkGraph && Array.isArray(initialNetworkGraph.nodes) && initialNetworkGraph.nodes.length
+      ? initialNetworkGraph
+      : { nodes: [], edges: [], meta: { source: "", rowCount: 0, nodeCount: 0, edgeCount: 0, warnings: [] } };
     let runtimeStatus = {{ runtime_status | tojson }};
     let selectedGraphNodeId = "";
     let highlightedCommunityMembers = [];
     let highlightedPathNodes = [];
     let highlightedQueryNodes = [];
-    let currentExploreGraph = initialNetworkGraph && initialNetworkGraph.nodes ? initialNetworkGraph : { nodes: [], edges: [], meta: { mode: "", center: "", hop: 0, nodeCount: 0, edgeCount: 0, relationTypes: [] } };
+    let currentExploreGraph = initialNetworkGraph && Array.isArray(initialNetworkGraph.nodes) && initialNetworkGraph.nodes.length
+      ? initialNetworkGraph
+      : { nodes: [], edges: [], meta: { mode: "", center: "", hop: 0, nodeCount: 0, edgeCount: 0, relationTypes: [] } };
     let selectedGraphEdgeId = "";
     let networkCameraState = { scale: 1.08, offsetX: 0, offsetY: 16, tiltX: 4, tiltY: 0 };
     let immersiveGraphOpen = false;
@@ -633,27 +642,6 @@ LIMIT 10</textarea>
       `;
     }
 
-  function renderNotes(notes) {
-    const block = document.getElementById("qaNotesBlock");
-    const list = document.getElementById("qaNotesList");
-
-    console.log("block =", block);
-    console.log("list =", list);
-
-    if (!notes || notes.length === 0) {
-        if (block) block.hidden = true;
-        if (list) list.innerHTML = "";
-        return;
-    }
-
-    if (block) block.hidden = false;
-    if (list) {
-        list.innerHTML = notes
-            .map(note => `<li>${escapeHtml(note)}</li>`)
-            .join("");
-    }
-}
-
     function splitAnswerSections(answer) {
       const raw = String(answer || "").trim();
       const marker = "模型参考说明：";
@@ -702,7 +690,9 @@ LIMIT 10</textarea>
         <div class="qa-bubble qa-bubble--${role}">${html}</div>
       `;
       stream.appendChild(article);
-      stream.scrollTop = stream.scrollHeight;
+      if (options.scroll !== false) {
+        stream.scrollTop = stream.scrollHeight;
+      }
       createLucideIcons();
       return article;
     }
@@ -718,22 +708,34 @@ LIMIT 10</textarea>
         if (bubble) bubble.innerHTML = contentHtml;
       }
       const stream = document.getElementById("qaChatStream");
-      stream.scrollTop = stream.scrollHeight;
+      if (options.scroll !== false) {
+        stream.scrollTop = stream.scrollHeight;
+      }
       return node;
     }
 
     function buildAssistantMessageHtml(answerSections, notes) {
-      const noteHtml = notes && notes.length
+      const compactNotes = (notes || []).slice(0, 2);
+      const modelReferenceHtml = answerSections.modelReference
+        ? `
+            <div class="qa-inline-reference">
+              <div class="qa-bubble__label">${escapeHtml("{{ ui.model_reference_label }}")}</div>
+              <p class="answer-text answer-text--reference">${escapeHtml(answerSections.modelReference)}</p>
+            </div>
+          `
+        : "";
+      const noteHtml = compactNotes.length
         ? `
             <div class="qa-inline-notes">
-            <div class="qa-bubble__label">查询提示</div>
-            <ul class="notes-list">${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+            <div class="qa-bubble__label">${escapeHtml("{{ ui.qa_notes_label }}")}</div>
+            <ul class="notes-list">${compactNotes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
           </div>
         `
         : "";
       return `
-        <div class="qa-bubble__label">图谱回答</div>
+        <div class="qa-bubble__label">${escapeHtml("{{ ui.qa_answer_label }}")}</div>
         <p class="answer-text">${escapeHtml(answerSections.graphConclusion || UI_TEXT.resultEmpty)}</p>
+        ${modelReferenceHtml}
         ${noteHtml}
       `;
     }
@@ -763,11 +765,13 @@ LIMIT 10</textarea>
       document.getElementById("qaRouteStage").textContent = data.route_stage || "未提供链路阶段信息";
       document.getElementById("qaSparql").textContent = data.sparql || UI_TEXT.resultEmpty;
       document.getElementById("qaRowCount").textContent = `${(data.rows || []).length} 行`;
-      renderNotes(data.notes || []);
       lastQaRows = data.rows || [];
       renderTable("qaRows", lastQaRows);
       highlightRowsInGraph(lastQaRows);
-      upsertAssistantMessage(buildAssistantMessageHtml(answerSections, data.notes || []), { id: currentAssistantMessageId });
+      upsertAssistantMessage(buildAssistantMessageHtml(answerSections, data.notes || []), {
+        id: currentAssistantMessageId,
+        scroll: false
+      });
     }
 
     function renderSparqlResult(data) {
@@ -1549,16 +1553,16 @@ LIMIT 10</textarea>
 
       if (!options.fromHistory) {
         appendQaMessage("user", `
-          <div class="qa-bubble__label">当前问题</div>
+          <div class="qa-bubble__label">{{ ui.qa_user_label }}</div>
           <p class="answer-text">${escapeHtml(question)}</p>
         `);
       }
       pushQaHistory(question);
       currentAssistantMessageId = `qa-assistant-${Date.now()}`;
       upsertAssistantMessage(`
-        <div class="qa-bubble__label">图谱回答</div>
+        <div class="qa-bubble__label">{{ ui.qa_answer_label }}</div>
         <p class="answer-text">正在整理相关人物、关系与图谱结果，请稍候...</p>
-      `, { id: currentAssistantMessageId });
+      `, { id: currentAssistantMessageId, scroll: false });
 
       askBtn.disabled = true;
       questionInput.disabled = true;
@@ -1570,14 +1574,6 @@ LIMIT 10</textarea>
       document.getElementById("qaSparql").textContent = "等待查询结果...";
       document.getElementById("qaRowCount").textContent = "0 行";
      
-      const qaNotesBlock = document.getElementById("qaNotesBlock");
-
-        console.log("qaNotesBlock:", qaNotesBlock);
-
-        if (qaNotesBlock) {
-            qaNotesBlock.hidden = true;
-        }
-
       renderTable("qaRows", []);
 
       try {
@@ -1742,9 +1738,7 @@ LIMIT 10</textarea>
 
     window.addEventListener("load", () => {
       const openingScreen = document.getElementById("openingScreen");
-      if (!initialNetworkGraph || !initialNetworkGraph.nodes || initialNetworkGraph.nodes.length === 0) {
-        networkPreloadPromise = loadExploreGraph();
-      }
+      networkPreloadPromise = loadExploreGraph();
       window.setTimeout(() => {
         openingScreen.classList.add("opening-screen--hidden");
       }, 1250);

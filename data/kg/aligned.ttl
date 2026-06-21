@@ -41574,4 +41574,205 @@ kg:张在辛_e1  kg:hasCourtesyName  "卯君" .
 kg:张在辛_e1  kg:hasArtName  "柏庭" .
 kg:张在辛_e1  kg:dynasty  "清" .
 kg:张在辛_e1  kg:birthPlace  "山东莱州" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T15:10:28.881193
+# 浜虹墿: 张溶
+# 鍖归厤鏂规硶: rule_based (score=1.25)
+# ==========================================================
+kg:张庆善_e2  owl:sameAs  <http://cbdb.fas.harvard.edu/person/100905> .
+kg:张庆善_e2  kg:cbdbId  "100905" .
+kg:张庆善_e2  kg:alignmentStatus  "aligned" .
+kg:张庆善_e2  kg:alignmentMethod  "rule_based" .
+kg:张庆善_e2  kg:hasCourtesyName  "镜心" .
+kg:张庆善_e2  kg:hasArtName  "石泉" .
+kg:张庆善_e2  kg:dynasty  "清" .
+kg:张庆善_e2  kg:birthPlace  "江苏娄县" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T15:18:45.057891
+# 浜虹墿: 张熊
+# 鍖归厤鏂规硶: rule_based (score=1.25)
+# ==========================================================
+kg:张嗣初_e21  owl:sameAs  <http://cbdb.fas.harvard.edu/person/82875> .
+kg:张嗣初_e21  kg:cbdbId  "82875" .
+kg:张嗣初_e21  kg:alignmentStatus  "aligned" .
+kg:张嗣初_e21  kg:alignmentMethod  "rule_based" .
+kg:张嗣初_e21  kg:hasCourtesyName  "寿甫" .
+kg:张嗣初_e21  kg:hasArtName  "子祥" .
+kg:张嗣初_e21  kg:bornIn  "1803" .
+kg:张嗣初_e21  kg:diedIn  "1886" .
+kg:张嗣初_e21  kg:dynasty  "清" .
+kg:张嗣初_e21  kg:birthPlace  "浙江秀水" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T15:55:00.649622
+# 浜虹墿: 金农
+# 鍖归厤鏂规硶: rule_based (score=1.1)
+# ==========================================================
+kg:林皋_e12  owl:sameAs  <http://cbdb.fas.harvard.edu/person/82983> .
+kg:林皋_e12  kg:cbdbId  "82983" .
+kg:林皋_e12  kg:alignmentStatus  "aligned" .
+kg:林皋_e12  kg:alignmentMethod  "rule_based" .
+kg:林皋_e12  kg:hasCourtesyName  "寿门" .
+kg:林皋_e12  kg:hasArtName  "冬心" .
+kg:林皋_e12  kg:bornIn  "1687" .
+kg:林皋_e12  kg:diedIn  "1763" .
+kg:林皋_e12  kg:dynasty  "清" .
+kg:林皋_e12  kg:birthPlace  "浙江仁和" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T15:57:51.650612
+# 浜虹墿: 甘旸
+# 鍖归厤鏂规硶: rule_based (score=1.1)
+# ==========================================================
+kg:甘旸_e1  owl:sameAs  <http://cbdb.fas.harvard.edu/person/42101> .
+kg:甘旸_e1  kg:cbdbId  "42101" .
+kg:甘旸_e1  kg:alignmentStatus  "aligned" .
+kg:甘旸_e1  kg:alignmentMethod  "rule_based" .
+kg:甘旸_e1  kg:hasCourtesyName  "旭甫" .
+kg:甘旸_e1  kg:hasArtName  "寅东" .
+kg:甘旸_e1  kg:dynasty  "明" .
+kg:甘旸_e1  kg:birthPlace  "江苏江宁" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T15:57:51.688713
+# 浜虹墿: 严栻
+# 鍖归厤鏂规硶: rule_based (score=1.1)
+# ==========================================================
+kg:e7  owl:sameAs  <http://cbdb.fas.harvard.edu/person/100915> .
+kg:e7  kg:cbdbId  "100915" .
+kg:e7  kg:alignmentStatus  "aligned" .
+kg:e7  kg:alignmentMethod  "rule_based" .
+kg:e7  kg:hasCourtesyName  "子张" .
+kg:e7  kg:hasArtName  "髻珠头陀" .
+kg:e7  kg:dynasty  "清" .
+kg:e7  kg:birthPlace  "江苏常熟" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T16:07:02.384443
+# 浜虹墿: 张廷济
+# 鍖归厤鏂规硶: rule_based (score=1.25)
+# ==========================================================
+kg:张廷济_e1  owl:sameAs  <http://cbdb.fas.harvard.edu/person/100886> .
+kg:张廷济_e1  kg:cbdbId  "100886" .
+kg:张廷济_e1  kg:alignmentStatus  "aligned" .
+kg:张廷济_e1  kg:alignmentMethod  "rule_based" .
+kg:张廷济_e1  kg:hasCourtesyName  "顺安" .
+kg:张廷济_e1  kg:hasArtName  "叔未" .
+kg:张廷济_e1  kg:bornIn  "1768" .
+kg:张廷济_e1  kg:diedIn  "1848" .
+kg:张廷济_e1  kg:dynasty  "清" .
+kg:张廷济_e1  kg:birthPlace  "浙江嘉兴" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T16:11:27.304066
+# 浜虹墿: 赵穆
+# 鍖归厤鏂规硶: rule_based (score=1.1)
+# ==========================================================
+kg:赵之谦_e11  owl:sameAs  <http://cbdb.fas.harvard.edu/person/100911> .
+kg:赵之谦_e11  kg:cbdbId  "100911" .
+kg:赵之谦_e11  kg:alignmentStatus  "aligned" .
+kg:赵之谦_e11  kg:alignmentMethod  "rule_based" .
+kg:赵之谦_e11  kg:hasCourtesyName  "穆父" .
+kg:赵之谦_e11  kg:hasArtName  "仲穆" .
+kg:赵之谦_e11  kg:bornIn  "1855" .
+kg:赵之谦_e11  kg:diedIn  "1894" .
+kg:赵之谦_e11  kg:dynasty  "清" .
+kg:赵之谦_e11  kg:birthPlace  "江苏常州" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T16:13:13.277635
+# 浜虹墿: 沈凤
+# 鍖归厤鏂规硶: rule_based (score=1.25)
+# ==========================================================
+kg:沈野_e14  owl:sameAs  <http://cbdb.fas.harvard.edu/person/82876> .
+kg:沈野_e14  kg:cbdbId  "82876" .
+kg:沈野_e14  kg:alignmentStatus  "aligned" .
+kg:沈野_e14  kg:alignmentMethod  "rule_based" .
+kg:沈野_e14  kg:hasCourtesyName  "凡民" .
+kg:沈野_e14  kg:hasArtName  "补萝" .
+kg:沈野_e14  kg:dynasty  "清" .
+kg:沈野_e14  kg:birthPlace  "江苏江阴" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T16:13:49.842859
+# 浜虹墿: 沈心
+# 鍖归厤鏂规硶: rule_based (score=0.85)
+# ==========================================================
+kg:e14  owl:sameAs  <http://cbdb.fas.harvard.edu/person/56155> .
+kg:e14  kg:cbdbId  "56155" .
+kg:e14  kg:alignmentStatus  "aligned" .
+kg:e14  kg:alignmentMethod  "rule_based" .
+kg:e14  kg:hasCourtesyName  "房仲" .
+kg:e14  kg:hasArtName  "松阜" .
+kg:e14  kg:bornIn  "1689" .
+kg:e14  kg:dynasty  "清" .
+kg:e14  kg:birthPlace  "仁和" .
+kg:e14  kg:ctextId  "759700" .
+kg:e14  <http://www.w3.org/2000/01/rdf-schema#seeAlso>  <https://ctext.org/datawiki.pl?if=en&res=759700> .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T16:21:07.135140
+# 浜虹墿: 石韫玉
+# 鍖归厤鏂规硶: rule_based (score=1.1)
+# ==========================================================
+kg:石韫玉_e1  owl:sameAs  <http://cbdb.fas.harvard.edu/person/82760> .
+kg:石韫玉_e1  kg:cbdbId  "82760" .
+kg:石韫玉_e1  kg:alignmentStatus  "aligned" .
+kg:石韫玉_e1  kg:alignmentMethod  "rule_based" .
+kg:石韫玉_e1  kg:hasCourtesyName  "执如" .
+kg:石韫玉_e1  kg:hasArtName  "琢堂" .
+kg:石韫玉_e1  kg:bornIn  "1746" .
+kg:石韫玉_e1  kg:diedIn  "1832" .
+kg:石韫玉_e1  kg:dynasty  "清" .
+kg:石韫玉_e1  kg:birthPlace  "江苏吴县" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T16:32:34.469216
+# 浜虹墿: 童大年
+# 鍖归厤鏂规硶: rule_based (score=1.1)
+# ==========================================================
+kg:童大年_e1  owl:sameAs  <http://cbdb.fas.harvard.edu/person/100941> .
+kg:童大年_e1  kg:cbdbId  "100941" .
+kg:童大年_e1  kg:alignmentStatus  "aligned" .
+kg:童大年_e1  kg:alignmentMethod  "rule_based" .
+kg:童大年_e1  kg:hasCourtesyName  "醒盦" .
+kg:童大年_e1  kg:hasArtName  "性涵" .
+kg:童大年_e1  kg:bornIn  "1868" .
+kg:童大年_e1  kg:diedIn  "1955" .
+kg:童大年_e1  kg:dynasty  "清" .
+kg:童大年_e1  kg:birthPlace  "江苏崇明" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T16:32:42.903548
+# 浜虹墿: 钟以敬
+# 鍖归厤鏂规硶: rule_based (score=1.25)
+# ==========================================================
+kg:钟以敬_e1  owl:sameAs  <http://cbdb.fas.harvard.edu/person/100918> .
+kg:钟以敬_e1  kg:cbdbId  "100918" .
+kg:钟以敬_e1  kg:alignmentStatus  "aligned" .
+kg:钟以敬_e1  kg:alignmentMethod  "rule_based" .
+kg:钟以敬_e1  kg:hasCourtesyName  "让先" .
+kg:钟以敬_e1  kg:hasArtName  "窳堪" .
+kg:钟以敬_e1  kg:bornIn  "1866" .
+kg:钟以敬_e1  kg:diedIn  "1928" .
+kg:钟以敬_e1  kg:dynasty  "清" .
+kg:钟以敬_e1  kg:birthPlace  "浙江钱塘" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T16:34:26.534730
+# 浜虹墿: 黎简
+# 鍖归厤鏂规硶: rule_based (score=1.25)
+# ==========================================================
+kg:吴悦_e4  owl:sameAs  <http://cbdb.fas.harvard.edu/person/82850> .
+kg:吴悦_e4  kg:cbdbId  "82850" .
+kg:吴悦_e4  kg:alignmentStatus  "aligned" .
+kg:吴悦_e4  kg:alignmentMethod  "rule_based" .
+kg:吴悦_e4  kg:hasCourtesyName  "二樵" .
+kg:吴悦_e4  kg:hasArtName  "简民" .
+kg:吴悦_e4  kg:bornIn  "1748" .
+kg:吴悦_e4  kg:diedIn  "1799" .
+kg:吴悦_e4  kg:dynasty  "清" .
+kg:吴悦_e4  kg:birthPlace  "广东顺德" .
+# ==========================================================
+# 瀵归綈鏃堕棿: 2026-06-21T17:11:17.698810
+# 浜虹墿: 汪关
+# 鍖归厤鏂规硶: rule_based (score=0.8500000000000001)
+# ==========================================================
+kg:e5  owl:sameAs  <http://cbdb.fas.harvard.edu/person/41990> .
+kg:e5  kg:cbdbId  "41990" .
+kg:e5  kg:alignmentStatus  "aligned" .
+kg:e5  kg:alignmentMethod  "rule_based" .
+kg:e5  kg:hasCourtesyName  "尹子" .
+kg:e5  kg:hasArtName  "宝印" .
+kg:e5  kg:dynasty  "明" .
+kg:e5  kg:birthPlace  "安徽歙县" .
 

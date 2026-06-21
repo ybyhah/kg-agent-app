@@ -52,6 +52,15 @@ class GraphQueryTemplateTests(unittest.TestCase):
         sparql = self.graph_store.last_sparql
         self.assertIn("yrz:relationType yrz:foundsSchool", sparql)
         self.assertIn('CONTAINS(STR(?schoolLabel), "吴门印派")', sparql)
+        self.assertIn("yrz:targetEntity ?school", sparql)
+
+    def test_school_representatives_query_uses_membership_and_founder_relations(self) -> None:
+        self.tools.get_school_representatives("吴门印派")
+        sparql = self.graph_store.last_sparql
+        self.assertIn("yrz:relationType yrz:belongsToSchool", sparql)
+        self.assertIn("yrz:relationType yrz:foundsSchool", sparql)
+        self.assertIn("?seedRelation rdf:type yrz:Relation", sparql)
+        self.assertIn("yrz:targetEntity ?school", sparql)
 
     def test_fewshot_pair_relation_query_can_be_generated(self) -> None:
         generator = FewShotSparqlGenerator()

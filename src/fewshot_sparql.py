@@ -48,7 +48,7 @@ WHERE {{
 }}
 LIMIT 20
 """.strip(),
-                description="适合查询人物的字，已对齐成员 C 的关系实例建模。",
+                description="适合查询人物的字，已对齐当前项目的关系实例建模。",
             ),
             FewShotExample(
                 name="查询号",
@@ -68,7 +68,7 @@ WHERE {{
 }}
 LIMIT 20
 """.strip(),
-                description="适合查询人物的号，已对齐成员 C 的关系实例建模。",
+                description="适合查询人物的号，已对齐当前项目的关系实例建模。",
             ),
             FewShotExample(
                 name="查询字和号",
@@ -102,7 +102,7 @@ WHERE {{
 }}
 LIMIT 20
 """.strip(),
-                description="适合同时查询人物的字和号，已对齐成员 C 的关系实例建模。",
+                description="适合同时查询人物的字和号，已对齐当前项目的关系实例建模。",
             ),
             FewShotExample(
                 name="查询生卒年",
@@ -224,6 +224,157 @@ LIMIT 20
 """.strip(),
                 description="适合查询某流派的开创者，并兼容简称与全称部分匹配。",
             ),
+            FewShotExample(
+                name="查询流派代表人物",
+                question="吴门印派代表人物有哪些？",
+                template="""
+{prefixes}
+SELECT DISTINCT ?person ?personLabel ?school ?schoolLabel ?role
+WHERE {{
+  {{
+    ?school rdfs:label ?schoolLabel .
+    FILTER(
+      CONTAINS(STR(?schoolLabel), "{school}") ||
+      CONTAINS("{school}", STR(?schoolLabel)) ||
+      STR(?schoolLabel) = "吴门"
+    )
+  }}
+  {{
+    ?relation rdf:type yrz:Relation ;
+              yrz:relationType yrz:belongsToSchool ;
+              yrz:sourceEntity ?person ;
+              yrz:targetEntity ?school .
+    BIND("成员" AS ?role)
+  }}
+  UNION
+  {{
+    ?relation rdf:type yrz:Relation ;
+              yrz:relationType yrz:foundsSchool ;
+              yrz:sourceEntity ?person ;
+              yrz:targetEntity ?school .
+    BIND("开创者" AS ?role)
+  }}
+  OPTIONAL {{ ?person rdfs:label ?personLabel . }}
+}}
+LIMIT 30
+""".strip(),
+                description="适合查询流派代表人物，兼容图谱中“吴门印派”以“吴门”标签落库的情况。",
+            ),
+            FewShotExample(
+                name="查询字号与生卒",
+                question="请同时给出文彭的字、号与生卒信息。",
+                template="""
+{prefixes}
+SELECT ?person ?label ?courtesyName ?artName
+       (GROUP_CONCAT(DISTINCT ?birthText; separator=" / ") AS ?birthYear)
+       (GROUP_CONCAT(DISTINCT ?deathText; separator=" / ") AS ?deathYear)
+WHERE {{
+  ?person rdf:type yrz:Person ;
+          rdfs:label ?label .
+  FILTER(CONTAINS(STR(?label), "{person}"))
+
+  OPTIONAL {{
+    {{
+      ?courtesyRelation rdf:type yrz:Relation ;
+                        yrz:relationType yrz:hasCourtesyName ;
+                        yrz:sourceEntity ?person ;
+                        yrz:targetEntity ?courtesyNode .
+      OPTIONAL {{ ?courtesyNode rdfs:label ?courtesyLabel . }}
+      BIND(COALESCE(?courtesyLabel, STR(?courtesyNode)) AS ?courtesyName)
+    }}
+    UNION
+    {{
+      ?person yrz:courtesyName ?courtesyLiteral .
+      BIND(STR(?courtesyLiteral) AS ?courtesyName)
+    }}
+  }}
+
+  OPTIONAL {{
+    {{
+      ?artRelation rdf:type yrz:Relation ;
+                   yrz:relationType yrz:hasArtName ;
+                   yrz:sourceEntity ?person ;
+                   yrz:targetEntity ?artNode .
+      OPTIONAL {{ ?artNode rdfs:label ?artLabel . }}
+      BIND(COALESCE(?artLabel, STR(?artNode)) AS ?artName)
+    }}
+    UNION
+    {{
+      ?person yrz:artName ?artLiteral .
+      BIND(STR(?artLiteral) AS ?artName)
+    }}
+  }}
+
+  OPTIONAL {{
+    {{
+      ?birthRelation rdf:type yrz:Relation ;
+                     yrz:relationType yrz:bornIn ;
+                     yrz:sourceEntity ?person ;
+                     yrz:targetEntity ?birthNode .
+      OPTIONAL {{ ?birthNode rdfs:label ?birthNodeLabel . }}
+      BIND(COALESCE(?birthNodeLabel, STR(?birthNode)) AS ?birthText)
+    }}
+    UNION
+    {{
+      ?person yrz:bornIn ?birthLiteral .
+      FILTER(isLiteral(?birthLiteral))
+      BIND(STR(?birthLiteral) AS ?birthText)
+    }}
+  }}
+
+  OPTIONAL {{
+    {{
+      ?deathRelation rdf:type yrz:Relation ;
+                     yrz:relationType yrz:diedIn ;
+                     yrz:sourceEntity ?person ;
+                     yrz:targetEntity ?deathNode .
+      OPTIONAL {{ ?deathNode rdfs:label ?deathNodeLabel . }}
+      BIND(COALESCE(?deathNodeLabel, STR(?deathNode)) AS ?deathText)
+    }}
+    UNION
+    {{
+      ?person yrz:diedIn ?deathLiteral .
+      FILTER(isLiteral(?deathLiteral))
+      BIND(STR(?deathLiteral) AS ?deathText)
+    }}
+  }}
+}}
+GROUP BY ?person ?label ?courtesyName ?artName
+LIMIT 20
+""".strip(),
+                description="适合组合查询人物的字、号与生卒信息，同时兼容关系实例和直接属性两种写法。",
+            ),
+            FewShotExample(
+                name="查询人物与流派关系",
+                question="赵大晋与吴门印派的关系是什么？",
+                template="""
+{prefixes}
+SELECT DISTINCT ?person ?personLabel ?school ?schoolLabel ?relationType ?relationTypeLabel
+WHERE {{
+  ?person rdf:type yrz:Person ;
+          rdfs:label ?personLabel .
+  FILTER(CONTAINS(STR(?personLabel), "{person}"))
+
+  ?relation rdf:type yrz:Relation ;
+            yrz:sourceEntity ?person ;
+            yrz:relationType ?relationType ;
+            yrz:targetEntity ?school .
+  OPTIONAL {{ ?relationType rdfs:label ?relationTypeLabel . }}
+  OPTIONAL {{ ?school rdfs:label ?schoolLabel . }}
+
+  FILTER(
+    ?relationType IN (yrz:belongsToSchool, yrz:foundsSchool) &&
+    (
+      CONTAINS(STR(?schoolLabel), "{school}") ||
+      CONTAINS("{school}", STR(?schoolLabel)) ||
+      STR(?schoolLabel) = "吴门"
+    )
+  )
+}}
+LIMIT 20
+""".strip(),
+                description="适合查询人物与流派之间的直接图谱关系，若无结果可自然进入 fallback。",
+            ),
         ]
 
     def try_generate(self, question: str) -> FewShotDraft | None:
@@ -246,8 +397,22 @@ LIMIT 20
             school = normalized.split("谁开创了", 1)[-1].strip()
             return self._build_from_example("查询流派开创者", question, school=school)
 
+        for suffix in ["代表人物有哪些", "主要人物有哪些", "成员有哪些"]:
+            if normalized.endswith(suffix):
+                school = normalized[: -len(suffix)].strip()
+                if school:
+                    return self._build_from_example("查询流派代表人物", question, school=school)
+
+        relation_match = re.match(r"^(.+?)[与和](.+?)的关系是什么", normalized)
+        if relation_match:
+            person = relation_match.group(1).strip()
+            school = relation_match.group(2).strip()
+            if person and school:
+                return self._build_from_example("查询人物与流派关系", question, person=person, school=school)
+
         # 优先匹配"字和号"
         for suffix, example_name in [
+            ("请同时给出", "查询字号与生卒"),
             ("的字和号是什么", "查询字和号"),
             ("的字与号是什么", "查询字和号"),
             ("的字号是什么", "查询字和号"),
@@ -258,6 +423,11 @@ LIMIT 20
             if normalized.endswith(suffix):
                 person = normalized[: -len(suffix)].strip()
                 return self._build_from_example(example_name, question, person=person)
+
+        if "字" in normalized and "号" in normalized and "生卒" in normalized:
+            person = normalized.replace("请同时给出", "").replace("的字、号与生卒信息", "").strip("，。！？ ")
+            if person:
+                return self._build_from_example("查询字号与生卒", question, person=person)
 
         return None
 
@@ -270,7 +440,7 @@ LIMIT 20
         joined_examples = "\n\n".join(example_blocks)
         return (
             "你是《印人传》知识图谱问答系统的 SPARQL 生成模块。\n"
-            "请严格基于 RDF/SPARQL 生成可执行查询，优先复用 yrz 命名空间和成员 C 的正式本体。\n"
+            "请严格基于 RDF/SPARQL 生成可执行查询，优先复用 yrz 命名空间和当前项目本体。\n"
             "注意 core.ttl 的关系不是人物和属性直接相连，而是通过 yrz:Relation + "
             "yrz:relationType / yrz:sourceEntity / yrz:targetEntity 表示。\n\n"
             f"{joined_examples}\n\n"
@@ -288,7 +458,7 @@ LIMIT 20
             example_name=example.name,
             question=question,
             sparql=sparql,
-            note=f"{example.description} 当前 few-shot 已对齐成员 C 的真实 RDF 结构。",
+            note=f"{example.description} 当前 few-shot 已对齐项目中的真实 RDF 结构。",
         )
 
     def _escape_literal(self, value: str) -> str:

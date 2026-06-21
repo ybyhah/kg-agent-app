@@ -137,7 +137,7 @@ class QueryTools:
         return self._run(
             name="get_person_labels",
             sparql=sparql,
-            note="按成员 C 的正式本体查询人物候选实体。",
+            note="根据当前本体结构查询人物候选实体。",
         )
 
     def get_courtesy_name(self, person_name: str) -> ToolResult:
@@ -347,6 +347,9 @@ class QueryTools:
           {{
             SELECT DISTINCT ?school ?schoolLabel
             WHERE {{
+              ?relation rdf:type yrz:Relation ;
+                        yrz:relationType yrz:foundsSchool ;
+                        yrz:targetEntity ?school .
               ?school rdfs:label ?schoolLabel .
               {self._school_filter(school_name)}
             }}
@@ -365,6 +368,57 @@ class QueryTools:
             name="get_school_founder",
             sparql=sparql,
             note="当前按关系实例模型查询流派开创者，并兼容“吴门”与“吴门印派”这类部分匹配。",
+        )
+
+    def get_school_representatives(self, school_name: str) -> ToolResult:
+        school_name = self._escape_literal(school_name)
+        sparql = f"""
+        {BASE_PREFIXES}
+        SELECT DISTINCT ?person ?personLabel ?school ?schoolLabel ?role
+        WHERE {{
+          {{
+            SELECT DISTINCT ?school ?schoolLabel
+            WHERE {{
+              {{
+                ?seedRelation rdf:type yrz:Relation ;
+                              yrz:relationType yrz:belongsToSchool ;
+                              yrz:targetEntity ?school .
+              }}
+              UNION
+              {{
+                ?seedRelation rdf:type yrz:Relation ;
+                              yrz:relationType yrz:foundsSchool ;
+                              yrz:targetEntity ?school .
+              }}
+              ?school rdfs:label ?schoolLabel .
+              {self._school_filter(school_name)}
+            }}
+            LIMIT 30
+          }}
+          {{
+            ?relation rdf:type yrz:Relation ;
+                      yrz:relationType yrz:belongsToSchool ;
+                      yrz:sourceEntity ?person ;
+                      yrz:targetEntity ?school .
+            BIND("成员" AS ?role)
+          }}
+          UNION
+          {{
+            ?relation rdf:type yrz:Relation ;
+                      yrz:relationType yrz:foundsSchool ;
+                      yrz:sourceEntity ?person ;
+                      yrz:targetEntity ?school .
+            BIND("开创者" AS ?role)
+          }}
+          OPTIONAL {{ ?person rdfs:label ?personLabelRaw . }}
+          BIND(COALESCE(?personLabelRaw, STR(?person)) AS ?personLabel)
+        }}
+        LIMIT 60
+        """
+        return self._run(
+            name="get_school_representatives",
+            sparql=sparql,
+            note="当前按关系实例模型查询流派成员与开创者，用于回答流派代表人物、主要成员等问题。",
         )
 
     def get_pair_relations(self, person_a: str, person_b: str) -> ToolResult:
@@ -469,21 +523,35 @@ class QueryTools:
           {self._candidate_people_block(person_name_escaped)}
 
           OPTIONAL {{
-            ?courtesyRelation rdf:type yrz:Relation ;
-                              yrz:relationType yrz:hasCourtesyName ;
-                              yrz:sourceEntity ?person ;
-                              yrz:targetEntity ?courtesyNode .
-            OPTIONAL {{ ?courtesyNode rdfs:label ?courtesyLabel . }}
-            BIND(COALESCE(?courtesyLabel, STR(?courtesyNode)) AS ?courtesyName)
+            {{
+              ?courtesyRelation rdf:type yrz:Relation ;
+                                yrz:relationType yrz:hasCourtesyName ;
+                                yrz:sourceEntity ?person ;
+                                yrz:targetEntity ?courtesyNode .
+              OPTIONAL {{ ?courtesyNode rdfs:label ?courtesyLabel . }}
+              BIND(COALESCE(?courtesyLabel, STR(?courtesyNode)) AS ?courtesyName)
+            }}
+            UNION
+            {{
+              ?person yrz:courtesyName ?courtesyLiteral .
+              BIND(STR(?courtesyLiteral) AS ?courtesyName)
+            }}
           }}
 
           OPTIONAL {{
-            ?artRelation rdf:type yrz:Relation ;
-                         yrz:relationType yrz:hasArtName ;
-                         yrz:sourceEntity ?person ;
-                         yrz:targetEntity ?artNode .
-            OPTIONAL {{ ?artNode rdfs:label ?artLabel . }}
-            BIND(COALESCE(?artLabel, STR(?artNode)) AS ?artName)
+            {{
+              ?artRelation rdf:type yrz:Relation ;
+                           yrz:relationType yrz:hasArtName ;
+                           yrz:sourceEntity ?person ;
+                           yrz:targetEntity ?artNode .
+              OPTIONAL {{ ?artNode rdfs:label ?artLabel . }}
+              BIND(COALESCE(?artLabel, STR(?artNode)) AS ?artName)
+            }}
+            UNION
+            {{
+              ?person yrz:artName ?artLiteral .
+              BIND(STR(?artLiteral) AS ?artName)
+            }}
           }}
         }}
         LIMIT 20
@@ -491,7 +559,7 @@ class QueryTools:
         return self._run(
             name="get_courtesy_and_art_name",
             sparql=sparql,
-            note="当前按 core.ttl 的关系实例模型同时查询人物的字和号。",
+            note="当前同时兼容关系实例与直接属性两种写法查询人物的字和号。",
         )
 
     def get_classmates(self, person_name: str) -> ToolResult:

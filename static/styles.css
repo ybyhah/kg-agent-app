@@ -1946,10 +1946,18 @@ button.primary-btn:hover {
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.52),
     0 26px 50px rgba(74, 38, 18, 0.08);
-  cursor: grab;
-  perspective: 2400px;
-  transform-style: preserve-3d;
   backdrop-filter: blur(14px);
+}
+
+.network-canvas {
+  display: block;
+  border-radius: 30px;
+  max-width: 100%;
+  height: auto;
+}
+
+body.graph-immersive-open .network-canvas-wrap {
+  min-height: 940px;
 }
 
 .network-canvas-wrap::after {
@@ -1977,39 +1985,6 @@ button.primary-btn:hover {
   cursor: grabbing;
 }
 
-.network-svg {
-  width: 100%;
-  height: 760px;
-  display: block;
-}
-
-.network-camera {
-  transition: transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1);
-  transform-box: fill-box;
-  transform-style: preserve-3d;
-}
-
-.network-space-grid {
-  opacity: 0.78;
-}
-
-.network-space-curve,
-.network-space-floor {
-  fill: none;
-  stroke: rgba(151, 114, 79, 0.16);
-  stroke-width: 1.3;
-  stroke-dasharray: 10 16;
-}
-
-.network-space-floor {
-  stroke: rgba(50, 89, 80, 0.12);
-}
-
-.network-space-wall {
-  fill: rgba(255, 250, 243, 0.08);
-  stroke: rgba(151, 114, 79, 0.12);
-  stroke-width: 1;
-}
 
 .network-inspector {
   position: absolute;
@@ -2194,6 +2169,7 @@ button.primary-btn:hover {
 .result-card--analysis-showcase {
   padding: 0;
   min-height: 320px;
+  max-height: 480px;
   overflow: hidden;
   animation: breathe-card 6s ease-in-out infinite;
 }
@@ -2212,9 +2188,23 @@ button.primary-btn:hover {
 
 .analysis-card-shell {
   position: relative;
-  min-height: 320px;
+  height: 100%;
+  max-height: 480px;
   padding: 20px 20px 18px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar for analysis cards */
+.analysis-card-shell::-webkit-scrollbar {
+  width: 5px;
+}
+.analysis-card-shell::-webkit-scrollbar-thumb {
+  background: rgba(151, 114, 79, 0.25);
+  border-radius: 3px;
+}
+.analysis-card-shell::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .analysis-card-shell::before {
@@ -2345,127 +2335,6 @@ button.primary-btn:hover {
   line-height: 1.72;
 }
 
-.network-edge-group {
-  animation: edge-group-fade 500ms ease both;
-}
-
-.network-edge-line {
-  stroke: rgba(88, 72, 63, 0.58);
-  stroke-width: 2.2;
-  transition: stroke-width 140ms ease, opacity 140ms ease;
-  stroke-dasharray: 10 12;
-  animation: edge-flow 5.2s linear infinite;
-  fill: none;
-  stroke-linecap: round;
-}
-
-.network-edge-group.edge-class-teacher .network-edge-line {
-  stroke: rgba(151, 45, 22, 0.78);
-  animation-duration: 4.2s;
-}
-
-.network-edge-group.edge-class-family .network-edge-line {
-  stroke: rgba(162, 123, 43, 0.82);
-  animation-duration: 6.3s;
-}
-
-.network-edge-group.edge-class-social .network-edge-line {
-  stroke: rgba(50, 89, 80, 0.72);
-  animation-duration: 5.5s;
-}
-
-.network-edge-group.edge-class-school .network-edge-line {
-  stroke: rgba(121, 77, 41, 0.78);
-  animation-duration: 4.8s;
-}
-
-.network-edge-line.is-highlighted,
-.network-edge-group.is-highlighted .network-edge-line,
-.network-edge-line.is-selected,
-.network-edge-group.is-selected .network-edge-line {
-  stroke-width: 4.2;
-  opacity: 1;
-  stroke-dasharray: 14 8;
-  animation-duration: 2.2s;
-  filter: drop-shadow(0 0 10px rgba(151, 45, 22, 0.26));
-}
-
-.network-edge-line.is-query-highlighted {
-  opacity: 0.92;
-}
-
-.network-edge-label {
-  font-size: 12px;
-  fill: var(--accent-strong);
-  text-anchor: middle;
-  paint-order: stroke;
-  stroke: rgba(255, 250, 243, 0.92);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-  font-family: "IBM Plex Sans SC", sans-serif;
-}
-
-.network-node-ripple {
-  fill: none;
-  stroke: rgba(151, 45, 22, 0.18);
-  stroke-width: 1.5;
-  opacity: 0;
-}
-
-.network-node-shadow {
-  fill: rgba(56, 36, 22, 0.1);
-  filter: blur(10px);
-  transform-origin: center;
-}
-
-.network-node-ripple.is-community-highlighted,
-.network-node-ripple.is-path-highlighted {
-  animation: community-ripple 2.5s ease-out infinite;
-  opacity: 1;
-}
-
-.network-node-circle {
-  stroke: rgba(255, 250, 243, 0.95);
-  stroke-width: 3;
-  filter: drop-shadow(0 10px 18px rgba(71, 40, 18, 0.12));
-  transition: transform 140ms ease, stroke 140ms ease, stroke-width 140ms ease, filter 140ms ease;
-  animation: node-breathe 4.8s ease-in-out infinite;
-  transform-origin: center;
-}
-
-.network-node-group {
-  cursor: pointer;
-  animation: node-reveal 440ms ease both;
-}
-
-.network-node-group:hover .network-node-circle {
-  stroke: rgba(32, 23, 20, 0.8);
-  stroke-width: 4;
-}
-
-.network-node-circle.is-center {
-  stroke: rgba(162, 123, 43, 0.92);
-  stroke-width: 4.6;
-  animation-duration: 3.9s;
-}
-
-.network-node-circle.is-selected {
-  stroke: rgba(50, 89, 80, 0.98);
-  stroke-width: 5.4;
-}
-
-.network-node-circle.is-community-highlighted,
-.network-node-circle.is-path-highlighted {
-  filter: drop-shadow(0 0 20px rgba(151, 45, 22, 0.22));
-  stroke-width: 5;
-}
-
-.network-node-circle.is-query-highlighted {
-  stroke: rgba(162, 123, 43, 0.98);
-  stroke-width: 5.6;
-  filter: drop-shadow(0 0 24px rgba(162, 123, 43, 0.25));
-}
-
 body.graph-immersive-open .page-shell {
   width: min(100vw - 24px, 1520px);
 }
@@ -2488,10 +2357,6 @@ body.graph-immersive-open .network-canvas-wrap {
   perspective: 2800px;
 }
 
-body.graph-immersive-open .network-svg {
-  height: 860px;
-}
-
 body.graph-immersive-open .network-inspector {
   width: min(300px, calc(100% - 52px));
   min-height: 210px;
@@ -2506,15 +2371,6 @@ body.graph-immersive-open .network-inspector {
 .clickable-analysis:hover {
   border-color: rgba(151, 45, 22, 0.26);
   transform: translateY(-1px);
-}
-
-.network-node-text {
-  fill: #fffaf3;
-  font-size: 12px;
-  font-weight: 700;
-  text-anchor: middle;
-  pointer-events: none;
-  font-family: "IBM Plex Sans SC", sans-serif;
 }
 
 @keyframes opening-fade-in {
@@ -2725,60 +2581,6 @@ body.graph-immersive-open .network-inspector {
   100% {
     transform: translateX(380%) skewX(-22deg);
     opacity: 0;
-  }
-}
-
-@keyframes edge-flow {
-  from {
-    stroke-dashoffset: 0;
-  }
-  to {
-    stroke-dashoffset: -44;
-  }
-}
-
-@keyframes edge-group-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes node-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.055);
-  }
-}
-
-@keyframes community-ripple {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.32;
-  }
-  70% {
-    transform: scale(1.28);
-    opacity: 0.06;
-  }
-  100% {
-    transform: scale(1.34);
-    opacity: 0;
-  }
-}
-
-@keyframes node-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 

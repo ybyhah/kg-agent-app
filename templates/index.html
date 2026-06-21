@@ -520,13 +520,19 @@ LIMIT 10</textarea>
     let highlightedQueryNodes = [];
     let currentExploreGraph = initialNetworkGraph && initialNetworkGraph.nodes ? initialNetworkGraph : { nodes: [], edges: [], meta: { mode: "", center: "", hop: 0, nodeCount: 0, edgeCount: 0, relationTypes: [] } };
     let selectedGraphEdgeId = "";
-    let networkCameraState = { scale: 1.08, offsetX: 0, offsetY: 16, tiltX: 4, tiltY: 0 };
+    // Canvas rendering state
+    let networkCanvas = null;
+    let networkCtx = null;
+    let networkLayout = null;           // { nodes: [...], edges: [...], nodeMap: {...} }
+    let networkHoveredId = "";
+    let networkDpr = 1;
+    let networkCameraState = { panX: 0, panY: 0, zoom: 1.08 };
     let immersiveGraphOpen = false;
-    let graphDragState = { dragging: false, startX: 0, startY: 0, baseX: 0, baseY: 0 };
+    let graphDragState = { dragging: false, startX: 0, startY: 0, basePanX: 0, basePanY: 0 };
     let networkInspectorPinned = false;
     let renderedGraphSignature = "";
     let networkRenderRaf = 0;
-    let networkCameraRaf = 0;
+    let networkRedrawRaf = 0;
     let qaHistory = [];
     let qaMessageCounter = 0;
     let currentAssistantMessageId = "";
@@ -956,60 +962,323 @@ LIMIT 10</textarea>
       });
     }
 
-    function cameraTransformStyle(width, height) {
-      const state = networkCameraState;
-      return [
-        `translate(${state.offsetX}px, ${state.offsetY}px)`,
-        `scale(${state.scale})`,
-        `rotateX(${state.tiltX}deg)`,
-        `rotateY(${state.tiltY}deg)`,
-        `translateZ(0px)`
-      ].join(" ");
+    // ── Canvas rendering engine ──
+
+    function canvasWorldSize() {
+      const w = immersiveGraphOpen ? 1680 : 1320;
+      const h = immersiveGraphOpen ? 940 : 760;
+      return { w, h };
     }
 
-    function applyNetworkCameraTransform() {
-      const camera = document.querySelector("#networkCanvasWrap .network-camera");
-      const svg = document.querySelector("#networkCanvasWrap .network-svg");
-      if (!camera || !svg) return;
-      const viewBox = svg.getAttribute("viewBox")?.split(" ").map(Number) || [0, 0, 980, 620];
-      const width = viewBox[2] || 980;
-      const height = viewBox[3] || 620;
-      camera.style.transform = cameraTransformStyle(width, height);
+    function buildCanvasLayout(graphData) {
+      const { w, h } = canvasWorldSize();
+      const positioned = buildForceLikeLayout(graphData.nodes, w, h, graphData.meta?.center || "");
+      const nodeMap = Object.fromEntries(positioned.map(n => [n.id, n]));
+      const edges = [];
+      for (const edge of graphData.edges) {
+        const src = nodeMap[edge.source];
+        const tgt = nodeMap[edge.target];
+        if (!src || !tgt) continue;
+        edges.push({
+          ...edge,
+          sx: src.x, sy: src.y,
+          tx: tgt.x, ty: tgt.y,
+          srcZ: src.z || 1, tgtZ: tgt.z || 1,
+        });
+      }
+      return { nodes: positioned, edges, nodeMap };
     }
 
-    function requestApplyNetworkCameraTransform() {
-      if (networkCameraRaf) cancelAnimationFrame(networkCameraRaf);
-      networkCameraRaf = requestAnimationFrame(() => {
-        networkCameraRaf = 0;
-        applyNetworkCameraTransform();
+    function drawNetworkCanvas() {
+      if (!networkCtx || !networkLayout) return;
+      const ctx = networkCtx;
+      const canvas = networkCanvas;
+      const dpr = networkDpr;
+      const { w, h } = canvasWorldSize();
+      const cam = networkCameraState;
+      const layout = networkLayout;
+
+      // Clear
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+      // Background
+      const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+      bgGrad.addColorStop(0, '#fffaf3');
+      bgGrad.addColorStop(1, '#f1e6d8');
+      ctx.fillStyle = bgGrad;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, w, h, 30);
+      ctx.fill();
+
+      // Glow spots
+      const glows = [
+        { x: 140, y: 118, r: 130, color: 'rgba(151,45,22,0.08)' },
+        { x: w - 120, y: h - 90, r: 160, color: 'rgba(50,89,80,0.08)' },
+        { x: w * 0.56, y: h * 0.22, r: 120, color: 'rgba(157,125,56,0.07)' },
+      ];
+      for (const g of glows) {
+        const grad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.r);
+        grad.addColorStop(0, g.color);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Grid curves (decorative)
+      ctx.strokeStyle = 'rgba(151,114,79,0.08)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([10, 16]);
+      ctx.beginPath();
+      ctx.moveTo(76, h - 152);
+      ctx.quadraticCurveTo(w * 0.24, h - 300, w * 0.76, h - 300);
+      ctx.quadraticCurveTo(w - 76, h - 300, w - 76, h - 152);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Camera transform
+      ctx.save();
+      ctx.translate(cam.panX, cam.panY);
+      ctx.scale(cam.zoom, cam.zoom);
+
+      // Edges
+      for (const edge of layout.edges) {
+        const isSelected = selectedGraphEdgeId === edge.id;
+        const isPath = highlightedPathNodes.includes(edge.source) && highlightedPathNodes.includes(edge.target);
+        const isQuery = highlightedQueryNodes.includes(edge.source) || highlightedQueryNodes.includes(edge.target);
+        const isHighlighted = isSelected || isPath;
+        const midX = (edge.sx + edge.tx) / 2;
+        const midY = (edge.sy + edge.ty) / 2 - (edge.srcZ + edge.tgtZ) * 6;
+        const controlY = Math.min(edge.sy, edge.ty) - 28 - Math.abs(edge.sx - edge.tx) * 0.06;
+
+        ctx.beginPath();
+        ctx.moveTo(edge.sx, edge.sy);
+        ctx.quadraticCurveTo(midX, controlY, edge.tx, edge.ty);
+
+        if (isHighlighted) {
+          ctx.strokeStyle = edge.color || '#6f6458';
+          ctx.lineWidth = 4.2;
+          ctx.setLineDash([14, 8]);
+        } else if (isQuery) {
+          ctx.strokeStyle = '#a27b2b';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([]);
+        } else {
+          ctx.strokeStyle = edge.color ? edge.color.replace('0.78', '0.35').replace('0.82', '0.35').replace('0.72', '0.35') : 'rgba(88,72,63,0.35)';
+          ctx.lineWidth = 1.6;
+          ctx.setLineDash([]);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Edge label
+        if (cam.zoom > 0.9) {
+          ctx.fillStyle = isHighlighted ? '#2c2418' : 'rgba(88,72,63,0.7)';
+          ctx.font = '10px "IBM Plex Sans SC", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(edge.relationLabel || '', midX, midY - 6);
+        }
+      }
+
+      // Nodes
+      for (const node of layout.nodes) {
+        const fill = GRAPH_COLORS[node.type] || GRAPH_COLORS.unknown;
+        const isSelected = selectedGraphNodeId === node.id;
+        const isCenter = node.isCenter;
+        const isCommunity = highlightedCommunityMembers.includes(node.id);
+        const isPath = highlightedPathNodes.includes(node.id);
+        const isQuery = highlightedQueryNodes.includes(node.id);
+        const isHovered = networkHoveredId === node.id;
+        const radius = Math.max(10, node.size * (node.z || 1));
+
+        // Shadow
+        ctx.fillStyle = 'rgba(56,36,22,0.08)';
+        ctx.beginPath();
+        ctx.ellipse(node.x, node.y + radius + 22, radius * 1.3, Math.max(8, radius * 0.35), 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ripple ring (highlighted)
+        if (isCommunity || isPath) {
+          ctx.strokeStyle = 'rgba(151,45,22,0.25)';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, radius + 9, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Main circle
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+
+        // Stroke
+        if (isSelected) {
+          ctx.strokeStyle = 'rgba(50,89,80,0.95)';
+          ctx.lineWidth = 5;
+        } else if (isCenter) {
+          ctx.strokeStyle = 'rgba(162,123,43,0.9)';
+          ctx.lineWidth = 4.5;
+        } else if (isHovered) {
+          ctx.strokeStyle = 'rgba(32,23,20,0.7)';
+          ctx.lineWidth = 3;
+        } else if (isCommunity || isPath) {
+          ctx.strokeStyle = 'rgba(151,45,22,0.4)';
+          ctx.lineWidth = 3;
+        } else if (isQuery) {
+          ctx.strokeStyle = 'rgba(162,123,43,0.5)';
+          ctx.lineWidth = 3;
+        } else {
+          ctx.strokeStyle = 'rgba(255,250,243,0.9)';
+          ctx.lineWidth = 2.5;
+        }
+        ctx.stroke();
+
+        // Label
+        if (cam.zoom > 0.85) {
+          ctx.fillStyle = '#fffaf3';
+          ctx.font = `bold ${Math.max(10, 12 * cam.zoom * 0.5 + 6)}px "IBM Plex Sans SC", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(node.label, node.x, node.y + 1);
+        }
+      }
+
+      ctx.restore(); // camera
+      ctx.restore(); // dpr
+    }
+
+    function redrawCanvas() {
+      drawNetworkCanvas();
+    }
+
+    function requestCanvasRedraw() {
+      if (networkRedrawRaf) cancelAnimationFrame(networkRedrawRaf);
+      networkRedrawRaf = requestAnimationFrame(() => {
+        networkRedrawRaf = 0;
+        redrawCanvas();
       });
     }
 
-    function buildNetworkBackdrop(width, height) {
-      return `
-        <defs>
-          <linearGradient id="networkBg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#fffaf3"></stop>
-            <stop offset="100%" stop-color="#f1e6d8"></stop>
-          </linearGradient>
-          <radialGradient id="networkGlowA" cx="18%" cy="16%" r="42%">
-            <stop offset="0%" stop-color="rgba(151, 45, 22, 0.16)"></stop>
-            <stop offset="100%" stop-color="rgba(151, 45, 22, 0)"></stop>
-          </radialGradient>
-          <radialGradient id="networkGlowB" cx="82%" cy="80%" r="44%">
-            <stop offset="0%" stop-color="rgba(50, 89, 80, 0.16)"></stop>
-            <stop offset="100%" stop-color="rgba(50, 89, 80, 0)"></stop>
-          </radialGradient>
-          <radialGradient id="networkGlowC" cx="54%" cy="24%" r="34%">
-            <stop offset="0%" stop-color="rgba(157, 125, 56, 0.14)"></stop>
-            <stop offset="100%" stop-color="rgba(157, 125, 56, 0)"></stop>
-          </radialGradient>
-        </defs>
-        <rect x="0" y="0" width="${width}" height="${height}" rx="30" fill="url(#networkBg)"></rect>
-        <circle cx="140" cy="118" r="130" fill="url(#networkGlowA)"></circle>
-        <circle cx="${width - 120}" cy="${height - 90}" r="160" fill="url(#networkGlowB)"></circle>
-        <circle cx="${width * 0.56}" cy="${height * 0.22}" r="120" fill="url(#networkGlowC)"></circle>
-      `;
+    function canvasHitTest(ex, ey) {
+      if (!networkLayout || !networkCanvas) return null;
+      const cam = networkCameraState;
+      const rect = networkCanvas.getBoundingClientRect();
+      // Map screen coords → canvas CSS coords → internal layout coords
+      const internalW = networkCanvas.width / networkDpr;
+      const internalH = networkCanvas.height / networkDpr;
+      const sx = (ex - rect.left) * (internalW / rect.width);
+      const sy = (ey - rect.top) * (internalH / rect.height);
+      const wx = (sx - cam.panX) / cam.zoom;
+      const wy = (sy - cam.panY) / cam.zoom;
+      // Check nodes (reverse order for z-order)
+      for (let i = networkLayout.nodes.length - 1; i >= 0; i--) {
+        const n = networkLayout.nodes[i];
+        const r = Math.max(10, n.size * (n.z || 1)) + 6;
+        const dx = wx - n.x, dy = wy - n.y;
+        if (dx * dx + dy * dy < r * r) return { type: 'node', node: n };
+      }
+      // Check edges
+      for (const edge of networkLayout.edges) {
+        const midX = (edge.sx + edge.tx) / 2;
+        const midY = (edge.sy + edge.ty) / 2;
+        const dx = wx - midX, dy = wy - midY;
+        if (dx * dx + dy * dy < 30 * 30) return { type: 'edge', edge };
+      }
+      return null;
+    }
+
+    function bindCanvasInteractions(canvas) {
+      if (!canvas) return;
+      // Wheel zoom — always zoom toward viewport center, graph stays centered
+      canvas.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        const internalW = networkCanvas.width / networkDpr;
+        const internalH = networkCanvas.height / networkDpr;
+        const cx = internalW / 2;
+        const cy = internalH / 2;
+        const oldZoom = networkCameraState.zoom;
+        const newZoom = Math.max(0.5, Math.min(4, oldZoom * (event.deltaY > 0 ? 0.92 : 1.08)));
+        networkCameraState.panX = cx - (cx - networkCameraState.panX) * (newZoom / oldZoom);
+        networkCameraState.panY = cy - (cy - networkCameraState.panY) * (newZoom / oldZoom);
+        networkCameraState.zoom = newZoom;
+        requestCanvasRedraw();
+      }, { passive: false });
+
+      // Pan drag
+      canvas.addEventListener('pointerdown', (event) => {
+        graphDragState.dragging = true;
+        graphDragState.startX = event.clientX;
+        graphDragState.startY = event.clientY;
+        graphDragState.basePanX = networkCameraState.panX;
+        graphDragState.basePanY = networkCameraState.panY;
+        canvas.style.cursor = 'grabbing';
+        canvas.setPointerCapture(event.pointerId);
+      });
+      canvas.addEventListener('pointermove', (event) => {
+        if (graphDragState.dragging) {
+          networkCameraState.panX = graphDragState.basePanX + (event.clientX - graphDragState.startX);
+          networkCameraState.panY = graphDragState.basePanY + (event.clientY - graphDragState.startY);
+          requestCanvasRedraw();
+        } else {
+          const hit = canvasHitTest(event.clientX, event.clientY);
+          const newHoverId = hit?.type === 'node' ? hit.node.id : '';
+          if (newHoverId !== networkHoveredId) {
+            networkHoveredId = newHoverId;
+            canvas.style.cursor = newHoverId ? 'pointer' : 'grab';
+            requestCanvasRedraw();
+          }
+        }
+      });
+      const release = () => {
+        graphDragState.dragging = false;
+        canvas.style.cursor = networkHoveredId ? 'pointer' : 'grab';
+      };
+      canvas.addEventListener('pointerup', release);
+      canvas.addEventListener('pointerleave', release);
+
+      // Click
+      canvas.addEventListener('click', async (event) => {
+        const hit = canvasHitTest(event.clientX, event.clientY);
+        if (hit?.type === 'node') {
+          const nodeId = hit.node.id;
+          // Deselect previous
+          selectedGraphEdgeId = "";
+          selectedGraphNodeId = nodeId;
+          networkInspectorPinned = true;
+          requestCanvasRedraw();
+          const node = (currentExploreGraph.nodes || []).find(n => n.id === nodeId);
+          if (node && node.type !== 'person') {
+            const entityType = lookupEntityType(node.entityType || '');
+            updateNetworkInspector(`
+              <p class="network-inspector__eyebrow">Node Focus</p>
+              <h4 class="network-inspector__title">${escapeHtml(node.label || nodeId)}</h4>
+              <p class="network-inspector__body">${escapeHtml(entityType ? entityType.description : '')}</p>
+              <div class="network-meta-tags">
+                <span class="network-meta-tag">${escapeHtml(entityType ? entityType.label : node.type)}</span>
+                <span class="network-meta-tag network-meta-tag--dim">${escapeHtml(node.entityType || node.type)}</span>
+              </div>
+            `, false);
+          } else {
+            await loadPersonDetail(nodeId);
+          }
+        } else if (hit?.type === 'edge') {
+          selectedGraphNodeId = "";
+          selectedGraphEdgeId = hit.edge.id;
+          networkInspectorPinned = true;
+          requestCanvasRedraw();
+          updateNetworkInspector(renderEdgeDetailHtml(hit.edge), false);
+        } else {
+          selectedGraphNodeId = "";
+          selectedGraphEdgeId = "";
+          networkInspectorPinned = false;
+          requestCanvasRedraw();
+          showNetworkMetaSummary(currentExploreGraph.meta || {});
+        }
+      });
     }
 
     function graphSummaryText(meta = {}) {
@@ -1021,12 +1290,18 @@ LIMIT 10</textarea>
       return `已生成 ${nodeCount} 个节点、${edgeCount} 条边。`;
     }
 
-    function primeSpatialCamera(meta = {}) {
+    function primeCanvasCamera(meta = {}) {
       if (selectedGraphNodeId || selectedGraphEdgeId) return;
-      const centerBias = meta.center ? -16 : 0;
-      networkCameraState = immersiveGraphOpen
-        ? { scale: 1.42, offsetX: 0, offsetY: 42 + centerBias, tiltX: 9, tiltY: 0 }
-        : { scale: 1.08, offsetX: 0, offsetY: 16 + centerBias, tiltX: 4, tiltY: 0 };
+      const { w, h } = canvasWorldSize();
+      const zoom = 1.08;
+      // Graph layout center = (w/2, h*0.53). Pin it to viewport center (w/2, h/2).
+      const cx = w / 2;
+      const cy = h * 0.53 + (meta.center ? -24 : 0);
+      networkCameraState = {
+        panX: w / 2 - cx * zoom,
+        panY: h / 2 - cy * zoom,
+        zoom,
+      };
     }
 
     function updateNetworkInspector(html, empty = false) {
@@ -1056,12 +1331,12 @@ LIMIT 10</textarea>
         <p class="network-inspector__body">${escapeHtml(note)}</p>
         <div class="network-meta-cluster">
           <div class="network-stat">
-            <strong>${escapeHtml(meta.nodeCount || 0)}</strong>
-            <span>可视节点</span>
+            <strong>${escapeHtml(meta.nodeCount || 0)}${meta.isSubset && meta.totalNodeCount ? ' / ' + escapeHtml(meta.totalNodeCount) : ''}</strong>
+            <span>可视 / 总节点</span>
           </div>
           <div class="network-stat">
-            <strong>${escapeHtml(meta.edgeCount || 0)}</strong>
-            <span>可视边</span>
+            <strong>${escapeHtml(meta.edgeCount || 0)}${meta.isSubset && meta.totalEdgeCount ? ' / ' + escapeHtml(meta.totalEdgeCount) : ''}</strong>
+            <span>可视 / 总边</span>
           </div>
           <div class="network-stat">
             <strong>${escapeHtml(meta.totalPersonCount || meta.nodeCount || 0)}</strong>
@@ -1131,196 +1406,28 @@ LIMIT 10</textarea>
       `;
     }
 
-    function focusCameraOnNode(nodeId) {
-      const graphData = currentExploreGraph;
-      if (!graphData?.nodes?.length) return;
-      const width = immersiveGraphOpen ? 1680 : 1320;
-      const height = immersiveGraphOpen ? 940 : 760;
-      const nodes = buildForceLikeLayout(graphData.nodes, width, height, graphData.meta.center || "");
-      const targetNode = nodes.find((item) => item.id === nodeId);
+    function focusCanvasOnNode(nodeId) {
+      if (!networkLayout) return;
+      const { w, h } = canvasWorldSize();
+      const targetNode = networkLayout.nodes.find(n => n.id === nodeId);
       if (!targetNode) return;
-      const zoomLevel = immersiveGraphOpen ? 1.84 : 1.36;
-      const desiredX = width * 0.5 - targetNode.x * zoomLevel;
-      const desiredY = height * 0.46 - targetNode.y * zoomLevel;
+      const zoom = 1.6;
       networkCameraState = {
-        scale: zoomLevel,
-        offsetX: desiredX,
-        offsetY: desiredY,
-        tiltX: immersiveGraphOpen ? 12 : 6,
-        tiltY: Math.max(-10, Math.min(10, ((targetNode.x - width / 2) / width) * 20)),
+        panX: w / 2 - targetNode.x * zoom,
+        panY: h / 2 - targetNode.y * zoom,
+        zoom,
       };
     }
 
-    function graphRenderSignature(graphData, width, height) {
+    function graphRenderSignature(graphData) {
       return JSON.stringify({
         nodeCount: graphData.nodes?.length || 0,
         edgeCount: graphData.edges?.length || 0,
         center: graphData.meta?.center || "",
-        selectedNode: selectedGraphNodeId,
-        selectedEdge: selectedGraphEdgeId,
         highlightedCommunityMembers,
         highlightedPathNodes,
         highlightedQueryNodes,
         immersiveGraphOpen,
-        width,
-        height,
-      });
-    }
-
-    function buildNetworkSvgMarkup(graphData, width, height) {
-      const positionedNodes = buildForceLikeLayout(graphData.nodes, width, height, graphData.meta.center || "");
-      const nodeLookup = Object.fromEntries(positionedNodes.map((node) => [node.id, node]));
-      const edgeLines = graphData.edges.map((edge) => {
-        const source = nodeLookup[edge.source];
-        const target = nodeLookup[edge.target];
-        if (!source || !target) return "";
-        const midX = (source.x + target.x) / 2;
-        const midY = (source.y + target.y) / 2 - ((source.z + target.z) * 12);
-        const isPathEdge = highlightedPathNodes.includes(edge.source) && highlightedPathNodes.includes(edge.target);
-        const isQueryEdge = highlightedQueryNodes.includes(edge.source) || highlightedQueryNodes.includes(edge.target);
-        const isSelected = selectedGraphEdgeId === edge.id;
-        const controlY = Math.min(source.y, target.y) - 28 - Math.abs(source.x - target.x) * 0.06;
-        return `
-          <g class="network-edge-group ${edge.edgeClass || ""} ${isPathEdge ? "is-highlighted" : ""} ${isSelected ? "is-selected" : ""}" data-edge-id="${escapeHtml(edge.id)}" data-source-id="${escapeHtml(edge.source)}" data-target-id="${escapeHtml(edge.target)}">
-            <path
-              d="M ${source.x} ${source.y} Q ${midX} ${controlY} ${target.x} ${target.y}"
-              class="network-edge-line ${isPathEdge ? "is-highlighted" : ""} ${isQueryEdge ? "is-query-highlighted" : ""} ${isSelected ? "is-selected" : ""}"
-              stroke="${edge.color || "#6f6458"}"
-              stroke-width="${edge.width || 2}">
-            </path>
-            <text x="${midX}" y="${midY - 6}" class="network-edge-label">${escapeHtml(edge.relationLabel || edge.label)}</text>
-          </g>
-        `;
-      }).join("");
-      const nodeCircles = positionedNodes.map((node, index) => {
-        const fill = GRAPH_COLORS[node.type] || GRAPH_COLORS.unknown;
-        const isCommunityHighlighted = highlightedCommunityMembers.includes(node.id);
-        const isPathHighlighted = highlightedPathNodes.includes(node.id);
-        const isQueryHighlighted = highlightedQueryNodes.includes(node.id);
-        const isSelected = selectedGraphNodeId === node.id;
-        const nodeRadius = Math.max(12, node.size * (node.z || 1));
-        return `
-          <g class="network-node-group" data-node-id="${escapeHtml(node.id)}" style="animation-delay:${index * 60}ms; transform: translateZ(${Math.round((node.z || 1) * 60)}px);">
-            <ellipse cx="${node.x}" cy="${node.y + nodeRadius + 26}" rx="${nodeRadius * 1.45}" ry="${Math.max(10, nodeRadius * 0.4)}" class="network-node-shadow"></ellipse>
-            <circle cx="${node.x}" cy="${node.y}" r="${nodeRadius + 9}" class="network-node-ripple ${isCommunityHighlighted ? "is-community-highlighted" : ""} ${isPathHighlighted ? "is-path-highlighted" : ""}"></circle>
-            <circle
-              cx="${node.x}" cy="${node.y}" r="${nodeRadius}" fill="${fill}"
-              class="network-node-circle ${node.isCenter ? "is-center" : ""} ${isSelected ? "is-selected" : ""} ${isCommunityHighlighted ? "is-community-highlighted" : ""} ${isPathHighlighted ? "is-path-highlighted" : ""} ${isQueryHighlighted ? "is-query-highlighted" : ""}">
-            </circle>
-            <text x="${node.x}" y="${node.y + 5}" class="network-node-text">${escapeHtml(node.label)}</text>
-          </g>
-        `;
-      }).join("");
-      return `
-        <svg viewBox="0 0 ${width} ${height}" class="network-svg" role="img" aria-label="人物关系网络预览">
-          ${buildNetworkBackdrop(width, height)}
-          <g class="network-space-grid">
-            <path d="M 76 ${height - 152} C ${width * 0.24} ${height - 300}, ${width * 0.76} ${height - 300}, ${width - 76} ${height - 152}" class="network-space-curve"></path>
-            <path d="M 148 ${height - 68} C ${width * 0.28} ${height - 176}, ${width * 0.72} ${height - 176}, ${width - 148} ${height - 68}" class="network-space-floor"></path>
-            <path d="M ${width * 0.14} ${height * 0.28} C ${width * 0.26} ${height * 0.2}, ${width * 0.34} ${height * 0.2}, ${width * 0.42} ${height * 0.28}" class="network-space-floor"></path>
-            <path d="M ${width * 0.62} ${height * 0.24} C ${width * 0.72} ${height * 0.16}, ${width * 0.84} ${height * 0.16}, ${width * 0.92} ${height * 0.24}" class="network-space-floor"></path>
-          </g>
-          <g class="network-camera" style="transform-origin:${width / 2}px ${height / 2}px; transform: ${cameraTransformStyle(width, height)};">
-            ${edgeLines}
-            ${nodeCircles}
-          </g>
-        </svg>
-      `;
-    }
-
-    function bindGraphViewportInteractions(container) {
-      if (!container) return;
-      container.onwheel = (event) => {
-        event.preventDefault();
-        const direction = event.deltaY > 0 ? -0.1 : 0.1;
-        networkCameraState.scale = Math.max(0.78, Math.min(3.2, networkCameraState.scale + direction));
-        networkCameraState.tiltX = immersiveGraphOpen ? Math.max(-10, Math.min(18, 4 + (networkCameraState.scale - 1) * 9)) : Math.max(-4, Math.min(10, 2 + (networkCameraState.scale - 1) * 5));
-        requestApplyNetworkCameraTransform();
-      };
-      container.onpointerdown = (event) => {
-        graphDragState.dragging = true;
-        graphDragState.startX = event.clientX;
-        graphDragState.startY = event.clientY;
-        graphDragState.baseX = networkCameraState.offsetX;
-        graphDragState.baseY = networkCameraState.offsetY;
-        container.classList.add("is-dragging");
-      };
-      container.onpointermove = (event) => {
-        if (!graphDragState.dragging) {
-          const rect = container.getBoundingClientRect();
-          const px = (event.clientX - rect.left) / rect.width - 0.5;
-          const py = (event.clientY - rect.top) / rect.height - 0.5;
-          networkCameraState.tiltY = immersiveGraphOpen ? Math.max(-12, Math.min(12, px * 14)) : Math.max(-8, Math.min(8, px * 7));
-          networkCameraState.tiltX = immersiveGraphOpen ? Math.max(-8, Math.min(16, -py * 12 + (networkCameraState.scale - 1) * 8)) : Math.max(-5, Math.min(11, -py * 7 + (networkCameraState.scale - 1) * 4));
-          requestApplyNetworkCameraTransform();
-          return;
-        }
-        networkCameraState.offsetX = graphDragState.baseX + (event.clientX - graphDragState.startX);
-        networkCameraState.offsetY = graphDragState.baseY + (event.clientY - graphDragState.startY);
-        requestApplyNetworkCameraTransform();
-      };
-      const release = () => {
-        graphDragState.dragging = false;
-        container.classList.remove("is-dragging");
-      };
-      container.onpointerup = release;
-      container.onpointerleave = release;
-    }
-
-    function bindGraphInteractions(container) {
-      if (!container) return;
-      bindGraphViewportInteractions(container);
-      container.addEventListener("click", (event) => {
-        if (event.target === container || event.target.closest("svg")) {
-          if (!event.target.closest(".network-node-group") && !event.target.closest(".network-edge-group")) {
-            selectedGraphNodeId = "";
-            selectedGraphEdgeId = "";
-            networkInspectorPinned = false;
-            requestRenderNetworkGraph();
-          }
-        }
-      });
-      container.querySelectorAll(".network-node-group").forEach((group) => {
-        group.addEventListener("click", async () => {
-          const nodeId = group.dataset.nodeId || "";
-          if (!nodeId) return;
-          selectedGraphNodeId = nodeId;
-          selectedGraphEdgeId = "";
-          networkInspectorPinned = true;
-          focusCameraOnNode(nodeId);
-          requestRenderNetworkGraph();
-          const node = (currentExploreGraph.nodes || []).find((n) => n.id === nodeId);
-          if (node && node.type !== "person") {
-            // 非人物节点（流派/地名等）：直接展示本体类型说明
-            const entityType = lookupEntityType(node.entityType || "");
-            const entityLabel = entityType ? entityType.label : node.type;
-            const entityDesc = entityType ? entityType.description : "";
-            updateNetworkInspector(`
-              <p class="network-inspector__eyebrow">Node Focus</p>
-              <h4 class="network-inspector__title">${escapeHtml(node.label || nodeId)}</h4>
-              <p class="network-inspector__body">${escapeHtml(entityDesc)}</p>
-              <div class="network-meta-tags">
-                <span class="network-meta-tag">${escapeHtml(entityLabel)}</span>
-                <span class="network-meta-tag network-meta-tag--dim">${escapeHtml(node.entityType || node.type)}</span>
-              </div>
-            `, false);
-          } else {
-            await loadPersonDetail(nodeId);
-          }
-        });
-      });
-      container.querySelectorAll(".network-edge-group").forEach((group) => {
-        group.addEventListener("click", (event) => {
-          event.stopPropagation();
-          const edgeId = group.dataset.edgeId || "";
-          const edge = (currentExploreGraph.edges || []).find((item) => item.id === edgeId);
-          if (!edge) return;
-          selectedGraphEdgeId = edge.id;
-          selectedGraphNodeId = "";
-          networkInspectorPinned = true;
-          requestRenderNetworkGraph();
-          updateNetworkInspector(renderEdgeDetailHtml(edge), false);
-        });
       });
     }
 
@@ -1339,40 +1446,65 @@ LIMIT 10</textarea>
       currentExploreGraph = graphData;
       if (!graphData.nodes.length) {
         wrap.className = "network-canvas-wrap empty-state";
-        wrap.textContent = UI_TEXT.networkEmpty;
+        wrap.innerHTML = "";
         statusText.textContent = UI_TEXT.networkEmpty;
         updateNetworkInspector(`
           <p class="network-inspector__eyebrow">Graph Inspector</p>
           <h4 class="network-inspector__title">还没有可展示的数据</h4>
           <p class="network-inspector__body">${escapeHtml(UI_TEXT.networkEmpty)}</p>
         `, true);
+        networkCanvas = null; networkCtx = null; networkLayout = null;
         return;
       }
       if (graphData.nodes.length < 2 || graphData.edges.length < 1) {
         wrap.className = "network-canvas-wrap empty-state";
-        wrap.textContent = UI_TEXT.networkTooSmall;
+        wrap.innerHTML = "";
         statusText.textContent = UI_TEXT.networkTooSmall;
         updateNetworkInspector(`
           <p class="network-inspector__eyebrow">Graph Inspector</p>
           <h4 class="network-inspector__title">当前结果过少</h4>
           <p class="network-inspector__body">${escapeHtml(UI_TEXT.networkTooSmall)}</p>
         `, true);
+        networkCanvas = null; networkCtx = null; networkLayout = null;
         return;
       }
-      const width = immersiveGraphOpen ? 1680 : 1320;
-      const height = immersiveGraphOpen ? 940 : 760;
-      const signature = graphRenderSignature(graphData, width, height);
-      if (signature === renderedGraphSignature && wrap.classList.contains("network-canvas-wrap")) {
+      const signature = graphRenderSignature(graphData);
+      if (signature === renderedGraphSignature && networkCanvas && networkCtx) {
         statusText.textContent = graphSummaryText(graphData.meta || {});
         return;
       }
       renderedGraphSignature = signature;
+      // Recalculate layout
+      networkLayout = buildCanvasLayout(graphData);
+      // Get container width for responsive sizing
+      networkDpr = window.devicePixelRatio || 1;
+      const { w, h } = canvasWorldSize();
+      const containerWidth = wrap.clientWidth || w;
+      const scale = Math.min(1, containerWidth / w);
+      const displayW = Math.floor(w * scale);
+      const displayH = Math.floor(h * scale);
+      // Create or reuse canvas
+      let canvas = networkCanvas;
+      if (!canvas) {
+        canvas = document.createElement("canvas");
+        canvas.className = "network-canvas";
+        networkCanvas = canvas;
+        networkCtx = canvas.getContext("2d");
+        bindCanvasInteractions(canvas);
+        wrap.innerHTML = "";
+        wrap.appendChild(canvas);
+      }
+      canvas.width = w * networkDpr;
+      canvas.height = h * networkDpr;
+      canvas.style.width = displayW + "px";
+      canvas.style.height = displayH + "px";
+      canvas.style.cursor = "grab";
+      networkCanvas = canvas;
+      networkCtx = canvas.getContext("2d");
       wrap.className = "network-canvas-wrap";
-      primeSpatialCamera(graphData.meta || {});
-      wrap.innerHTML = buildNetworkSvgMarkup(graphData, width, height);
+      primeCanvasCamera(graphData.meta || {});
+      drawNetworkCanvas();
       statusText.textContent = graphSummaryText(graphData.meta || {});
-      bindGraphInteractions(wrap);
-      applyNetworkCameraTransform();
       if (!selectedGraphNodeId && !selectedGraphEdgeId) {
         showNetworkMetaSummary(graphData.meta || {});
       }
@@ -1430,12 +1562,14 @@ LIMIT 10</textarea>
       }
       highlightedCommunityMembers = [];
       highlightedPathNodes = [];
+      selectedGraphNodeId = "";
       selectedGraphEdgeId = "";
       networkInspectorPinned = false;
       renderedGraphSignature = "";
       renderNetworkGraph(payload.data);
       if (payload.data.meta?.center) {
         selectedGraphNodeId = payload.data.meta.center;
+        requestCanvasRedraw();
         await loadPersonDetail(payload.data.meta.center);
       }
       return payload.data;
@@ -1525,6 +1659,12 @@ LIMIT 10</textarea>
           <span>关联流派：${escapeHtml((item.linkedSchools || []).map((school) => `${school.school}(${school.linkCount})`).join("、") || "暂无")}</span>
         </article>
       `);
+      // Reset path block hint (path analysis is triggered by user input + button)
+      const pathBlock = document.getElementById("pathBlock");
+      if (pathBlock && pathBlock.classList.contains("empty-state")) {
+        pathBlock.className = "analysis-block empty-state";
+        pathBlock.textContent = "在上方输入起点和终点人物名，点击「路径分析」按钮开始查找。";
+      }
       bindAnalysisHighlightActions();
     }
 
@@ -1779,8 +1919,8 @@ LIMIT 10</textarea>
     document.getElementById("openImmersiveGraphBtn").addEventListener("click", () => {
       immersiveGraphOpen = !immersiveGraphOpen;
       networkCameraState = immersiveGraphOpen
-        ? { scale: 1.42, offsetX: 0, offsetY: 42, tiltX: 9, tiltY: 0 }
-        : { scale: 1.08, offsetX: 0, offsetY: 16, tiltX: 4, tiltY: 0 };
+        ? { panX: 0, panY: 20, zoom: 1.42 }
+        : { panX: 0, panY: 0, zoom: 1.08 };
       document.body.classList.toggle("graph-immersive-open", immersiveGraphOpen);
       document.getElementById("openImmersiveGraphBtn").querySelector("span").textContent = immersiveGraphOpen ? "退出沉浸" : "沉浸查看";
       renderedGraphSignature = "";

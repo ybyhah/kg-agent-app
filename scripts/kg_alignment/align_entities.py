@@ -1882,6 +1882,8 @@ class AlignmentCandidate:
     death_year: str | None = None
     dynasty: str | None = None
     birth_place: str | None = None
+    ctext_id: str | None = None
+    ctext_url: str | None = None
     match_score: float = 0.0
     match_method: str = ""
     llm_score: float | None = None
@@ -2105,12 +2107,130 @@ def extract_person_info(source_text: str, person_name: str) -> dict[str, Any]:
 # ============================================================
 
 
+def _ensure_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
+def _build_ctext_source_info(sources: Any) -> tuple[str, str]:
+    for source in _ensure_list(sources):
+        if not isinstance(source, dict):
+            continue
+        source_name = str(source.get("Source", ""))
+        if "ctext" not in source_name.lower():
+            continue
+        pages = str(source.get("Pages", "")).strip()
+        base = str(source.get("UrlApi", "")).strip()
+        coda = str(source.get("UrlApiCoda", "")).strip()
+        if pages and base:
+            return pages, f"{base}{pages}{coda}"
+        if pages:
+            return pages, ""
+    return "", ""
+
+
+def _parse_cbdb_detail_payload(payload: dict[str, Any], fallback_name: str = "") -> dict[str, Any]:
+    person = (
+        payload.get("Package", {})
+        .get("PersonAuthority", {})
+        .get("PersonInfo", {})
+        .get("Person", {})
+    )
+    basic_info = person.get("BasicInfo", {}) if isinstance(person, dict) else {}
+
+    courtesy_name = ""
+    art_name = ""
+    for alias in _ensure_list(person.get("PersonAliases", {}).get("Alias") if isinstance(person.get("PersonAliases"), dict) else None):
+        if not isinstance(alias, dict):
+            continue
+        alias_name = str(alias.get("AliasName", "")).strip()
+        alias_type = str(alias.get("AliasType", "")).strip()
+        if not alias_name:
+            continue
+        if not courtesy_name and ("字" in alias_type or alias_type == "4"):
+            courtesy_name = alias_name
+        elif not art_name and any(keyword in alias_type for keyword in ["號", "别號", "別號", "室名"]):
+            art_name = alias_name
+
+    birth_place = ""
+    for address in _ensure_list(person.get("PersonAddresses", {}).get("Address") if isinstance(person.get("PersonAddresses"), dict) else None):
+        if not isinstance(address, dict):
+            continue
+        address_name = str(address.get("AddrName", "")).strip()
+        notes = str(address.get("Notes", "")).strip()
+        if address_name:
+            birth_place = address_name
+            break
+        if notes:
+            birth_place = notes.replace("人", "").strip()
+            break
+
+    ctext_id, ctext_url = _build_ctext_source_info(
+        person.get("PersonSources", {}).get("Source") if isinstance(person.get("PersonSources"), dict) else None
+    )
+
+    return {
+        "cbdb_id": str(basic_info.get("PersonId", "")).strip(),
+        "name": str(basic_info.get("ChName", "") or fallback_name).strip(),
+        "courtesy_name": courtesy_name,
+        "art_name": art_name,
+        "birth_year": str(basic_info.get("YearBirth", "")).strip(),
+        "death_year": str(basic_info.get("YearDeath", "")).strip(),
+        "dynasty": str(basic_info.get("Dynasty", "")).strip(),
+        "birth_place": birth_place or str(basic_info.get("IndexAddr", "")).strip(),
+        "ctext_id": ctext_id,
+        "ctext_url": ctext_url,
+        "source": "CBDB_JSON",
+    }
+
+
+def _fetch_cbdb_person_detail(cbdb_id: str, fallback_name: str = "") -> dict[str, Any]:
+    detail_url = f"{CBDB_SEARCH_URL}?id={urllib.parse.quote(str(cbdb_id))}&o=json"
+    req = urllib.request.Request(
+        detail_url,
+        headers={"Accept": "application/json", "User-Agent": "Mozilla/5.0"},
+    )
+    with urllib.request.urlopen(req, timeout=CBDB_TIMEOUT) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    detail = _parse_cbdb_detail_payload(payload, fallback_name=fallback_name)
+    if not detail.get("cbdb_id"):
+        detail["cbdb_id"] = str(cbdb_id)
+    if not detail.get("name"):
+        detail["name"] = fallback_name
+    return detail
+
+
+def _candidate_richness(candidate: dict[str, Any]) -> int:
+    fields = [
+        candidate.get("courtesy_name"),
+        candidate.get("art_name"),
+        candidate.get("birth_year"),
+        candidate.get("death_year"),
+        candidate.get("dynasty"),
+        candidate.get("birth_place"),
+        candidate.get("ctext_id"),
+        candidate.get("ctext_url"),
+    ]
+    return sum(1 for value in fields if str(value or "").strip())
+
+
+def _merge_candidate_info(base: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(base)
+    for key, value in extra.items():
+        if key not in merged or not str(merged.get(key, "")).strip():
+            merged[key] = value
+    return merged
+
+
 def search_cbdb_by_name(name: str) -> list[dict[str, Any]]:
     """
     使用 CBDB API 搜索人物
 
-    注意：当前 API 返回 HTML 页面，返回的是搜索结果或详情页。
-    我们从 HTML title 中提取 ID。
+    当前搜索页返回 HTML，因此先解析搜索结果中的候选 ID，
+    再通过 id + o=json 拉取结构化详情。
     """
     params = urllib.parse.urlencode({"name": name, "mode": "exact", "adv": 1})
     url = f"{CBDB_SEARCH_URL}?{params}"
@@ -2122,37 +2242,51 @@ def search_cbdb_by_name(name: str) -> list[dict[str, Any]]:
         with urllib.request.urlopen(req, timeout=CBDB_TIMEOUT) as response:
             html = response.read().decode("utf-8")
 
-            # 从 title 提取 ID（如果是详情页直接跳转）
-            title_match = re.search(r"<title>.*?(\d+)</title>", html)
-            candidates = []
+        candidate_ids: list[tuple[str, str]] = []
+        search_results_match = re.search(r"searchResultsData\s*=\s*(\[[\s\S]*?\]);", html)
+        if search_results_match:
+            try:
+                raw_results = json.loads(search_results_match.group(1))
+            except json.JSONDecodeError:
+                raw_results = []
+            for item in raw_results:
+                if not isinstance(item, dict):
+                    continue
+                candidate_id = str(item.get("id", "")).strip()
+                label = str(item.get("label", "")).strip() or name
+                if candidate_id:
+                    candidate_ids.append((candidate_id, label))
 
-            if title_match:
-                cbdb_id = title_match.group(1)
-                # 尝试从页面文本中提取更多信息（虽然大部分由 JS 填充）
-                person_info = {
+        title_match = re.search(r"<title>.*?(\d+)</title>", html)
+        if title_match:
+            candidate_ids.append((title_match.group(1), name))
+
+        seen_ids: set[str] = set()
+        candidates: list[dict[str, Any]] = []
+        for cbdb_id, label in candidate_ids:
+            if not cbdb_id or cbdb_id in seen_ids:
+                continue
+            seen_ids.add(cbdb_id)
+            try:
+                detail = _fetch_cbdb_person_detail(cbdb_id, fallback_name=label or name)
+            except Exception as detail_error:
+                print(f"  [CBDB] 详情获取失败 {cbdb_id}: {detail_error}", file=sys.stderr)
+                detail = {
                     "cbdb_id": cbdb_id,
-                    "name": name,
+                    "name": label or name,
                     "courtesy_name": "",
                     "art_name": "",
                     "birth_year": "",
                     "death_year": "",
                     "dynasty": "",
                     "birth_place": "",
+                    "ctext_id": "",
+                    "ctext_url": "",
+                    "source": "CBDB_API",
                 }
+            candidates.append(detail)
 
-                # 尝试从 HTML 中用正则提取可能的字段
-                text_clean = re.sub(r"<[^>]+>", " ", html)
-                text_clean = re.sub(r"\s+", " ", text_clean)
-
-                # 提取生卒年
-                year_match = re.search(r"(1[0-9]{3}|1[4-9][0-9]{2})\s*[-~～至]\s*(1[0-9]{3}|1[4-9][0-9]{2})", text_clean)
-                if year_match:
-                    person_info["birth_year"] = year_match.group(1)
-                    person_info["death_year"] = year_match.group(2)
-
-                candidates.append(person_info)
-
-            return candidates
+        return candidates
 
     except (urllib.error.HTTPError, urllib.error.URLError) as e:
         print(f"  [CBDB] HTTP 错误: {e}", file=sys.stderr)
@@ -2164,7 +2298,12 @@ def search_cbdb_by_name(name: str) -> list[dict[str, Any]]:
 
 def search_ctext_by_name(name: str, max_results: int = 5) -> list[dict[str, Any]]:
     """
-    使用 ctext API 搜索人物（支持中文关键词）
+    使用 ctext 检索人物。
+
+    说明：
+    1. 旧的 apisearch 路径已不稳定，先尝试原路径；
+    2. 若失败，则退回使用 CBDB 详情页中已经携带的 ctext 来源链接，
+       至少恢复 ctextId / ctext_url 这条外部链路。
 
     返回候选列表: [{name, ctext_id, url, dynasty, ...}]
     """
@@ -2244,7 +2383,30 @@ def search_ctext_by_name(name: str, max_results: int = 5) -> list[dict[str, Any]
 
     except Exception as e:
         print(f"  [ctext] 错误: {e}", file=sys.stderr)
-        return []
+        fallback_candidates: list[dict[str, Any]] = []
+        try:
+            for candidate in search_cbdb_by_name(name):
+                ctext_id = str(candidate.get("ctext_id", "")).strip()
+                ctext_url = str(candidate.get("ctext_url", "")).strip()
+                if not ctext_id and not ctext_url:
+                    continue
+                fallback_candidates.append(
+                    {
+                        "cbdb_id": ctext_id,
+                        "name": candidate.get("name", name),
+                        "courtesy_name": candidate.get("courtesy_name", ""),
+                        "art_name": candidate.get("art_name", ""),
+                        "birth_year": candidate.get("birth_year", ""),
+                        "death_year": candidate.get("death_year", ""),
+                        "dynasty": candidate.get("dynasty", ""),
+                        "birth_place": candidate.get("birth_place", ""),
+                        "ctext_url": ctext_url,
+                        "source": "CTEXT_FALLBACK",
+                    }
+                )
+        except Exception as fallback_error:
+            print(f"  [ctext] 备用链路失败: {fallback_error}", file=sys.stderr)
+        return fallback_candidates[:max_results]
 
 
 def get_or_build_candidates(name: str, person_info: dict[str, Any], 
@@ -2256,50 +2418,65 @@ def get_or_build_candidates(name: str, person_info: dict[str, Any],
 
     skip_external: 为 True 时跳过外部 API 调用（调试或 API 繁忙时使用）
     """
+    all_candidates: list[dict[str, Any]] = []
+    by_cbdb_id: dict[str, int] = {}
+
     # 1. 尝试从本地已知库获取（最可靠）
     if name in KNOWN_CBDB_MAP:
-        known = KNOWN_CBDB_MAP[
+        known = KNOWN_CBDB_MAP[name]
+        known_candidate = {
             "cbdb_id": known["cbdb_id"],
             "name": name,
-            "courtesy_name": known["courtesy_name"],
-            "art_name": known["art_name"],
-            "birth_year": known["birth_year"],
-            "death_year": known["death_year"],
-            "dynasty": known["dynasty"],
-            "birth_place": known["birth_place"],
+            "courtesy_name": known.get("courtesy_name", ""),
+            "art_name": known.get("art_name", ""),
+            "birth_year": known.get("birth_year", ""),
+            "death_year": known.get("death_year", ""),
+            "dynasty": known.get("dynasty", ""),
+            "birth_place": known.get("birth_place", ""),
+            "ctext_id": known.get("ctext_id", ""),
             "ctext_url": "",
             "source": "KNOWN_MAP",
-        }]
-
-    if skip_external:
-        return []
-
-    all_candidates = []
+            "seed_match": True,
+        }
+        by_cbdb_id[known_candidate["cbdb_id"]] = len(all_candidates)
+        all_candidates.append(known_candidate)
 
     # 2. 尝试 CBDB API 搜索
+    if skip_external:
+        return all_candidates
+
     print(f"  [候选] 搜索 '{name}'...", file=sys.stdout)
     cbdb_results = search_cbdb_by_name(name)
     if cbdb_results:
         for r in cbdb_results:
-            r["ctext_url": r.get("ctext_url": "UNKNOWN")
-            r["source"] = r.get("source": "CBDB_API")
-            print(f"  CBDB: {r['name']} ID={r['cbdb_id']}")
-        all_candidates.extend(cbdb_results)
+            normalized = dict(r)
+            normalized["ctext_url"] = normalized.get("ctext_url", "UNKNOWN")
+            normalized["source"] = normalized.get("source", "CBDB_API")
+            print(f"  CBDB: {normalized['name']} ID={normalized['cbdb_id']}")
+            cbdb_id = str(normalized.get("cbdb_id", "")).strip()
+            if cbdb_id and cbdb_id in by_cbdb_id:
+                existing_idx = by_cbdb_id[cbdb_id]
+                all_candidates[existing_idx] = _merge_candidate_info(all_candidates[existing_idx], normalized)
+            else:
+                if cbdb_id:
+                    by_cbdb_id[cbdb_id] = len(all_candidates)
+                all_candidates.append(normalized)
 
     # 3. 尝试 ctext API 搜索
     ctext_results = search_ctext_by_name(name)
     if ctext_results:
         for r in ctext_results:
-            r["source"] = r.get("source": "CTEXT")
-            print(f"  ctext: {r['name']}")
-        all_candidates.extend(ctext_results)
+            normalized = dict(r)
+            normalized["source"] = normalized.get("source", "CTEXT")
+            print(f"  ctext: {normalized['name']}")
+            all_candidates.append(normalized)
 
     if all_candidates:
         print(f"  共找到 {len(all_candidates)} 个候选.")
         return all_candidates
 
     # 4. 都失败
-    print(f"  未找到外部候")
+    print("  未找到外部候选")
     return []
 
 
@@ -2320,6 +2497,11 @@ def rule_based_scoring(
     """
     score = 0.0
     rules: list[str] = []
+
+    # 0. 已人工确认的种子映射优先
+    if candidate.get("seed_match"):
+        score += 0.25
+        rules.append("KNOWN_MAP 种子映射 +0.25")
 
     # 1. 姓名完全匹配
     ext_name = candidate.get("name", "")
@@ -2506,6 +2688,10 @@ def disambiguate(
             best_score = score
             best_candidate_raw = c
             best_rules = rules
+        elif score == best_score and best_candidate_raw is not None:
+            if _candidate_richness(c) > _candidate_richness(best_candidate_raw):
+                best_candidate_raw = c
+                best_rules = rules
 
     if best_candidate_raw is None:
         return None, best_rules
@@ -2521,6 +2707,8 @@ def disambiguate(
         death_year=best_candidate_raw.get("death_year"),
         dynasty=best_candidate_raw.get("dynasty"),
         birth_place=best_candidate_raw.get("birth_place"),
+        ctext_id=best_candidate_raw.get("ctext_id"),
+        ctext_url=best_candidate_raw.get("ctext_url"),
         match_score=best_score,
         match_method="rule_based",
     )
@@ -2657,6 +2845,103 @@ def llm_disambiguation(
 # TTL 写入
 # ============================================================
 
+def build_alignment_ttl_block(
+    person_name: str,
+    source_entity_id: str,
+    candidate: AlignmentCandidate,
+) -> str:
+    safe_id = re.sub(r'[^a-zA-Z0-9_\u4e00-\u9fa5]', '_', source_entity_id or person_name)
+
+    lines = []
+    lines.append("# " + "=" * 58)
+    lines.append(f"# 瀵归綈鏃堕棿: {datetime.now().isoformat()}")
+    lines.append(f"# 浜虹墿: {person_name}")
+    lines.append(f"# 鍖归厤鏂规硶: {candidate.match_method} (score={candidate.match_score})")
+    if candidate.llm_score is not None:
+        lines.append(f"# LLM 鍒嗘暟: {candidate.llm_score}")
+    if candidate.llm_reason:
+        lines.append(f"# LLM 鐞嗙敱: {candidate.llm_reason}")
+    lines.append("# " + "=" * 58)
+
+    lines.append(
+        f"kg:{safe_id}  owl:sameAs  "
+        f"<http://cbdb.fas.harvard.edu/person/{candidate.external_id}> ."
+    )
+    lines.append(f'kg:{safe_id}  kg:cbdbId  "{candidate.external_id}" .')
+    lines.append(f'kg:{safe_id}  kg:alignmentStatus  "{candidate.alignment_status}" .')
+    lines.append(f'kg:{safe_id}  kg:alignmentMethod  "{candidate.match_method}" .')
+
+    if candidate.courtesy_name:
+        lines.append(f'kg:{safe_id}  kg:hasCourtesyName  "{candidate.courtesy_name}" .')
+    if candidate.art_name:
+        lines.append(f'kg:{safe_id}  kg:hasArtName  "{candidate.art_name}" .')
+    if candidate.birth_year:
+        lines.append(f'kg:{safe_id}  kg:bornIn  "{candidate.birth_year}" .')
+    if candidate.death_year:
+        lines.append(f'kg:{safe_id}  kg:diedIn  "{candidate.death_year}" .')
+    if candidate.dynasty:
+        lines.append(f'kg:{safe_id}  kg:dynasty  "{candidate.dynasty}" .')
+    if candidate.birth_place:
+        lines.append(f'kg:{safe_id}  kg:birthPlace  "{candidate.birth_place}" .')
+    if candidate.ctext_id:
+        lines.append(f'kg:{safe_id}  kg:ctextId  "{candidate.ctext_id}" .')
+    if candidate.ctext_url:
+        lines.append(
+            f'kg:{safe_id}  <http://www.w3.org/2000/01/rdf-schema#seeAlso>  <{candidate.ctext_url}> .'
+        )
+    if candidate.llm_score is not None:
+        lines.append(f'kg:{safe_id}  kg:llmScore  "{candidate.llm_score}"^^xsd:float .')
+    if candidate.llm_reason:
+        reason_escaped = candidate.llm_reason.replace('"', '\\"')
+        lines.append(f'kg:{safe_id}  kg:llmReason  "{reason_escaped}" .')
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _remove_subject_blocks(existing_text: str, safe_id: str) -> str:
+    subject_token = f"kg:{safe_id}"
+    paragraphs = re.split(r"\n\s*\n", existing_text)
+    kept = [paragraph for paragraph in paragraphs if subject_token not in paragraph]
+    cleaned = "\n\n".join(paragraph for paragraph in kept if paragraph.strip())
+    if cleaned and not cleaned.endswith("\n"):
+        cleaned += "\n"
+    return cleaned
+
+
+def write_alignment_block(
+    ttl_path: Path,
+    person_name: str,
+    source_entity_id: str,
+    candidate: AlignmentCandidate,
+    *,
+    replace_existing: bool = False,
+    dry_run: bool = False,
+) -> str:
+    ttl_content = build_alignment_ttl_block(person_name, source_entity_id, candidate)
+    safe_id = re.sub(r'[^a-zA-Z0-9_\u4e00-\u9fa5]', '_', source_entity_id or person_name)
+
+    if dry_run:
+        print("\n  [骞茶繍琛宂 灏嗗啓鍏ヤ互涓嬪唴瀹瑰埌 aligned.ttl:")
+        print("-" * 60)
+        print(ttl_content)
+        print("-" * 60)
+        return ttl_content
+
+    try:
+        existing_text = ttl_path.read_text(encoding="utf-8") if ttl_path.exists() else ""
+        if replace_existing and existing_text:
+            existing_text = _remove_subject_blocks(existing_text, safe_id)
+        if existing_text and not existing_text.endswith("\n"):
+            existing_text += "\n"
+        ttl_path.write_text(existing_text + ttl_content + "\n", encoding="utf-8")
+        action = "鏇挎崲鍐欏叆" if replace_existing else "杩藉姞鍐欏叆"
+        print(f"  [鍐欏叆] {action} -> {ttl_path}")
+    except Exception as e:
+        print(f"  [鍐欏叆閿欒] {e}", file=sys.stderr)
+
+    return ttl_content
+
 
 def append_to_aligned_ttl(
     person_name: str,
@@ -2684,53 +2969,59 @@ def append_to_aligned_ttl(
 
     # 主实体 owl:sameAs
     lines.append(
-        f"yrzr:e_{safe_id}  owl:sameAs  "
+        f"kg:{safe_id}  owl:sameAs  "
         f"<http://cbdb.fas.harvard.edu/person/{candidate.external_id}> ."
     )
 
     # CBDB ID 属性
-    lines.append(f"yrzr:e_{safe_id}  yrz:cbdbId  \"{candidate.external_id}\" .")
+    lines.append(f"kg:{safe_id}  kg:cbdbId  \"{candidate.external_id}\" .")
     lines.append(
-        f'yrzr:e_{safe_id}  yrz:alignmentStatus  "{candidate.alignment_status}" .'
+        f'kg:{safe_id}  kg:alignmentStatus  "{candidate.alignment_status}" .'
     )
     lines.append(
-        f'yrzr:e_{safe_id}  yrz:alignmentMethod  "{candidate.match_method}" .'
+        f'kg:{safe_id}  kg:alignmentMethod  "{candidate.match_method}" .'
     )
 
     # 补充属性
     if candidate.courtesy_name:
         lines.append(
-            f'yrzr:e_{safe_id}  yrz:hasCourtesyName  "{candidate.courtesy_name}" .'
+            f'kg:{safe_id}  kg:hasCourtesyName  "{candidate.courtesy_name}" .'
         )
     if candidate.art_name:
         lines.append(
-            f'yrzr:e_{safe_id}  yrz:hasArtName  "{candidate.art_name}" .'
+            f'kg:{safe_id}  kg:hasArtName  "{candidate.art_name}" .'
         )
     if candidate.birth_year:
         lines.append(
-            f'yrzr:e_{safe_id}  yrz:bornIn  "{candidate.birth_year}" .'
+            f'kg:{safe_id}  kg:bornIn  "{candidate.birth_year}" .'
         )
     if candidate.death_year:
         lines.append(
-            f'yrzr:e_{safe_id}  yrz:diedIn  "{candidate.death_year}" .'
+            f'kg:{safe_id}  kg:diedIn  "{candidate.death_year}" .'
         )
     if candidate.dynasty:
         lines.append(
-            f'yrzr:e_{safe_id}  yrz:dynasty  "{candidate.dynasty}" .'
+            f'kg:{safe_id}  kg:dynasty  "{candidate.dynasty}" .'
         )
     if candidate.birth_place:
         lines.append(
-            f'yrzr:e_{safe_id}  yrz:birthPlace  "{candidate.birth_place}" .'
+            f'kg:{safe_id}  kg:birthPlace  "{candidate.birth_place}" .'
+        )
+    if candidate.ctext_id:
+        lines.append(f'kg:{safe_id}  kg:ctextId  "{candidate.ctext_id}" .')
+    if candidate.ctext_url:
+        lines.append(
+            f'kg:{safe_id}  <http://www.w3.org/2000/01/rdf-schema#seeAlso>  <{candidate.ctext_url}> .'
         )
 
     # LLM 打分信息
     if candidate.llm_score is not None:
         lines.append(
-            f"yrzr:e_{safe_id}  yrz:llmScore  \"{candidate.llm_score}\"^^xsd:float ."
+            f"kg:{safe_id}  kg:llmScore  \"{candidate.llm_score}\"^^xsd:float ."
         )
     if candidate.llm_reason:
         reason_escaped = candidate.llm_reason.replace('"', '\\"')
-        lines.append(f'yrzr:e_{safe_id}  yrz:llmReason  "{reason_escaped}" .')
+        lines.append(f'kg:{safe_id}  kg:llmReason  "{reason_escaped}" .')
 
     lines.append("")
 

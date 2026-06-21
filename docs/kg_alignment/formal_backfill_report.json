@@ -1,0 +1,152 @@
+{
+  "selected_targets": 10,
+  "written": 10,
+  "with_cbdb": 10,
+  "with_ctext": 5,
+  "skipped": [],
+  "records": [
+    {
+      "name": "文彭",
+      "entity_id": "e9",
+      "cbdb_id": "34677",
+      "ctext_id": "326035",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（寿承） +0.3",
+        "号匹配（三桥） +0.25"
+      ]
+    },
+    {
+      "name": "文征明",
+      "entity_id": "e1",
+      "cbdb_id": "23240",
+      "ctext_id": "",
+      "match_score": 0.9,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "号匹配（衡山） +0.25",
+        "朝代匹配（明） +0.1"
+      ]
+    },
+    {
+      "name": "许友",
+      "entity_id": "方仲芝_e6",
+      "cbdb_id": "15737",
+      "ctext_id": "",
+      "match_score": 0.8500000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（有介） +0.3"
+      ]
+    },
+    {
+      "name": "周亮工",
+      "entity_id": "YRZ_00924_e0",
+      "cbdb_id": "65797",
+      "ctext_id": "793879",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（元亮） +0.3",
+        "号匹配（栎园） +0.25",
+        "籍贯包含匹配(祥符/河南祥符) +0.15"
+      ]
+    },
+    {
+      "name": "丁敬",
+      "entity_id": "朱宏晋_e18",
+      "cbdb_id": "68915",
+      "ctext_id": "354051",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ]
+    },
+    {
+      "name": "郑燮",
+      "entity_id": "8",
+      "cbdb_id": "10363",
+      "ctext_id": "852873",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ]
+    },
+    {
+      "name": "金农",
+      "entity_id": "林皋_e12",
+      "cbdb_id": "82983",
+      "ctext_id": "137993",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（寿门） +0.3",
+        "号匹配（冬心） +0.25"
+      ]
+    },
+    {
+      "name": "吴大澂",
+      "entity_id": "吴大澂_e1",
+      "cbdb_id": "65538",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（清卿） +0.3",
+        "号匹配（窓斋） +0.25",
+        "籍贯匹配（吴县≈江苏吴县） +0.15"
+      ]
+    },
+    {
+      "name": "邓石如",
+      "entity_id": "吴廷飏_e11",
+      "cbdb_id": "82880",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ]
+    },
+    {
+      "name": "赵之谦",
+      "entity_id": "赵之谦_e1",
+      "cbdb_id": "100874",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ]
+    }
+  ]
+}

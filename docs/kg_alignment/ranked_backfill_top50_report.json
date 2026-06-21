@@ -1,0 +1,1244 @@
+{
+  "selected_targets": 76,
+  "written": 75,
+  "report_only": 0,
+  "skipped": 1,
+  "written_records": [
+    {
+      "name": "周亮工",
+      "entity_id": "YRZ_00924_e0",
+      "cbdb_id": "65797",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（元亮） +0.3",
+        "号匹配（栎园） +0.25",
+        "籍贯包含匹配(祥符/河南祥符) +0.15"
+      ],
+      "richness": 7,
+      "seed_name": "周亮工"
+    },
+    {
+      "name": "赵之谦",
+      "entity_id": "赵之谦_e1",
+      "cbdb_id": "100874",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 6,
+      "seed_name": "赵之谦"
+    },
+    {
+      "name": "胡震",
+      "entity_id": "胡震_e1",
+      "cbdb_id": "100878",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（不恐） +0.3",
+        "号匹配（胡鼻山人） +0.25"
+      ],
+      "richness": 6,
+      "seed_name": "胡震"
+    },
+    {
+      "name": "黎简",
+      "entity_id": "吴悦_e4",
+      "cbdb_id": "82850",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（二樵） +0.3",
+        "号匹配（简民） +0.25",
+        "籍贯包含匹配(顺德/广东顺德) +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "黎简"
+    },
+    {
+      "name": "归昌世",
+      "entity_id": "归昌世_e1",
+      "cbdb_id": "42102",
+      "ctext_id": "",
+      "match_score": 0.8,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "号匹配（假庵） +0.25"
+      ],
+      "richness": 5,
+      "seed_name": "归昌世"
+    },
+    {
+      "name": "张燕昌",
+      "entity_id": "YRZ_00766_e0",
+      "cbdb_id": "82862",
+      "ctext_id": "",
+      "match_score": 0.8500000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（芑堂） +0.3"
+      ],
+      "richness": 5,
+      "seed_name": "张燕昌"
+    },
+    {
+      "name": "奚冈",
+      "entity_id": "俞廷谔_e12",
+      "cbdb_id": "100889",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（纯章） +0.3",
+        "号匹配（铁生） +0.25"
+      ],
+      "richness": 5,
+      "seed_name": "奚冈"
+    },
+    {
+      "name": "鞠履厚",
+      "entity_id": "赵丙棫_e28",
+      "cbdb_id": "82794",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 5,
+      "seed_name": "鞠履厚"
+    },
+    {
+      "name": "陈鸿寿",
+      "entity_id": "陈鸿寿_e1",
+      "cbdb_id": "100883",
+      "ctext_id": "",
+      "match_score": 0.7000000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "籍贯匹配（钱塘≈浙江钱塘） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "陈鸿寿"
+    },
+    {
+      "name": "徐三庚",
+      "entity_id": "徐三庚_e1",
+      "cbdb_id": "100879",
+      "ctext_id": "",
+      "match_score": 0.8500000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（辛谷） +0.3"
+      ],
+      "richness": 5,
+      "seed_name": "徐三庚"
+    },
+    {
+      "name": "唐源邺",
+      "entity_id": "唐源邺_e1",
+      "cbdb_id": "100935",
+      "ctext_id": "",
+      "match_score": 0.8,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "号匹配（醉龙） +0.25"
+      ],
+      "richness": 5,
+      "seed_name": "唐源邺"
+    },
+    {
+      "name": "方薰",
+      "entity_id": "张燕昌_e17",
+      "cbdb_id": "82870",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（兰坻） +0.3",
+        "号匹配（樗盦） +0.25",
+        "籍贯包含匹配(浙江石门县/浙江石门) +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "方薰"
+    },
+    {
+      "name": "钱松",
+      "entity_id": "钱以发_e5",
+      "cbdb_id": "100877",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（叔盖） +0.3",
+        "号匹配（耐青） +0.25",
+        "籍贯匹配（钱塘≈浙江钱塘） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "钱松"
+    },
+    {
+      "name": "张熊",
+      "entity_id": "张嗣初_e21",
+      "cbdb_id": "82875",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（寿甫） +0.3",
+        "号匹配（子祥） +0.25",
+        "籍贯匹配（秀水≈浙江秀水） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "张熊"
+    },
+    {
+      "name": "高凤翰",
+      "entity_id": "高凤翰_e1",
+      "cbdb_id": "82820",
+      "ctext_id": "",
+      "match_score": 0.8500000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（西园） +0.3"
+      ],
+      "richness": 5,
+      "seed_name": "高凤翰"
+    },
+    {
+      "name": "杨沂孙",
+      "entity_id": "杨沂孙_e1",
+      "cbdb_id": "82951",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（咏春） +0.3",
+        "号匹配（子与） +0.25",
+        "籍贯匹配（常熟≈江苏常熟） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "杨沂孙"
+    },
+    {
+      "name": "何震",
+      "entity_id": "e1",
+      "cbdb_id": "42095",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（主臣） +0.3",
+        "号匹配（雪渔） +0.25",
+        "籍贯包含匹配(婺源/江西婺源) +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "何震"
+    },
+    {
+      "name": "董洵",
+      "entity_id": "e3",
+      "cbdb_id": "82780",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（企泉） +0.3",
+        "号匹配（小池） +0.25",
+        "籍贯匹配（山阴≈浙江山阴） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "董洵"
+    },
+    {
+      "name": "黄易",
+      "entity_id": "4",
+      "cbdb_id": "100888",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（大易） +0.3",
+        "号匹配（小松） +0.25",
+        "籍贯匹配（仁和≈浙江仁和） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "黄易"
+    },
+    {
+      "name": "江尊",
+      "entity_id": "江介_e2",
+      "cbdb_id": "100903",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（尊生） +0.3",
+        "号匹配（西谷） +0.25",
+        "籍贯匹配（钱塘≈浙江钱塘） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "江尊"
+    },
+    {
+      "name": "朱简",
+      "entity_id": "朱蔚_e2",
+      "cbdb_id": "42096",
+      "ctext_id": "",
+      "match_score": 0.8500000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（修能） +0.3"
+      ],
+      "richness": 5,
+      "seed_name": "朱简"
+    },
+    {
+      "name": "朱熊",
+      "entity_id": "朱一元_e4",
+      "cbdb_id": "82855",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（吉甫） +0.3",
+        "号匹配（梦泉） +0.25",
+        "籍贯匹配（秀水≈浙江秀水） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "朱熊"
+    },
+    {
+      "name": "高翔",
+      "entity_id": "e1",
+      "cbdb_id": "82985",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 5,
+      "seed_name": "高翔"
+    },
+    {
+      "name": "何屿",
+      "entity_id": "何其仁_e2",
+      "cbdb_id": "100906",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（子万） +0.3",
+        "号匹配（紫曼） +0.25",
+        "籍贯匹配（松江≈江苏松江） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "何屿"
+    },
+    {
+      "name": "赵穆",
+      "entity_id": "赵之谦_e11",
+      "cbdb_id": "100911",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（穆父） +0.3",
+        "号匹配（仲穆） +0.25"
+      ],
+      "richness": 5,
+      "seed_name": "赵穆"
+    },
+    {
+      "name": "文嘉",
+      "entity_id": "e17",
+      "cbdb_id": "23241",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（休承） +0.3",
+        "号匹配（文水道人） +0.25"
+      ],
+      "richness": 5,
+      "seed_name": "文嘉"
+    },
+    {
+      "name": "徐贞木",
+      "entity_id": "徐贞木_e1",
+      "cbdb_id": "82877",
+      "ctext_id": "",
+      "match_score": 0.7000000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "籍贯匹配（秀水≈浙江秀水） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "徐贞木"
+    },
+    {
+      "name": "吴大澂",
+      "entity_id": "吴大澂_e1",
+      "cbdb_id": "65538",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（清卿） +0.3",
+        "号匹配（窓斋） +0.25",
+        "籍贯匹配（吴县≈江苏吴县） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "吴大澂"
+    },
+    {
+      "name": "陈豫钟",
+      "entity_id": "e1",
+      "cbdb_id": "100882",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（浚仪） +0.3",
+        "号匹配（秋堂） +0.25",
+        "籍贯匹配（钱塘≈浙江钱塘） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "陈豫钟"
+    },
+    {
+      "name": "张廷济",
+      "entity_id": "张廷济_e1",
+      "cbdb_id": "100886",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（顺安） +0.3",
+        "号匹配（叔未） +0.25",
+        "籍贯匹配（嘉兴≈浙江嘉兴） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "张廷济"
+    },
+    {
+      "name": "钟以敬",
+      "entity_id": "钟以敬_e1",
+      "cbdb_id": "100918",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（让先） +0.3",
+        "号匹配（窳堪） +0.25",
+        "籍贯匹配（钱塘≈浙江钱塘） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "钟以敬"
+    },
+    {
+      "name": "徐霖",
+      "entity_id": "徐霖_e1",
+      "cbdb_id": "29887",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（子仁） +0.3",
+        "号匹配（髯仙） +0.25",
+        "籍贯匹配（金陵≈金陵） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "徐霖"
+    },
+    {
+      "name": "屠倬",
+      "entity_id": "e5",
+      "cbdb_id": "100885",
+      "ctext_id": "",
+      "match_score": 1.0,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（孟昭） +0.3",
+        "籍贯匹配（钱塘≈浙江钱塘） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "屠倬"
+    },
+    {
+      "name": "陶窳",
+      "entity_id": "陶窳_e1",
+      "cbdb_id": "100909",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（若予） +0.3",
+        "号匹配（甄夫） +0.25",
+        "籍贯包含匹配(顺德/广东顺德) +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "陶窳"
+    },
+    {
+      "name": "张溶",
+      "entity_id": "张庆善_e2",
+      "cbdb_id": "100905",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（镜心） +0.3",
+        "号匹配（石泉） +0.25",
+        "籍贯匹配（娄县≈江苏娄县） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "张溶"
+    },
+    {
+      "name": "甘旸",
+      "entity_id": "甘旸_e1",
+      "cbdb_id": "42101",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（旭甫） +0.3",
+        "号匹配（寅东） +0.25"
+      ],
+      "richness": 5,
+      "seed_name": "甘旸"
+    },
+    {
+      "name": "沈凤",
+      "entity_id": "沈野_e14",
+      "cbdb_id": "82876",
+      "ctext_id": "",
+      "match_score": 1.25,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（凡民） +0.3",
+        "号匹配（补萝） +0.25",
+        "籍贯匹配（江阴≈江苏江阴） +0.15"
+      ],
+      "richness": 5,
+      "seed_name": "沈凤"
+    },
+    {
+      "name": "李流芳",
+      "entity_id": "李流芳_e1",
+      "cbdb_id": "34696",
+      "ctext_id": "",
+      "match_score": 0.7000000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "籍贯包含匹配(嘉定/江苏嘉定) +0.15"
+      ],
+      "richness": 4,
+      "seed_name": "李流芳"
+    },
+    {
+      "name": "童大年",
+      "entity_id": "童大年_e1",
+      "cbdb_id": "100941",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（醒盦） +0.3",
+        "号匹配（性涵） +0.25"
+      ],
+      "richness": 4,
+      "seed_name": "童大年"
+    },
+    {
+      "name": "金农",
+      "entity_id": "林皋_e12",
+      "cbdb_id": "82983",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（寿门） +0.3",
+        "号匹配（冬心） +0.25"
+      ],
+      "richness": 4,
+      "seed_name": "金农"
+    },
+    {
+      "name": "文征明",
+      "entity_id": "e1",
+      "cbdb_id": "23240",
+      "ctext_id": "",
+      "match_score": 0.8,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "号匹配（衡山） +0.25"
+      ],
+      "richness": 4,
+      "seed_name": "文征明"
+    },
+    {
+      "name": "石韫玉",
+      "entity_id": "石韫玉_e1",
+      "cbdb_id": "82760",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（执如） +0.3",
+        "号匹配（琢堂） +0.25"
+      ],
+      "richness": 4,
+      "seed_name": "石韫玉"
+    },
+    {
+      "name": "文彭",
+      "entity_id": "e9",
+      "cbdb_id": "34677",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（寿承） +0.3",
+        "号匹配（三桥） +0.25"
+      ],
+      "richness": 4,
+      "seed_name": "文彭"
+    },
+    {
+      "name": "严栻",
+      "entity_id": "e7",
+      "cbdb_id": "100915",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（子张） +0.3",
+        "号匹配（髻珠头陀） +0.25"
+      ],
+      "richness": 4,
+      "seed_name": "严栻"
+    },
+    {
+      "name": "张在辛",
+      "entity_id": "张在辛_e1",
+      "cbdb_id": "82793",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（卯君） +0.3",
+        "号匹配（柏庭） +0.25"
+      ],
+      "richness": 4,
+      "seed_name": "张在辛"
+    },
+    {
+      "name": "吴廷飏",
+      "entity_id": "吴廷飏_e1",
+      "cbdb_id": "100927",
+      "ctext_id": "",
+      "match_score": 1.1,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（熙载） +0.3",
+        "号匹配（让之） +0.25"
+      ],
+      "richness": 4,
+      "seed_name": "吴廷飏"
+    },
+    {
+      "name": "翁大年",
+      "entity_id": "翁大年_e1",
+      "cbdb_id": "100887",
+      "ctext_id": "",
+      "match_score": 0.7000000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "籍贯包含匹配(吴江/江苏吴江) +0.15"
+      ],
+      "richness": 3,
+      "seed_name": "翁大年"
+    },
+    {
+      "name": "胡唐",
+      "entity_id": "胡光筠_e2",
+      "cbdb_id": "82771",
+      "ctext_id": "",
+      "match_score": 0.7000000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "籍贯匹配（歙县≈安徽歙县） +0.15"
+      ],
+      "richness": 3,
+      "seed_name": "胡唐"
+    },
+    {
+      "name": "汪关",
+      "entity_id": "e5",
+      "cbdb_id": "41990",
+      "ctext_id": "",
+      "match_score": 0.8500000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（尹子） +0.3"
+      ],
+      "richness": 3,
+      "seed_name": "汪关"
+    },
+    {
+      "name": "王尔度",
+      "entity_id": "王尔度_e1",
+      "cbdb_id": "100897",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 3,
+      "seed_name": "王尔度"
+    },
+    {
+      "name": "赵宦光",
+      "entity_id": "e1",
+      "cbdb_id": "42097",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 3,
+      "seed_name": "赵宦光"
+    },
+    {
+      "name": "吴咨",
+      "entity_id": "吴咨_e1",
+      "cbdb_id": "82765",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 3,
+      "seed_name": "吴咨"
+    },
+    {
+      "name": "王云",
+      "entity_id": "e1",
+      "cbdb_id": "82860",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 3,
+      "seed_name": "王云"
+    },
+    {
+      "name": "程邃",
+      "entity_id": "e5",
+      "cbdb_id": "82886",
+      "ctext_id": "",
+      "match_score": 0.7000000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "籍贯匹配（歙≈安徽歙县） +0.15"
+      ],
+      "richness": 3,
+      "seed_name": "程邃"
+    },
+    {
+      "name": "许友",
+      "entity_id": "方仲芝_e6",
+      "cbdb_id": "15737",
+      "ctext_id": "",
+      "match_score": 0.8500000000000001,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3",
+        "字匹配（有介） +0.3"
+      ],
+      "richness": 2,
+      "seed_name": "许友"
+    },
+    {
+      "name": "吴让之",
+      "entity_id": "吴廷康_e36",
+      "cbdb_id": "100880",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 1,
+      "seed_name": "吴让之"
+    },
+    {
+      "name": "孔千秋",
+      "entity_id": "孔千秋_e1",
+      "cbdb_id": "100917",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "孔千秋"
+    },
+    {
+      "name": "李攀龙",
+      "entity_id": "江介_e8",
+      "cbdb_id": "29870",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "李攀龙"
+    },
+    {
+      "name": "陈洪绶",
+      "entity_id": "陈洪绶_e1",
+      "cbdb_id": "65496",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "陈洪绶"
+    },
+    {
+      "name": "丁敬",
+      "entity_id": "朱宏晋_e18",
+      "cbdb_id": "68915",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "丁敬"
+    },
+    {
+      "name": "吴昌硕",
+      "entity_id": "方濬益_e4",
+      "cbdb_id": "127761",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "吴昌硕"
+    },
+    {
+      "name": "郑燮",
+      "entity_id": "8",
+      "cbdb_id": "10363",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "郑燮"
+    },
+    {
+      "name": "杨大瓢",
+      "entity_id": "e9",
+      "cbdb_id": "100925",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "杨大瓢"
+    },
+    {
+      "name": "赵之琛",
+      "entity_id": "沈道腴_e7",
+      "cbdb_id": "100881",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "赵之琛"
+    },
+    {
+      "name": "邓石如",
+      "entity_id": "e7",
+      "cbdb_id": "82880",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "邓石如"
+    },
+    {
+      "name": "孙三锡",
+      "entity_id": "孙三锡_e1",
+      "cbdb_id": "82766",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "孙三锡"
+    },
+    {
+      "name": "巴慰祖",
+      "entity_id": "巴慰祖_e1",
+      "cbdb_id": "82770",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "巴慰祖"
+    },
+    {
+      "name": "汪士慎",
+      "entity_id": "汪士慎_e1",
+      "cbdb_id": "82984",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "汪士慎"
+    },
+    {
+      "name": "王大炘",
+      "entity_id": "1",
+      "cbdb_id": "100939",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "王大炘"
+    },
+    {
+      "name": "王石经",
+      "entity_id": "1",
+      "cbdb_id": "100876",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "王石经"
+    },
+    {
+      "name": "李尹桑",
+      "entity_id": "e1",
+      "cbdb_id": "100938",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "李尹桑"
+    },
+    {
+      "name": "苏宣",
+      "entity_id": "e8",
+      "cbdb_id": "42112",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "苏宣"
+    },
+    {
+      "name": "程荃",
+      "entity_id": "e4",
+      "cbdb_id": "82772",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "程荃"
+    },
+    {
+      "name": "赵荣",
+      "entity_id": "1",
+      "cbdb_id": "100914",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "赵荣"
+    },
+    {
+      "name": "郭麐",
+      "entity_id": "5",
+      "cbdb_id": "100884",
+      "ctext_id": "",
+      "match_score": 0.55,
+      "match_method": "rule_based",
+      "alignment_status": "aligned",
+      "rules": [
+        "KNOWN_MAP 种子映射 +0.25",
+        "姓名完全匹配 +0.3"
+      ],
+      "richness": 0,
+      "seed_name": "郭麐"
+    }
+  ],
+  "report_only_records": [],
+  "skipped_records": [
+    {
+      "name": "达受",
+      "seed_name": "释达受",
+      "entity_id": "法嘉荪_e31",
+      "reason": "not_aligned",
+      "richness": 2
+    }
+  ]
+}
